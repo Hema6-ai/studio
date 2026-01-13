@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getRoleFromEmail } from "@/lib/roles";
 
@@ -16,6 +16,11 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,6 +46,10 @@ export function LoginForm() {
       }
     }, 1000);
   };
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
