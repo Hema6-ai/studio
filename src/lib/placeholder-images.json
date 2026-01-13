@@ -1,3 +1,34 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "login-hero",
+      "description": "A modern university campus building.",
+      "imageUrl": "https://images.unsplash.com/photo-1590579491624-f98f36d4c763?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx1bml2ZXJzaXR5JTIwY2FtcHVzfGVufDB8fHx8MTc2ODI0MTI1M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "university campus"
+    },
+    {
+      "id": "announcement-1",
+      "description": "Students collaborating at a hackathon.",
+      "imageUrl": "https://images.unsplash.com/photo-1629481317043-16b1343d77d9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxzdHVkZW50cyUyMGNvZGluZ3xlbnwwfHx8fDE3NjgzMjI1MTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "students coding"
+    },
+    {
+      "id": "announcement-2",
+      "description": "A speaker presenting at a university event.",
+      "imageUrl": "https://images.unsplash.com/photo-1544531586-fde5298cdd40?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjb25mZXJlbmNlJTIwc3BlYWtlcnxlbnwwfHx8fDE3NjgyMDEzNTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "conference speaker"
+    },
+    {
+      "id": "announcement-3",
+      "description": "A university club fair.",
+      "imageUrl": "https://images.unsplash.com/photo-1633701945987-d21c145a07b0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzdHVkZW50JTIwZmFpcnxlbnwwfHx8fDE3NjgzMjI1MTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "student fair"
+    },
+    {
+      "id": "avatar-1",
+      "description": "Profile picture for a student named Hema.",
+      "imageUrl": "https://images.unsplash.com/photo-1557053908-4793c484d06f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2ODI0NTg4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman portrait"
+    }
+  ]
 }
