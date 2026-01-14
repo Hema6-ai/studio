@@ -29,61 +29,59 @@ export const dummyAnnouncements = [
 ];
 
 export const dummyCourses = [
-  { id: 'DSA1', name: 'Data Structures & Algorithms I' },
-  { id: 'DSA4', name: 'Data Structures & Algorithms IV' },
-  { id: 'SS2', name: 'Soft Skills II' },
-  { id: 'OPC3', name: 'Open Elective III' },
-  { id: 'PS3', name: 'Problem Solving III' },
-  { id: 'CA4', name: 'Computer Architecture IV' },
-  { id: 'BEC', name: 'Basic Electronics' },
-  { id: 'CA2', name: 'Computer Architecture II' },
-  { id: 'PS1', name: 'Problem Solving I' },
-  { id: 'SS3', name: 'Soft Skills III' },
-  { id: 'CA1', name: 'Computer Architecture I' },
-  { id: 'SS1', name: 'Soft Skills I' },
-  { id: 'PS2', name: 'Problem Solving II' },
-  { id: 'PS4', name: 'Problem Solving IV' },
-  { id: 'PS5', name: 'Problem Solving V' },
-  { id: 'OPC2', name: 'Open Elective II' },
-  { id: 'DSA3', name: 'Data Structures & Algorithms III' },
-  { id: 'SS4', name: 'Soft Skills IV' },
-  { id: 'DSA2', name: 'Data Structures & Algorithms II' },
-  { id: 'OPC1', name: 'Open Elective I' },
-  { id: 'OPC4', name: 'Open Elective IV' },
-  { id: 'AIV2', name: 'AI & Vulnerabilities II' },
-  { id: 'AIV1', name: 'AI & Vulnerabilities I' },
-  { id: 'EDL1', name: 'Eng. Design & Logic I' },
-  { id: 'EDL2', name: 'Eng. Design & Logic II' },
-  { id: 'CA3', name: 'Computer Architecture III' },
+  { id: 'PS', name: 'Probability and Statistics' },
+  { id: 'DSA', name: 'Data Structures and Algorithms' },
+  { id: 'SS', name: 'Signals and Systems' },
+  { id: 'CA', name: 'Computer Architecture' },
+  { id: 'BEC', name: 'Basic Electronics and Circuit' },
+  { id: 'OPC', name: 'Operational Coomunication' },
+  { id: 'EDL', name: 'Ethics in Every Day life' },
+  { id: 'AIV', name: 'Al and Visual Culture' }
 ];
 
+
 export const dummyFaculty = [
-    { id: 'faculty-1', name: 'Praveen K', email: 'praveen.k@iiits.in', courses: ['DSA1'], ugYear: [1], branch: 'CSE', section: 'A' },
-    { id: 'faculty-2', name: 'K V S R', email: 'kvsr@iiits.in', courses: ['DSA4'], ugYear: [1], branch: 'CSE', section: 'A' },
-    { id: 'faculty-3', name: 'Satrajit', email: 'satrajit@iiits.in', courses: ['SS2'], ugYear: [1], branch: 'Common', section: 'Common Class' },
-    { id: 'faculty-4', name: 'Srinivas B', email: 'srinivas.b@iiits.in', courses: ['OPC3'], ugYear: [1], branch: 'Common', section: 'Common Class' },
-    { id: 'faculty-5', name: 'Santhosh C', email: 'santhosh.c@iiits.in', courses: ['PS3'], ugYear: [1], branch: 'CSE', section: 'B' },
-    { id: 'faculty-6', name: 'Vandana J', email: 'vandana.j@iiits.in', courses: ['CA2'], ugYear: [1], branch: 'CSE', section: 'A' },
-    { id: 'faculty-7', name: 'Bhuvan T', email: 'bhuvan.t@iiits.in', courses: ['PS1'], ugYear: [1], branch: 'CSE', section: 'C' },
-    { id: 'faculty-8', name: 'Sujit S', email: 'sujit.s@iiits.in', courses: ['SS3'], ugYear: [1], branch: 'Common', section: 'Common Class' },
-    { id: 'faculty-9', name: 'K K B', email: 'kkb@iiits.in', courses: ['PS2'], ugYear: [1], branch: 'CSE', section: 'A' },
-    { id: 'faculty-10', name: 'Monalisa G', email: 'monalisa.g@iiits.in', courses: ['CA1'], ugYear: [1], branch: 'CSE', section: 'B' },
-    { id: 'faculty-11', name: 'Suneetha K', email: 'suneetha.k@iiits.in', courses: ['BEC'], ugYear: [1], branch: 'ECE', section: 'A' },
-    { id: 'faculty-12', name: 'Pankaj V', email: 'pankaj.v@iiits.in', courses: ['SS1'], ugYear: [1], branch: 'Common', section: 'Common Class' },
-    { id: 'faculty-13', name: 'Suman Kumar', email: 'suman.k@iiits.in', courses: ['DSA2'], ugYear: [1], branch: 'CSE', section: 'A' },
-    { id: 'faculty-14', name: 'Rakesh T', email: 'rakesh.t@iiits.in', courses: ['SS4'], ugYear: [1], branch: 'Common', section: 'Common Class' },
-    { id: 'faculty-15', name: 'Kishore K', email: 'kishore.k@iiits.in', courses: ['OPC4'], ugYear: [1], branch: 'Common', section: 'Common Class' },
-    { id: 'faculty-16', name: 'Ram K', email: 'ram.k@iiits.in', courses: ['PS5'], ugYear: [1], branch: 'CSE', section: 'C' },
-    { id: 'faculty-17', name: 'Prashant K', email: 'prashant.k@iiits.in', courses: ['CA3'], ugYear: [1], branch: 'CSE', section: 'C' },
-    { id: 'faculty-18', name: 'Dileep', email: 'dileep@iiits.in', courses: ['CA4'], ugYear: [1], branch: 'CSE', section: 'A' },
-    { id: 'faculty-19', name: 'Aakash', email: 'aakash@iiits.in', courses: ['DSA3'], ugYear: [1], branch: 'CSE', section: 'B' },
-    { id: 'faculty-20', name: 'Karthik S', email: 'karthik.s@iiits.in', courses: ['OPC1'], ugYear: [1], branch: 'Common', section: 'Common Class' },
-    { id: 'faculty-21', name: 'Gautam P', email: 'gautam.p@iiits.in', courses: ['PS4'], ugYear: [1], branch: 'CSE', section: 'B' },
-    { id: 'faculty-22', name: 'Anurag S', email: 'anurag.s@iiits.in', courses: ['OPC2'], ugYear: [1], branch: 'Common', section: 'Common Class' },
-    { id: 'faculty-23', name: 'Md. Aquib', email: 'md.aquib@iiits.in', courses: ['AIV2'], ugYear: [1], branch: 'AIDS', section: 'A' },
-    { id: 'faculty-24', name: 'Mounika J', email: 'mounika.j@iiits.in', courses: ['AIV1'], ugYear: [1], branch: 'AIDS', section: 'A' },
-    { id: 'faculty-25', name: 'Srinath', email: 'srinath@iiits.in', courses: ['EDL1'], ugYear: [1], branch: 'ECE', section: 'B' },
-    { id: 'faculty-26', name: 'Soumya', email: 'soumya@iiits.in', courses: ['EDL2'], ugYear: [1], branch: 'ECE', section: 'B' },
+  // Probability and Statistics (PS)
+  { id: 'faculty-ps1', name: 'Mansoori', email: 'ps1@iiits.in', courses: ['PS'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '1' },
+  { id: 'faculty-ps2', name: 'Dr.Jahnabi Chakravarty', email: 'ps2@iiits.in', courses: ['PS'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '2' },
+  { id: 'faculty-ps3', name: 'Dr.Jahnabi Chakravarty', email: 'ps3@iiits.in', courses: ['PS'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '3' },
+  { id: 'faculty-ps4', name: 'Dr. Narendra singh yadav', email: 'ps4@iiits.in', courses: ['PS'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '4' },
+  { id: 'faculty-ps5', name: 'Dr. Narendra singh yadav', email: 'ps5@iiits.in', courses: ['PS'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '5' },
+
+  // Data Structures and Algorithms (DSA)
+  { id: 'faculty-dsa1', name: 'Dr.AUG Sankanrarao', email: 'dsa1@iiits.in', courses: ['DSA'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '1' },
+  { id: 'faculty-dsa2', name: 'Dr.AUG Sankanrarao', email: 'dsa2@iiits.in', courses: ['DSA'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '2' },
+  { id: 'faculty-dsa3', name: 'Dr. Viswanath Pulabaigari', email: 'dsa3@iiits.in', courses: ['DSA'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '3' },
+  { id: 'faculty-dsa4', name: 'Dr. Viswanath Pulabaigari', email: 'dsa4@iiits.in', courses: ['DSA'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '4' },
+
+  // Signals and Systems (SS)
+  { id: 'faculty-ss1', name: 'Divyabramham', email: 'ss1@iiits.in', courses: ['SS'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '1' },
+  { id: 'faculty-ss2', name: 'Dr. Anish Chand Turlapaty', email: 'ss2@iiits.in', courses: ['SS'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '2' },
+  { id: 'faculty-ss3', name: 'Dr. Achintya Sarkar', email: 'ss3@iiits.in', courses: ['SS'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '3' },
+  { id: 'faculty-ss4', name: 'Dr. Achintya Sarkar', email: 'ss4@iiits.in', courses: ['SS'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '4' },
+
+  // Computer Architecture (CA)
+  { id: 'faculty-ca1', name: 'Dr. Santhosh A', email: 'ca1@iiits.in', courses: ['CA'], ugYear: [1], branch: 'CSE,AIDS', section: '1' },
+  { id: 'faculty-ca2', name: 'Dr. Bheemappa Halavar', email: 'ca2@iiits.in', courses: ['CA'], ugYear: [1], branch: 'CSE,AIDS', section: '2' },
+  { id: 'faculty-ca3', name: 'Dr. Bheemappa Halavar', email: 'ca3@iiits.in', courses: ['CA'], ugYear: [1], branch: 'CSE,AIDS', section: '3' },
+  { id: 'faculty-ca4', name: 'Dr. Kartick Sutradhar', email: 'ca4@iiits.in', courses: ['CA'], ugYear: [1], branch: 'CSE,AIDS', section: '4' },
+
+  // Basic Electronics and Circuit (BEC)
+  { id: 'faculty-bec', name: 'Dr. Raja Vara Prasad. Y/Mrs. Srivalli', email: 'bec@iiits.in', courses: ['BEC'], ugYear: [1], branch: 'ECE', section: 'Common Class' },
+
+  // Operational Coomunication (OPC)
+  { id: 'faculty-opc1', name: 'Dr.Vinay Kumar', email: 'opc1@iiits.in', courses: ['OPC'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '1' },
+  { id: 'faculty-opc2', name: 'Dr.Vinay Kumar', email: 'opc2@iiits.in', courses: ['OPC'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '2' },
+  { id: 'faculty-opc3', name: 'Dr.Krishna Swamy', email: 'opc3@iiits.in', courses: ['OPC'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '3' },
+  { id: 'faculty-opc4', name: 'Dr.Krishna Swamy', email: 'opc4@iiits.in', courses: ['OPC'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '4' },
+
+  // Ethics in Every Day life (EDL)
+  { id: 'faculty-edl1', name: 'Dr Rosemaria Regy Mathew', email: 'edl1@iiits.in', courses: ['EDL'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '1' },
+  { id: 'faculty-edl2', name: 'Dr Rosemaria Regy Mathew', email: 'edl2@iiits.in', courses: ['EDL'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '2' },
+  
+  // Al and Visual Culture (AIV)
+  { id: 'faculty-aiv1', name: 'Dr Rosemaria Regy Mathew', email: 'aiv1@iiits.in', courses: ['AIV'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '1' },
+  { id: 'faculty-aiv2', name: 'Dr Rosemaria Regy Mathew', email: 'aiv2@iiits.in', courses: ['AIV'], ugYear: [1], branch: 'CSE,ECE,AIDS', section: '2' }
 ];
 
 export const dummyTimetable = {
