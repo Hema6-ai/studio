@@ -78,7 +78,6 @@ export const dummyCourses = [
 
 
 export const dummyFaculty = [
-  // UG-1 Faculty
   { "id": "faculty-ps-1", "name": "Dr. Mansoori", "email": "ps1@iiits.in", "courseName": "Probability and Statistics", "courseAbbr": "PS", "branch": "CSE,ECE,AIDS", "section": "1", "ugYear": ["1"] },
   { "id": "faculty-ps-2", "name": "Dr. Jahnabi Chakravarty", "email": "ps2@iiits.in", "courseName": "Probability and Statistics", "courseAbbr": "PS", "branch": "CSE,ECE,AIDS", "section": "2", "ugYear": ["1"] },
   { "id": "faculty-ps-3", "name": "Dr. Jahnabi Chakravarty", "email": "ps3@iiits.in", "courseName": "Probability and Statistics", "courseAbbr": "PS", "branch": "CSE,ECE,AIDS", "section": "3", "ugYear": ["1"] },
@@ -105,7 +104,6 @@ export const dummyFaculty = [
   { "id": "faculty-edl-2", "name": "Dr. Rosemaria Regy Mathew", "email": "edl2@iiits.in", "courseName": "Ethics in Everyday Life", "courseAbbr": "EDL", "branch": "CSE,ECE,AIDS", "section": "2", "ugYear": ["1"] },
   { "id": "faculty-aiv-1", "name": "Dr. Rosemaria Regy Mathew", "email": "aiv1@iiits.in", "courseName": "AI and Visual Culture", "courseAbbr": "AIV", "branch": "CSE,ECE,AIDS", "section": "1", "ugYear": ["1"] },
   { "id": "faculty-aiv-2", "name": "Dr. Rosemaria Regy Mathew", "email": "aiv2@iiits.in", "courseName": "AI and Visual Culture", "courseAbbr": "AIV", "branch": "CSE,ECE,AIDS", "section": "2", "ugYear": ["1"] },
-  // UG-2 Faculty
   { "id": "faculty-ccn-1", "name": "Dr. Hemant Kumar", "email": "cn1@iiits.in", "courseName": "Computer and Communication Networks", "courseAbbr": "CCN", "branch": "CSE,ECE,AIDS", "section": "1", "ugYear": ["2"] },
   { "id": "faculty-ccn-2", "name": "Dr. U Somalatha", "email": "cn2@iiits.in", "courseName": "Computer and Communication Networks", "courseAbbr": "CCN", "branch": "CSE,ECE,AIDS", "section": "2", "ugYear": ["2"] },
   { "id": "faculty-ccn-3", "name": "Dr. Raja Vara Prasad Y", "email": "cn3@iiits.in", "courseName": "Computer and Communication Networks", "courseAbbr": "CCN", "branch": "CSE,ECE,AIDS", "section": "3", "ugYear": ["2"] },
@@ -123,7 +121,7 @@ export const dummyFaculty = [
   { "id": "faculty-emtl-1", "name": "Dr. Lokendra Chauhan", "email": "emtl@iiits.in", "courseName": "Electromagnetics and Transmission Lines", "courseAbbr": "EMTL", "branch": "ECE", "section": "Common", "ugYear": ["2"] },
   { "id": "faculty-fcomm-1", "name": "Dr. Rajeev Kumar", "email": "fcomm@iiits.in", "courseName": "Fundamentals of Communication", "courseAbbr": "FComm", "branch": "ECE", "section": "Common", "ugYear": ["2"] },
   { "id": "faculty-aikr-1", "name": "Dr. Anushree Bablani", "email": "aikr@iiits.in", "courseName": "Artificial Intelligence & Knowledge Representation", "courseAbbr": "AIKR", "branch": "AIDS", "section": "Common", "ugYear": ["2"] },
-  { "id": "faculty-dl-2-1", "name": "Dr. Pavan Kumar Perepu", "email": "dl2-1@iiits.in", "courseName": "Deep Learning", "courseAbbr": "DL", "branch": "AIDS", "section": "Common", "ugYear": ["2"] },
+  { "id": "faculty-dl-2-1", "name": "Dr. Pavan Kumar Perepu", "email": "dl2@iiits.in", "courseName": "Deep Learning", "courseAbbr": "DL", "branch": "AIDS", "section": "Common", "ugYear": ["2"] },
   { "id": "faculty-ida-1", "name": "Dr. Pavan Kumar Perepu", "email": "ida@iiits.in", "courseName": "Introduction to Data Analysis", "courseAbbr": "IDA", "branch": "AIDS", "section": "Common", "ugYear": ["2"] },
   { "id": "faculty-acs-1", "name": "Dr. Vinay Kumar", "email": "acs1@iiits.in", "courseName": "Advanced Communication Skills", "courseAbbr": "ACS", "branch": "CSE,ECE,AIDS", "section": "1", "ugYear": ["2"] },
   { "id": "faculty-acs-2", "name": "Dr. Vinay Kumar", "email": "acs2@iiits.in", "courseName": "Advanced Communication Skills", "courseAbbr": "ACS", "branch": "CSE,ECE,AIDS", "section": "2", "ugYear": ["2"] },
@@ -133,14 +131,12 @@ export const dummyFaculty = [
   { "id": "faculty-lr-2", "name": "Mrs. Shabhana Imran", "email": "lr2@iiits.in", "courseName": "Logical and Reasoning", "courseAbbr": "LR", "branch": "CSE,ECE,AIDS", "section": "2", "ugYear": ["2"] },
   { "id": "faculty-lr-3", "name": "Mrs. Shabhana Imran", "email": "lr3@iiits.in", "courseName": "Logical and Reasoning", "courseAbbr": "LR", "branch": "CSE,ECE,AIDS", "section": "3", "ugYear": ["2"] },
   { "id": "faculty-lr-4", "name": "Mrs. Shabhana Imran", "email": "lr4@iiits.in", "courseName": "Logical and Reasoning", "courseAbbr": "LR", "branch": "CSE,ECE,AIDS", "section": "4", "ugYear": ["2"] },
-  // UG-3 Faculty
   { "id": "faculty-ada-1", "name": "Dr. Mainak Thakur", "email": "ada@iiits.in", "courseName": "Advanced Data Analytics", "courseAbbr": "ADA", "branch": "CSE,AIDS", "section": "Common", "ugYear": ["3"] },
   { "id": "faculty-dl-3-1", "name": "Dr. Shaik Mohammad Rafi", "email": "dl@iiits.in", "courseName": "Deep Learning", "courseAbbr": "DL", "branch": "CSE", "section": "Common", "ugYear": ["3"] },
   { "id": "faculty-rl-1", "name": "Dr. Arun PV", "email": "rl@iiits.in", "courseName": "Reinforcement Learning", "courseAbbr": "RL", "branch": "CSE,AIDS", "section": "Common", "ugYear": ["3"] },
   { "id": "faculty-mot-1", "name": "Dr. Mohd Shanawaz Mansoori", "email": "mot@iiits.in", "courseName": "Mathematical Optimization Techniques", "courseAbbr": "MOT", "branch": "SE,DS,PEAI", "section": "Common", "ugYear": ["3"] },
   { "id": "faculty-fda-1", "name": "Dr. Shiv Mohan", "email": "fda@iiits.in", "courseName": "Financial Data Analysis", "courseAbbr": "FDA", "branch": "SE,DS,PEAI", "section": "Common", "ugYear": ["3"] },
   { "id": "faculty-idhv-1", "name": "Dr. Mainak Thakur / Dr. Rajendra Prasath", "email": "idhv@iiits.in", "courseName": "Introduction Data Handling & Visualization", "courseAbbr": "IDHV", "branch": "SE,DS,PEAI", "section": "Common", "ugYear": ["3"] },
-  { "id": "faculty-ada-2", "name": "Dr. Mainak Thakur", "email": "ada2@iiits.in", "courseName": "Advanced Data Analytics", "courseAbbr": "ADA", "branch": "SE,AIML,PE,AIDS", "section": "Common", "ugYear": ["3"] },
   { "id": "faculty-dsy-1", "name": "Dr. U Somalatha", "email": "dsy@iiits.in", "courseName": "Data Security", "courseAbbr": "DSY", "branch": "CSE,AI,DS,Cybersec", "section": "Common", "ugYear": ["3"] },
   { "id": "faculty-is-1", "name": "Dr. Kamalakanta Sethi", "email": "is1@iiits.in", "courseName": "Internet Security", "courseAbbr": "IS", "branch": "PE,CSE,Cybersec", "section": "1", "ugYear": ["3"] },
   { "id": "faculty-is-2", "name": "Dr. Kamalakanta Sethi", "email": "is2@iiits.in", "courseName": "Internet Security", "courseAbbr": "IS", "branch": "PE,CSE,Cybersec", "section": "2", "ugYear": ["3"] },
@@ -154,7 +150,6 @@ export const dummyFaculty = [
   { "id": "faculty-one-1", "name": "Dr. Visaprasad Kotamaraju", "email": "one@iiits.in", "courseName": "Opto and Nano Electronics", "courseAbbr": "ONE", "branch": "ECE", "section": "Common", "ugYear": ["3"] },
   { "id": "faculty-hdl-1", "name": "Dr. V. Ramesh Kumar", "email": "hdl@iiits.in", "courseName": "Verilog Hardware Description Language", "courseAbbr": "HDL", "branch": "ECE", "section": "Common", "ugYear": ["3"] },
   { "id": "faculty-pe-1", "name": "Dr. Paul Brainerd", "email": "pe@iiits.in", "courseName": "Power Electronics", "courseAbbr": "PE", "branch": "ECE", "section": "Common", "ugYear": ["3"] },
-  // UG-4 Faculty
   { "id": "faculty-cdp-1", "name": "Dr. Bulla Rajesh", "email": "cdp@iiits.in", "courseName": "Compressed Domain Processing", "courseAbbr": "CDP", "branch": "CSE", "section": "Common", "ugYear": ["4"] },
   { "id": "faculty-dip-1", "name": "Dr. Mrinmoy Ghorai", "email": "dip@iiits.in", "courseName": "Digital Image Processing", "courseAbbr": "DIP", "branch": "CSE,ECE", "section": "Common", "ugYear": ["4"] },
   { "id": "faculty-avlsi-1", "name": "Dr. Priyanka Dwivedi", "email": "avlsi@iiits.in", "courseName": "Advanced VLSI", "courseAbbr": "AVLSI", "branch": "CSE", "section": "Common", "ugYear": ["4"] },
@@ -282,3 +277,5 @@ export const dummyTimetable = {
     
 
     
+
+  
