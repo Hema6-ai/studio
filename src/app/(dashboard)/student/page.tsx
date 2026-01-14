@@ -42,7 +42,7 @@ import {
     Search,
     Send,
   } from "lucide-react";
-  import { dummySchedule, dummyAnnouncements, dummyTimetable } from "@/lib/data";
+  import { dummyAnnouncements, dummyTimetable } from "@/lib/data";
   import Image from "next/image";
   import Link from "next/link";
   import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
@@ -57,6 +57,13 @@ import {
       'not-available': 'ring-red-500',
       'nurse-available': 'ring-orange-500',
       'on-leave': 'ring-yellow-500',
+  }
+
+  const parseEntry = (entry: string) => {
+      const match = entry.match(/^([A-Z\d]+)-?([\w\d]+)?\s*(.*)$/);
+      if(!match) return { courseAbbr: entry, section: 'Common', room: ''};
+      const [, courseAbbr, section, room] = match;
+      return { courseAbbr, section: section || 'Common', room: room.trim() };
   }
   
   export default function StudentDashboard() {
@@ -79,33 +86,33 @@ import {
         const yearTimetable = (dummyTimetable as any)[ugYearKey]?.timetable;
         if(!yearTimetable) return [];
 
-        const enrolledCoursesSet = new Set(student.enrolledCourses.map((c: any) => `${c.courseAbbr}-${c.section}`));
-
+        const enrolledCoursesSet = new Set(student.enrolledCourses.map((c: any) => {
+            return c.section ? `${c.courseAbbr}-${c.section}` : c.courseAbbr;
+        }));
+        
         const scheduleByDay: { [key: string]: any[] } = {};
 
         Object.entries(yearTimetable).forEach(([day, slots]: [string, any]) => {
             scheduleByDay[day] = [];
             slots.forEach((slot: any) => {
-                const todaysClasses = slot.entries.filter((entry: string) => {
-                    const match = entry.match(/^([A-Z\d]+)-?([\w\d]+)?/);
-                    if(!match) return false;
-                    const [, courseAbbr, section] = match;
-                    const courseKey = `${courseAbbr}-${section || 'Common'}`;
-                    return enrolledCoursesSet.has(courseKey);
+                const todaysClasses = slot.entries.map(parseEntry).filter((entry: any) => {
+                    const courseKeyWithSection = `${entry.courseAbbr}-${entry.section}`;
+                    const courseKeyWithoutSection = entry.courseAbbr;
+                    return enrolledCoursesSet.has(courseKeyWithSection) || enrolledCoursesSet.has(courseKeyWithoutSection);
                 });
                 
                 if (todaysClasses.length > 0) {
                      scheduleByDay[day].push({
                         time: slot.time,
-                        subject: todaysClasses[0].split(' ')[0],
-                        venue: todaysClasses[0].split(' ').slice(1).join(' ')
+                        subject: todaysClasses[0].courseAbbr,
+                        venue: todaysClasses[0].room
                     });
                 }
             });
         });
 
-        // For simplicity, just showing Monday's schedule
-        return scheduleByDay['Monday'] || [];
+        const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+        return scheduleByDay[today] || [];
 
     }, [student]);
 
@@ -340,3 +347,5 @@ import {
     );
   }
   
+
+    

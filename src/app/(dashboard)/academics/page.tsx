@@ -30,7 +30,7 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
         email: student?.email || '',
         studentId: student?.studentId || student?.id || '',
         enrolledCoursesText: student?.enrolledCourses 
-            ? student.enrolledCourses.map((c: any) => `${c.courseAbbr}-${c.section} ${c.room}`).join('\n') 
+            ? student.enrolledCourses.map((c: any) => c.section ? `${c.courseAbbr}-${c.section}` : c.courseAbbr).join('\n') 
             : ''
     });
     const [isOpen, setIsOpen] = useState(false);
@@ -41,37 +41,33 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
     };
 
     const handleSubmit = () => {
-        // Parse enrolledCoursesText
         const courseLines = formData.enrolledCoursesText.split('\n').filter(line => line.trim() !== '');
         const enrolledCourses: any[] = [];
         let parseError = false;
 
         for (const line of courseLines) {
-            const match = line.match(/^([A-Z\d]+)-([\w\d]+)\s(.+)$/);
-            if (!match) {
-                parseError = true;
-                break;
-            }
-            const [, courseAbbr, section, room] = match;
-            
-            // Basic validation
+            const trimmedLine = line.trim();
+            const parts = trimmedLine.split('-');
+            const courseAbbr = parts[0];
+            const section = parts.length > 1 ? parts[1] : null;
+
             const courseExists = dummyCourses.some(c => c.abbr === courseAbbr);
-            if(!courseExists) {
+            if (!courseExists) {
                 toast({ variant: "destructive", title: "Invalid Course", description: `Course with abbreviation "${courseAbbr}" does not exist.` });
                 parseError = true;
                 break;
             }
-
-            enrolledCourses.push({ courseAbbr, section, room: room.trim() });
+            
+            enrolledCourses.push({ courseAbbr, section: section || 'Common' });
         }
         
         if (parseError) {
-             toast({ variant: "destructive", title: "Invalid Format", description: "Please check the format for enrolled classes. It should be <COURSE_ABBR>-<SECTION> <ROOM>." });
+             toast({ variant: "destructive", title: "Invalid Course", description: "Please check the course abbreviations and sections." });
             return;
         }
 
         const studentData = {
-            id: formData.studentId, // Use studentId as document ID
+            id: formData.studentId,
             studentId: formData.studentId,
             name: formData.name,
             email: formData.email,
@@ -87,7 +83,7 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
         }
     };
 
-    const isFormValid = formData.name && formData.email && formData.studentId;
+    const isFormValid = formData.name && formData.email && formData.studentId && formData.enrolledCoursesText;
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -123,10 +119,10 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
                                 value={formData.enrolledCoursesText} 
                                 onChange={handleChange} 
                                 className="col-span-3"
-                                placeholder="One class per line, e.g.,&#10;DSA-1 G09&#10;PS-3 G08"
+                                placeholder="One class per line. Example: PGM or DSA-1"
                                 rows={5}
                             />
-                            <p className="text-xs text-muted-foreground mt-1">Format: COURSE_ABBR-SECTION ROOM</p>
+                            <p className="text-xs text-muted-foreground mt-1">Format: COURSE_ABBR or COURSE_ABBR-SECTION</p>
                          </div>
                     </div>
                 </div>
@@ -605,3 +601,5 @@ export default function AcademicsDashboard() {
     </Tabs>
   );
 }
+
+    
