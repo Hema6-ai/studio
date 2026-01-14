@@ -119,6 +119,8 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
         id: faculty?.id || undefined,
         name: faculty?.name || '',
         email: faculty?.email || '',
+        courseAbbr: faculty?.courseAbbr || '',
+        courseName: faculty?.courseName || '',
         ugYear: faculty?.ugYear || [],
         branch: faculty?.branch || '',
         section: faculty?.section || ''
@@ -134,7 +136,7 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
         onSave(formData);
         setIsOpen(false);
         if (!faculty) {
-             setFormData({ id: undefined, name: '', email: '', ugYear: [], branch: '', section: '' });
+             setFormData({ id: undefined, name: '', email: '', courseAbbr: '', courseName: '', ugYear: [], branch: '', section: '' });
         }
     };
 
@@ -147,6 +149,8 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
             return { ...prev, ugYear: newYears };
         });
     }
+    
+    const isFormValid = formData.name && formData.email && formData.courseAbbr && formData.courseName && formData.branch && formData.section && formData.ugYear.length > 0;
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -164,19 +168,27 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="name" className="text-right">Name</Label>
-                        <Input id="name" value={formData.name} onChange={handleChange} className="col-span-3" />
+                        <Input id="name" value={formData.name} onChange={handleChange} className="col-span-3" required/>
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="email" className="text-right">Email</Label>
-                        <Input id="email" type="email" value={formData.email} onChange={handleChange} className="col-span-3" />
+                        <Input id="email" type="email" value={formData.email} onChange={handleChange} className="col-span-3" required/>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="courseAbbr" className="text-right">Course Abbr</Label>
+                        <Input id="courseAbbr" value={formData.courseAbbr} onChange={handleChange} className="col-span-3" placeholder="e.g. DSA, CA" required />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="courseName" className="text-right">Course Name</Label>
+                        <Input id="courseName" value={formData.courseName} onChange={handleChange} className="col-span-3" placeholder="e.g. Data Structures" required />
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="branch" className="text-right">Branch</Label>
-                        <Input id="branch" value={formData.branch} onChange={handleChange} className="col-span-3" placeholder="e.g. CSE,ECE,AIDS" />
+                        <Input id="branch" value={formData.branch} onChange={handleChange} className="col-span-3" placeholder="e.g. CSE,ECE,AIDS" required/>
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="section" className="text-right">Section</Label>
-                        <Input id="section" value={formData.section} onChange={handleChange} className="col-span-3" placeholder="e.g. 1, 2, Common Class"/>
+                        <Input id="section" value={formData.section} onChange={handleChange} className="col-span-3" placeholder="e.g. 1, 2, Common" required/>
                     </div>
                      <div className="grid grid-cols-4 items-start gap-4">
                         <Label className="text-right pt-2">UG Years</Label>
@@ -195,7 +207,7 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleSubmit}>Save Changes</Button>
+                    <Button onClick={handleSubmit} disabled={!isFormValid}>Save Changes</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -440,15 +452,17 @@ export default function AcademicsDashboard() {
                                                 <TableRow>
                                                     <TableHead>Name</TableHead>
                                                     <TableHead>Email</TableHead>
+                                                    <TableHead>Course</TableHead>
                                                     <TableHead>Actions</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {groupFaculty.length === 0 && <TableRow><TableCell colSpan={3} className="text-center">No faculty found.</TableCell></TableRow>}
+                                                {groupFaculty.length === 0 && <TableRow><TableCell colSpan={4} className="text-center">No faculty found.</TableCell></TableRow>}
                                                 {groupFaculty.map(f => (
                                                     <TableRow key={f.id}>
                                                         <TableCell>{f.name}</TableCell>
                                                         <TableCell>{f.email}</TableCell>
+                                                        <TableCell>{f.courseName} ({f.courseAbbr})</TableCell>
                                                         <TableCell className="flex gap-2">
                                                             <FacultyForm faculty={f} onSave={handleSaveFaculty} />
                                                             <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(f.id)}><Trash2 className="h-4 w-4 text-red-500"/></Button>
