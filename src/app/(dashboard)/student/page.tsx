@@ -44,6 +44,7 @@ import {
     User,
     CheckCircle,
     XCircle,
+    Users2,
   } from "lucide-react";
   import { dummyAnnouncements, dummyTimetable } from "@/lib/data";
   import Image from "next/image";
@@ -55,15 +56,6 @@ import {
   import { PlaceHolderImages } from "@/lib/placeholder-images";
   import { useMemo } from "react";
   
-  const availabilityColors: Record<string, string> = {
-      available: 'ring-green-500',
-      'not-available': 'ring-red-500',
-      'nurse-available': 'ring-orange-500',
-      'on-leave': 'ring-yellow-500',
-      'YES': 'ring-green-500',
-      'NO': 'ring-red-500'
-  }
-
   const parseEntry = (entry: string) => {
       const match = entry.match(/^([A-Z\d]+)-?([\w\d]+)?\s*(.*)$/);
       if(!match) return { courseAbbr: entry, section: 'Common', room: ''};
@@ -74,7 +66,6 @@ import {
   export default function StudentDashboard() {
     const firestore = useFirestore();
     const { user } = useUser();
-    const avatarImage = PlaceHolderImages.find(img => img.id === 'avatar-1');
 
     const studentQuery = useMemoFirebase(() => {
         if (!firestore || !user?.email) return null;
@@ -120,46 +111,6 @@ import {
         return scheduleByDay[today] || [];
 
     }, [student]);
-
-
-    const doctorAvailabilityQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return collection(firestore, 'doctorAvailability');
-    }, [firestore]);
-    const { data: doctorAvailability, isLoading: loadingDoctors } = useCollection(doctorAvailabilityQuery);
-
-    const availabilityQuery = useMemoFirebase(() => {
-        if(!firestore) return null;
-        return collection(firestore, 'availability');
-    }, [firestore]);
-    const {data: allAvailability, isLoading: loadingAvailability} = useCollection(availabilityQuery);
-
-    const facultyAvailability = useMemo(() => allAvailability?.filter(doc => doc.id === 'faculty'), [allAvailability]);
-    const academicOffice = useMemo(() => allAvailability?.find(doc => doc.id === 'academic'), [allAvailability]);
-    
-    const allStaff = [
-        ...(doctorAvailability || []),
-        ...(facultyAvailability?.[0]?.faculty || []),
-        ...(academicOffice ? [academicOffice] : [])
-    ];
-    
-    const getAvailabilityStatus = (s: any) => {
-        const status = s?.availabilityStatus || s?.status;
-        switch (status) {
-            case "available":
-            case "YES":
-                return { text: "Available", variant: "default", className: "bg-green-600" };
-            case "not-available":
-            case "NO":
-                return { text: "Unavailable", variant: "destructive" };
-            case "nurse-available":
-                 return { text: "Nurse Available", variant: "secondary", className: "bg-orange-500" };
-            case "on-leave":
-                return { text: "On Leave", variant: "secondary", className: "bg-yellow-500 text-black" };
-            default:
-                return { text: "Unavailable", variant: "destructive" };
-        }
-    }
 
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -333,40 +284,13 @@ import {
             <CardTitle>Staff & Doctor Availability</CardTitle>
             <CardDescription>Check who's available before you visit.</CardDescription>
           </CardHeader>
-          <CardContent>
-             <ul className="space-y-4">
-                {(loadingDoctors || loadingAvailability) && <li>Loading availability...</li>}
-                {allStaff?.map(staff => {
-                    const status = getAvailabilityStatus(staff);
-                    const availability = staff?.availabilityStatus || staff?.status || 'NO';
-                    const name = staff.doctorName || staff.name || "Academic Office";
-                    const role = staff.role || "Doctor";
-                    return (
-                        <li key={staff.id || name} className="flex flex-col p-3 rounded-lg bg-muted/50 gap-3">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <Avatar className={cn("h-10 w-10", `ring-2 ring-offset-2 ring-offset-background ${availabilityColors[availability]}`)}>
-                                        {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt="User avatar" data-ai-hint={avatarImage.imageHint} />}
-                                        <AvatarFallback>{name?.charAt(0).toUpperCase() || 'S'}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <p className="font-medium capitalize">{name}</p>
-                                        <p className="text-xs text-muted-foreground">{role}</p>
-                                    </div>
-                                </div>
-                                <Badge variant={status.variant} className={cn('text-xs', status.className)}>
-                                    {status.text}
-                                </Badge>
-                            </div>
-                            {(availability === 'NO' || availability === 'not-available') && (
-                                <p className="text-xs text-red-500 pl-12 flex items-center gap-1">
-                                    <XCircle className="h-3 w-3" /> Not available — please mail your query.
-                                </p>
-                            )}
-                         </li>
-                    )
-                })}
-             </ul>
+          <CardContent className="text-center">
+             <Link href="/student/availability/faculty">
+                <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 cursor-pointer hover:bg-muted/50">
+                <Users2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                <p className="mt-4 text-sm text-muted-foreground">Check Staff Availability</p>
+                </div>
+            </Link>
           </CardContent>
         </Card>
   

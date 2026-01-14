@@ -18,6 +18,9 @@ import {
     Users,
     GraduationCap,
     Book,
+    Briefcase,
+    Stethoscope,
+    Users2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -56,7 +59,16 @@ export const navLinks: Record<string, NavItem[]> = {
                 { href: '#', label: 'Fee Receipt', icon: Landmark },
             ]
         },
-        { href: '#availability', label: 'Staff Availability', icon: UserCheck },
+        {
+            key: 'availability',
+            label: 'Availability',
+            icon: UserCheck,
+            subLinks: [
+                { href: '/student/availability/faculty', label: 'Faculty', icon: Users2 },
+                { href: '/student/availability/academic-office', label: 'Academic Office', icon: Briefcase },
+                { href: '/student/availability/doctor', label: 'Doctor', icon: Stethoscope },
+            ]
+        },
         { href: '#burnout', label: 'Burnout Monitor', icon: Clock },
     ],
     faculty: [

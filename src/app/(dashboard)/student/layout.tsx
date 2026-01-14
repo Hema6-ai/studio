@@ -11,41 +11,90 @@ import {
   FileUp,
   Landmark,
   Menu,
+  Briefcase,
+  Stethoscope,
+  Users2
 } from "lucide-react"
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePathname } from 'next/navigation';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { isNavLinkParent, navLinks } from "@/lib/navigation";
+
 
 export default function StudentSubLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
 
-    const subNavLinks = [
-        { href: '/student/medical-leave', label: 'Medical Leave', icon: FileUp },
-        { href: '/student/fee-receipt', label: 'Fee Receipt', icon: Landmark },
-    ];
+    const studentNav = navLinks.student || [];
+    const docSubmissionParent = studentNav.find(item => isNavLinkParent(item) && item.key === 'document-submission');
+    const availabilityParent = studentNav.find(item => isNavLinkParent(item) && item.key === 'availability');
+    
+    const docSubNavLinks = isNavLinkParent(docSubmissionParent) ? docSubmissionParent.subLinks : [];
+    const availabilitySubLinks = isNavLinkParent(availabilityParent) ? availabilityParent.subLinks : [];
     
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <h3 className="font-semibold">Document Submission</h3>
+            <h3 className="font-semibold">Student Menu</h3>
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              {subNavLinks.map(link => (
-                <Link
-                    key={link.href}
-                    href={link.href}
-                    className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                        pathname === link.href && "bg-muted text-primary"
-                    )}
-                >
-                    <link.icon className="h-4 w-4" />
-                    {link.label}
-                </Link>
-              ))}
+              <Accordion type="multiple" defaultValue={['document-submission', 'availability']} className="w-full">
+                <AccordionItem value="document-submission" className="border-b-0">
+                  <AccordionTrigger className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:no-underline text-base">
+                      <div className="flex items-center gap-3">
+                        <FileUp className="h-4 w-4" />
+                        Document Submission
+                      </div>
+                  </AccordionTrigger>
+                   <AccordionContent className="pl-8 pt-2">
+                      <ul className="grid gap-2">
+                        {docSubNavLinks.map(link => (
+                          <li key={link.href}>
+                              <Link
+                                  href={link.href}
+                                  className={cn(
+                                      "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                                      pathname === link.href && "bg-muted text-primary"
+                                  )}
+                              >
+                                  <link.icon className="h-4 w-4" />
+                                  {link.label}
+                              </Link>
+                          </li>
+                        ))}
+                      </ul>
+                   </AccordionContent>
+                </AccordionItem>
+                 <AccordionItem value="availability" className="border-b-0">
+                  <AccordionTrigger className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:no-underline text-base">
+                      <div className="flex items-center gap-3">
+                        <Users2 className="h-4 w-4" />
+                        Availability
+                      </div>
+                  </AccordionTrigger>
+                   <AccordionContent className="pl-8 pt-2">
+                      <ul className="grid gap-2">
+                        {availabilitySubLinks.map(link => (
+                          <li key={link.href}>
+                              <Link
+                                  href={link.href}
+                                  className={cn(
+                                      "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                                      pathname === link.href && "bg-muted text-primary"
+                                  )}
+                              >
+                                  <link.icon className="h-4 w-4" />
+                                  {link.label}
+                              </Link>
+                          </li>
+                        ))}
+                      </ul>
+                   </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </nav>
           </div>
         </div>
@@ -64,25 +113,65 @@ export default function StudentSubLayout({ children }: { children: ReactNode }) 
                 </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="flex flex-col">
-                <nav className="grid gap-2 text-lg font-medium">
-                    <h3 className="font-semibold mb-4">Document Submission</h3>
-                    {subNavLinks.map(link => (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            className={cn(
-                                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                                pathname === link.href && "bg-muted text-primary"
-                            )}
-                        >
-                            <link.icon className="h-5 w-5" />
-                            {link.label}
-                        </Link>
-                    ))}
+                 <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+                  <Accordion type="multiple" defaultValue={['document-submission', 'availability']} className="w-full">
+                    <AccordionItem value="document-submission" className="border-b-0">
+                      <AccordionTrigger className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:no-underline text-base">
+                          <div className="flex items-center gap-3">
+                            <FileUp className="h-5 w-5" />
+                            Document Submission
+                          </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pl-8 pt-2">
+                          <ul className="grid gap-2">
+                            {docSubNavLinks.map(link => (
+                              <li key={link.href}>
+                                  <Link
+                                      href={link.href}
+                                      className={cn(
+                                          "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                                          pathname === link.href && "bg-muted text-primary"
+                                      )}
+                                  >
+                                      <link.icon className="h-5 w-5" />
+                                      {link.label}
+                                  </Link>
+                              </li>
+                            ))}
+                          </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="availability" className="border-b-0">
+                      <AccordionTrigger className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:no-underline text-base">
+                          <div className="flex items-center gap-3">
+                            <Users2 className="h-5 w-5" />
+                            Availability
+                          </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pl-8 pt-2">
+                          <ul className="grid gap-2">
+                            {availabilitySubLinks.map(link => (
+                              <li key={link.href}>
+                                  <Link
+                                      href={link.href}
+                                      className={cn(
+                                          "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                                          pathname === link.href && "bg-muted text-primary"
+                                      )}
+                                  >
+                                      <link.icon className="h-5 w-5" />
+                                      {link.label}
+                                  </Link>
+                              </li>
+                            ))}
+                          </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 </nav>
                 </SheetContent>
             </Sheet>
-            <h3 className="font-semibold text-lg">Document Submission</h3>
+            <h3 className="font-semibold text-lg">Student Menu</h3>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
           {children}
