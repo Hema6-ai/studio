@@ -47,9 +47,20 @@ import {
   import Link from "next/link";
   import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
   import { collection } from "firebase/firestore";
+  import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+  import { cn } from "@/lib/utils";
+  import { PlaceHolderImages } from "@/lib/placeholder-images";
+  
+  const availabilityColors: Record<string, string> = {
+      available: 'ring-green-500',
+      'not-available': 'ring-red-500',
+      'nurse-available': 'ring-orange-500',
+      'on-leave': 'ring-yellow-500',
+  }
   
   export default function StudentDashboard() {
     const firestore = useFirestore();
+    const avatarImage = PlaceHolderImages.find(img => img.id === 'avatar-1');
 
     const staffAvailabilityQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -226,17 +237,24 @@ import {
             <CardDescription>Check who's available before you visit.</CardDescription>
           </CardHeader>
           <CardContent>
-             <ul className="space-y-2">
+             <ul className="space-y-3">
                 {isLoading && <li>Loading availability...</li>}
                 {staffAvailability?.map(staff => {
                     const status = getAvailabilityStatus(staff);
+                    const availability = staff?.availabilityStatus || 'not-available';
                     return (
-                        <li key={staff.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                            <div>
-                                <p className="font-medium">Dr. {staff.id.slice(0,5)}</p>
-                                <p className="text-xs text-muted-foreground">Campus Doctor</p>
+                        <li key={staff.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                            <div className="flex items-center gap-3">
+                                <Avatar className={cn("h-10 w-10", `ring-2 ring-offset-2 ring-offset-background ${availabilityColors[availability]}`)}>
+                                    {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt="User avatar" data-ai-hint={avatarImage.imageHint} />}
+                                    <AvatarFallback>{staff.doctorName?.charAt(0).toUpperCase() || 'D'}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-medium">{staff.doctorName || `Dr. ${staff.id.slice(0,5)}`}</p>
+                                    <p className="text-xs text-muted-foreground">Campus Doctor</p>
+                                </div>
                             </div>
-                            <Badge variant={status.variant} className={status.className}>
+                            <Badge variant={status.variant} className={cn('text-xs', status.className)}>
                                 {status.text}
                             </Badge>
                         </li>
