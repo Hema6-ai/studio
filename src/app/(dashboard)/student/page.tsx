@@ -42,14 +42,15 @@ import {
     Search,
     Send,
   } from "lucide-react";
-  import { dummySchedule, dummyAnnouncements } from "@/lib/data";
+  import { dummySchedule, dummyAnnouncements, dummyTimetable } from "@/lib/data";
   import Image from "next/image";
   import Link from "next/link";
-  import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-  import { collection } from "firebase/firestore";
+  import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+  import { collection, query, where } from "firebase/firestore";
   import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
   import { cn } from "@/lib/utils";
   import { PlaceHolderImages } from "@/lib/placeholder-images";
+  import { useMemo } from "react";
   
   const availabilityColors: Record<string, string> = {
       available: 'ring-green-500',
@@ -60,7 +61,54 @@ import {
   
   export default function StudentDashboard() {
     const firestore = useFirestore();
+    const { user } = useUser();
     const avatarImage = PlaceHolderImages.find(img => img.id === 'avatar-1');
+
+    const studentQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.email) return null;
+        return query(collection(firestore, 'students'), where('email', '==', user.email));
+    }, [firestore, user]);
+
+    const {data: studentData, isLoading: studentLoading} = useCollection(studentQuery);
+    const student = studentData?.[0];
+
+    const studentSchedule = useMemo(() => {
+        if(!student || !dummyTimetable) return [];
+        
+        const ugYearKey = `UG${student.ugYear}`;
+        const yearTimetable = (dummyTimetable as any)[ugYearKey]?.timetable;
+        if(!yearTimetable) return [];
+
+        const enrolledCoursesSet = new Set(student.enrolledCourses.map((c: any) => `${c.courseAbbr}-${c.section}`));
+
+        const scheduleByDay: { [key: string]: any[] } = {};
+
+        Object.entries(yearTimetable).forEach(([day, slots]: [string, any]) => {
+            scheduleByDay[day] = [];
+            slots.forEach((slot: any) => {
+                const todaysClasses = slot.entries.filter((entry: string) => {
+                    const match = entry.match(/^([A-Z\d]+)-?([\w\d]+)?/);
+                    if(!match) return false;
+                    const [, courseAbbr, section] = match;
+                    const courseKey = `${courseAbbr}-${section || 'Common'}`;
+                    return enrolledCoursesSet.has(courseKey);
+                });
+                
+                if (todaysClasses.length > 0) {
+                     scheduleByDay[day].push({
+                        time: slot.time,
+                        subject: todaysClasses[0].split(' ')[0],
+                        venue: todaysClasses[0].split(' ').slice(1).join(' ')
+                    });
+                }
+            });
+        });
+
+        // For simplicity, just showing Monday's schedule
+        return scheduleByDay['Monday'] || [];
+
+    }, [student]);
+
 
     const staffAvailabilityQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -89,7 +137,7 @@ import {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle className="font-headline text-3xl">Welcome back, Hema!</CardTitle>
+            <CardTitle className="font-headline text-3xl">Welcome back, {studentLoading ? '...' : student?.name || 'Student'}!</CardTitle>
             <CardDescription>
               Ready to conquer the day? Your personalized dashboard is all set.
             </CardDescription>
@@ -102,6 +150,7 @@ import {
             <CardDescription>Here’s what your day looks like. Stay on track!</CardDescription>
           </CardHeader>
           <CardContent>
+            {studentLoading ? <p>Loading schedule...</p> : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -111,15 +160,20 @@ import {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {dummySchedule.map((item, index) => (
+                {studentSchedule.length > 0 ? studentSchedule.map((item, index) => (
                   <TableRow key={index}>
                     <TableCell>{item.time}</TableCell>
                     <TableCell>{item.subject}</TableCell>
                     <TableCell>{item.venue}</TableCell>
                   </TableRow>
-                ))}
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center">No classes scheduled for today.</TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
+            )}
           </CardContent>
         </Card>
 

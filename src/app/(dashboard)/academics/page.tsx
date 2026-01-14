@@ -14,43 +14,80 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from '@/components/ui/label';
 import { dummyCourses, dummyFaculty, dummyTimetable } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { TimetableDisplay } from '@/components/dashboard/timetable-display';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 // --- Reusable Student Form ---
 const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSave: (data: any) => void, branch: string, ugYear: string }) => {
+    const { toast } = useToast();
     const [formData, setFormData] = useState({
         id: student?.id || undefined,
         name: student?.name || '',
         email: student?.email || '',
-        studentId: student?.studentId || '',
-        studentNumber: student?.studentNumber || '',
-        enrolledCourses: student?.enrolledCourses || []
+        studentId: student?.studentId || student?.id || '',
+        enrolledCoursesText: student?.enrolledCourses 
+            ? student.enrolledCourses.map((c: any) => `${c.courseAbbr}-${c.section} ${c.room}`).join('\n') 
+            : ''
     });
     const [isOpen, setIsOpen] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
     };
-    
-    const handleCourseToggle = (courseId: string) => {
-        setFormData(prev => {
-            const newCourses = prev.enrolledCourses.includes(courseId)
-                ? prev.enrolledCourses.filter((id: string) => id !== courseId)
-                : [...prev.enrolledCourses, courseId];
-            return { ...prev, enrolledCourses: newCourses };
-        });
-    };
 
     const handleSubmit = () => {
-        onSave({ ...formData, branch, ugYear });
+        // Parse enrolledCoursesText
+        const courseLines = formData.enrolledCoursesText.split('\n').filter(line => line.trim() !== '');
+        const enrolledCourses: any[] = [];
+        let parseError = false;
+
+        for (const line of courseLines) {
+            const match = line.match(/^([A-Z\d]+)-([\w\d]+)\s(.+)$/);
+            if (!match) {
+                parseError = true;
+                break;
+            }
+            const [, courseAbbr, section, room] = match;
+            
+            // Basic validation
+            const courseExists = dummyCourses.some(c => c.abbr === courseAbbr);
+            if(!courseExists) {
+                toast({ variant: "destructive", title: "Invalid Course", description: `Course with abbreviation "${courseAbbr}" does not exist.` });
+                parseError = true;
+                break;
+            }
+
+            enrolledCourses.push({ courseAbbr, section, room: room.trim() });
+        }
+        
+        if (parseError) {
+             toast({ variant: "destructive", title: "Invalid Format", description: "Please check the format for enrolled classes. It should be <COURSE_ABBR>-<SECTION> <ROOM>." });
+            return;
+        }
+
+        const studentData = {
+            id: formData.studentId, // Use studentId as document ID
+            studentId: formData.studentId,
+            name: formData.name,
+            email: formData.email,
+            branch,
+            ugYear: parseInt(ugYear, 10),
+            enrolledCourses,
+        };
+        
+        onSave(studentData);
         setIsOpen(false);
         if (!student) {
-             setFormData({ id: undefined, name: '', email: '', studentId: '', studentNumber: '', enrolledCourses: [] });
+             setFormData({ id: undefined, name: '', email: '', studentId: '', enrolledCoursesText: '' });
         }
     };
+
+    const isFormValid = formData.name && formData.email && formData.studentId;
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -68,40 +105,33 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="name" className="text-right">Name</Label>
-                        <Input id="name" value={formData.name} onChange={handleChange} className="col-span-3" />
+                        <Input id="name" value={formData.name} onChange={handleChange} className="col-span-3" required/>
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="email" className="text-right">Email</Label>
-                        <Input id="email" type="email" value={formData.email} onChange={handleChange} className="col-span-3" />
+                        <Input id="email" type="email" value={formData.email} onChange={handleChange} className="col-span-3" required />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="studentId" className="text-right">Student ID</Label>
-                        <Input id="studentId" value={formData.studentId} onChange={handleChange} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="studentNumber" className="text-right">Student No.</Label>
-                        <Input id="studentNumber" value={formData.studentNumber} onChange={handleChange} className="col-span-3" />
+                        <Input id="studentId" value={formData.studentId} onChange={handleChange} className="col-span-3" disabled={!!student} required />
                     </div>
                      <div className="grid grid-cols-4 items-start gap-4">
-                        <Label className="text-right pt-2">Courses</Label>
-                        <div className="col-span-3 grid grid-cols-2 gap-2">
-                           {dummyCourses.map(course => (
-                                <div key={course.id} className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id={`course-${course.id}`}
-                                        checked={formData.enrolledCourses.includes(course.id)}
-                                        onCheckedChange={() => handleCourseToggle(course.id)}
-                                    />
-                                    <label htmlFor={`course-${course.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                       {course.name}
-                                    </label>
-                                </div>
-                            ))}
-                        </div>
+                        <Label htmlFor="enrolledCoursesText" className="text-right pt-2">Enrolled Classes</Label>
+                        <div className="col-span-3">
+                            <Textarea 
+                                id="enrolledCoursesText" 
+                                value={formData.enrolledCoursesText} 
+                                onChange={handleChange} 
+                                className="col-span-3"
+                                placeholder="One class per line, e.g.,&#10;DSA-1 G09&#10;PS-3 G08"
+                                rows={5}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">Format: COURSE_ABBR-SECTION ROOM</p>
+                         </div>
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleSubmit}>Save Changes</Button>
+                    <Button onClick={handleSubmit} disabled={!isFormValid}>Save Changes</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -188,32 +218,49 @@ const FacultyForm = ({ faculty, onSave, ugYear }: { faculty?: any, onSave: (data
 // --- Main Dashboard Component ---
 export default function AcademicsDashboard() {
   const { toast } = useToast();
+  const firestore = useFirestore();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   // --- States for Medical Records ---
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
-  // --- Data from dummy file ---
-  const [students, setStudents] = useState<any[]>([]); // This would be fetched
+  // --- Data from dummy file & Firestore ---
   const [faculty, setFaculty] = useState(dummyFaculty);
+  
+  const studentsQuery = useMemoFirebase(() => {
+    if(!firestore) return null;
+    return collection(firestore, 'students');
+  }, [firestore]);
+
+  const {data: students, isLoading: loadingStudents } = useCollection(studentsQuery);
+
   const approvedRequests: any[] = []; // This would be fetched
   const rejectedRequests: any[] = []; // This would be fetched
   const loadingApproved = false;
   const loadingRejected = false;
-  const loadingStudents = false;
   const loadingFaculty = false;
 
 
   // --- Student Management Logic ---
   const handleSaveStudent = (studentData: any) => {
-    // This is a placeholder for actual save logic
+    if(!firestore) return;
+    const studentRef = doc(firestore, 'students', studentData.id);
+    const dataToSave = {
+        ...studentData,
+        createdBy: "academic_office",
+        createdAt: serverTimestamp(),
+    };
+    delete dataToSave.id;
+
+    setDocumentNonBlocking(studentRef, dataToSave, { merge: true });
     toast({ title: "Success", description: `Student ${studentData.id ? 'updated' : 'added'} successfully.` });
   };
   
   const handleDeleteStudent = (studentId: string) => {
-    if(window.confirm("Are you sure you want to delete this student?")) {
-        // This is a placeholder for actual delete logic
+    if(window.confirm("Are you sure you want to delete this student?") && firestore) {
+        const studentRef = doc(firestore, 'students', studentId);
+        deleteDocumentNonBlocking(studentRef);
         toast({ title: "Success", description: "Student deleted successfully." });
     }
   };

@@ -96,36 +96,68 @@
       "type": "object",
       "description": "Represents a student entity.",
       "properties": {
-        "id": {
+        "name": {
           "type": "string",
-          "description": "Unique identifier for the student."
+          "description": "The full name of the student."
         },
-        "branch": {
+        "studentId": {
           "type": "string",
-          "description": "The student's branch (e.g., CSE, ECE, AIDS)."
+          "description": "Unique student identifier, used as document ID."
         },
         "ugYear": {
           "type": "number",
           "description": "The student's undergraduate year (1-4)."
         },
-        "enrolledSubjects": {
+        "branch": {
+          "type": "string",
+          "description": "The student's branch (e.g., CSE, ECE, AIDS)."
+        },
+        "email": {
+          "type": "string",
+          "description": "The student's institutional email address.",
+          "format": "email"
+        },
+        "enrolledCourses": {
           "type": "array",
-          "description": "List of subjects the student is enrolled in.",
+          "description": "List of courses the student is enrolled in.",
           "items": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "courseAbbr": {
+                "type": "string",
+                "description": "The abbreviation of the course (e.g., DSA, PS)."
+              },
+              "section": {
+                "type": "string",
+                "description": "The section number or 'Common'."
+              },
+              "room": {
+                "type": "string",
+                "description": "The room number for the class."
+              }
+            },
+            "required": ["courseAbbr", "section", "room"]
           }
         },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:1 Student)"
+        "createdBy": {
+            "type": "string",
+            "description": "Identifier for who created the record."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of when the record was created."
         }
       },
       "required": [
-        "id",
-        "branch",
+        "name",
+        "studentId",
         "ugYear",
-        "enrolledSubjects",
-        "userId"
+        "branch",
+        "email",
+        "enrolledCourses",
+        "createdBy",
+        "createdAt"
       ]
     },
     "User": {
@@ -266,7 +298,7 @@
           "schema": {
             "$ref": "#/backend/entities/Student"
           },
-          "description": "Stores student profile information.",
+          "description": "Stores student profile information. The document ID is the student's unique ID.",
           "params": [
             {
               "name": "studentId",
