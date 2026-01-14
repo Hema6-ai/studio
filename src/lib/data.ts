@@ -38,7 +38,6 @@ export const dummyCourses = [
   { id: 'EDL', name: 'Ethics in Everyday Life', abbr: 'EDL' },
   { id: 'AIV', name: 'AI and Visual Culture', abbr: 'AIV' },
   { id: 'CCN', name: 'Computer and Communication Networks', abbr: 'CCN' },
-  { id: 'FSD', name: 'FSD1 – Fundamentals of FSD', abbr: 'FSD' },
   { id: 'FFSD', name: 'FSD1 - Fundamentals of FSD', abbr: 'FFSD' },
   { id: 'AI', name: 'Artificial Intelligence', abbr: 'AI' },
   { id: 'ToC', name: 'Theory of Computation', abbr: 'ToC' },
@@ -74,7 +73,6 @@ export const dummyCourses = [
   { id: 'CB', name: 'Computational Biology', abbr: 'CB' },
   { id: 'UBC', name: 'Ubiquitous Computing', abbr: 'UBC' },
   { id: 'WN', name: 'Wireless Networks', abbr: 'WN' },
-  // Manually added from UG3 data
   { id: 'GTA', name: 'Geospatial Technologies and Applications', abbr: 'GTA' },
   { id: 'MS', name: 'Micro Sensors and Actuators', abbr: 'MS' },
   { id: 'IS1', name: 'Internet Security', abbr: 'IS1' },
@@ -165,7 +163,7 @@ export const dummyFaculty = [
   {"id":"faculty-hdl-1","name":"Dr. V. Ramesh Kumar","email":"hdl@iiits.in","courseName":"Verilog Hardware Description Language","courseAbbr":"HDL","branch":"ECE","section":"Common","ugYear":["3"]},
   {"id":"faculty-pe-1","name":"Dr. Paul Brainerd","email":"pe@iiits.in","courseName":"Power Electronics","courseAbbr":"PE","branch":"ECE","section":"Common","ugYear":["3"]},
   {"id":"faculty-cdp-1","name":"Dr. Bulla Rajesh","email":"cdp@iiits.in","courseName":"Compressed Domain Processing","courseAbbr":"CDP","branch":"CSE","section":"Common","ugYear":["4"]},
-  {"id":"faculty-dip-1","name":"Dr. Mrinmoy Ghosh","email":"dip@iiits.in","courseName":"Digital Image Processing","courseAbbr":"DIP","branch":"CSE,ECE","section":"Common","ugYear":["4"]},
+  {"id":"faculty-dip-1","name":"Dr. Mrinmoy Ghorai","email":"dip@iiits.in","courseName":"Digital Image Processing","courseAbbr":"DIP","branch":"CSE,ECE","section":"Common","ugYear":["4"]},
   {"id":"faculty-avlsi-1","name":"Dr. Priyanka Dwivedi","email":"avlsi@iiits.in","courseName":"Advanced VLSI","courseAbbr":"AVLSI","branch":"CSE","section":"Common","ugYear":["4"]},
   {"id":"faculty-soc-1","name":"Dr. V. Ramesh Kumar","email":"soc@iiits.in","courseName":"System on Chip","courseAbbr":"SOC","branch":"CSE","section":"Common","ugYear":["4"]},
   {"id":"faculty-cb-1","name":"Dr. Santhosh A","email":"cb@iiits.in","courseName":"Computational Biology","courseAbbr":"CB","branch":"CSE","section":"Common","ugYear":["4"]},
@@ -190,13 +188,10 @@ const ug1TimetableRaw = [
 const ug2TimetableRaw = [
     { "time": "08:45-09:45", "Monday": ["ACS4 G06", "TOC1 G05"], "Tuesday": ["FFSD1 G06", "DL 112", "AC G05"], "Wednesday": ["TOC1 G05", "TOC3 G06", "ACS4 B03", "IDA 112"], "Thursday": ["FFSD1 Lab 103", "LR4 G05"], "Friday": ["FFSD3 G06", "DL 112"], "Saturday": [] },
     { "time": "09:45-10:45", "Monday": ["CCN1 G06", "CCN3 G07"], "Tuesday": ["FFSD1 G06", "ACS2 G09", "CCN4 G04"], "Wednesday": ["EMTL G06", "TOC2 G05", "AIKR 104"], "Thursday": ["FFSD1 Lab 103", "LR4 G05", "IDA Lab 104"], "Friday": ["ACS1 B03", "FFSD3 G06"], "Saturday": [] },
-    { "time": "10:45-11:00", "Monday": ["BREAK"], "Tuesday": ["BREAK"], "Wednesday": ["BREAK"], "Thursday": ["BREAK"], "Friday": ["BREAK"], "Saturday": [] },
     { "time": "11:00-12:00", "Monday": ["CCN4 G05", "FFSD2 G06", "DL Lab 104"], "Tuesday": ["CCN1 G06", "TOC2 G07", "TOC3 G05"], "Wednesday": ["AC Lab 102/114", "DL Lab 106", "FFSD3 G06"], "Thursday": ["ACS3 G05", "FCOMM G06"], "Friday": ["AC G06", "AIKR 104", "AI2 G05"], "Saturday": [] },
     { "time": "12:00-13:00", "Monday": ["FFSD2 G06", "EMTL B03", "DL Lab 104"], "Tuesday": ["AIKR 104"], "Wednesday": ["AC Lab 102/114", "DL Lab 106", "AI1 G05", "AI3 G06"], "Thursday": ["AI2 G06", "AI3 G07", "AI1 G04"], "Friday": ["TOC1 G06", "TOC2 G04", "TOC3 G05", "FCOMM G07"], "Saturday": [] },
-    { "time": "13:00-14:00", "Monday": ["LUNCH"], "Tuesday": ["LUNCH"], "Wednesday": ["LUNCH"], "Thursday": ["LUNCH"], "Friday": ["LUNCH"], "Saturday": [] },
     { "time": "14:15-15:15", "Monday": ["AIKR G05", "FCOMM Lab 114/102", "TOC2 G06", "AI G04"], "Tuesday": ["IDA 112", "EMTL G06", "TOC1 G07", "AI2 B03"], "Wednesday": ["FFSD3 Lab G05", "AI2 G06", "DL 112"], "Thursday": ["ACS2 B03", "CCN4 G06", "LR3 G07"], "Friday": ["FFSD1 G06", "ACS3 G07"], "Saturday": [] },
     { "time": "15:15-16:15", "Monday": ["FCOMM Lab 114/102", "ACS1 G06", "AI3 G07", "CCN2 G05"], "Tuesday": ["CCN2 G06", "AC G05", "CCN3 G04", "AI1 G07"], "Wednesday": ["CCN1 B03", "CCN2 G06", "FFSD3 Lab G05"], "Thursday": ["EMTL G06", "LR3 G07", "FFSD2 Lab G05"], "Friday": ["CCN2 G08", "CCN4 G06", "CCN1 G05", "CCN3 G07"], "Saturday": [] },
-     { "time": "16:15-16:30", "Monday": ["BREAK"], "Tuesday": ["BREAK"], "Wednesday": ["BREAK"], "Thursday": ["BREAK"], "Friday": ["BREAK"], "Saturday": [] },
     { "time": "16:30-17:30", "Monday": ["IDA 112", "TOC3 G05"], "Tuesday": ["FFSD2 G05", "FCOMM G06", "AI3 G04"], "Wednesday": ["Faculty Meeting"], "Thursday": ["LR1 G07", "CCN3 G06", "FFSD2 Lab G05"], "Friday": ["BTP/Honors"], "Saturday": [] },
     { "time": "17:30-18:30", "Monday": [], "Tuesday": [], "Wednesday": ["LR2 G05"], "Thursday": ["LR1 G07"], "Friday": [], "Saturday": [] }
 ];
@@ -204,16 +199,25 @@ const ug2TimetableRaw = [
 const ug3TimetableRaw = [
     { "time": "08:45-09:45", "Monday": ["GTA 109", "MS 110", "IS1 111"], "Tuesday": ["DSY 110", "MSA 109"], "Wednesday": ["RES-AI 108", "CGC 109", "DC 111"], "Thursday": ["FDA 110", "AVLSI 108"], "Friday": ["WBD1 Lab 103", "WBD2 Lab G05", "WBD3 Lab G04"], "Saturday": [] },
     { "time": "09:45-10:45", "Monday": ["MSA 109", "DSY 108"], "Tuesday": ["PGM 108", "LPT1 109", "MOT 110"], "Wednesday": ["IS2 108", "WBD3 G04", "ONE 109"], "Thursday": ["IS2 108", "PE 109", "WBD3 G04"], "Friday": ["WBD1 Lab 103", "WBD2 Lab G05", "WBD3 Lab G04"], "Saturday": [] },
-    { "time": "10:45-11:00", "Monday": ["BREAK"], "Tuesday": ["BREAK"], "Wednesday": ["BREAK"], "Thursday": ["BREAK"], "Friday": ["BREAK"], "Saturday": [] },
     { "time": "11:00-12:00", "Monday": ["ADA 110"], "Tuesday": ["DM 108", "GTA 109", "MS 110", "IS1 111"], "Wednesday": ["BCI 105", "GEOTA 108", "MML 109", "SPEECH 110", "IAS 111", "IOT 112"], "Thursday": ["DM 108", "GTA 109", "MS 110", "HDL 111", "IS1 112"], "Friday": ["DSY 110", "ONE 109"], "Saturday": [] },
     { "time": "12:00-13:00", "Monday": ["DL 110", "WBD1 G04", "ONE 109", "WBD2 G05"], "Tuesday": ["HDL 109", "RES-AI 108", "CGC 110", "DC 111"], "Wednesday": ["LPT2 112", "PGM 108", "LPT1 109", "MOT 110"], "Thursday": ["IDHV 110"], "Friday": ["BCI 105", "GEOTA 108", "MML 109", "SPEECH 110", "IAS 111", "IOT 112"], "Saturday": [] },
-    { "time": "13:00-14:00", "Monday": ["LUNCH"], "Tuesday": ["LUNCH"], "Wednesday": ["LUNCH"], "Thursday": ["LUNCH"], "Friday": ["LUNCH"], "Saturday": [] },
     { "time": "14:15-15:15", "Monday": ["PGM 108", "LPT1 109", "MOT 110", "AVLSI 111", "LPT2 112"], "Tuesday": ["DL 110", "WBD1 G04", "PE 109", "WBD2 G05"], "Wednesday": ["RL 111", "IDHV 110"], "Thursday": ["RES-AI 108", "CGC 109", "DC 111"], "Friday": ["IDHV 110", "RL 111"], "Saturday": [] },
     { "time": "15:15-16:15", "Monday": ["DM 110", "IS2 108", "HDL 109"], "Tuesday": ["BCI 105", "GEOTA 108", "MML 109", "SPEECH 110", "IAS 111", "IOT 112"], "Wednesday": ["DL 110", "WBD1 G04", "AVLSI 111", "WBD2 G07"], "Thursday": ["FDA 110"], "Friday": ["WBD3 G04", "PE 110"], "Saturday": [] },
-    { "time": "16:15-16:30", "Monday": ["BREAK"], "Tuesday": ["BREAK"], "Wednesday": ["BREAK"], "Thursday": ["BREAK"], "Friday": ["BREAK"], "Saturday": [] },
     { "time": "16:30-17:30", "Monday": ["ADA 110", "RL 111"], "Tuesday": ["FDA 108", "LPT2 111", "MSA 109"], "Wednesday": ["Faculty Meeting"], "Thursday": ["ADA 110"], "Friday": ["BTP/Honors"], "Saturday": [] },
     { "time": "17:30-18:30", "Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": [] }
 ];
+
+const ug4TimetableRaw = [
+    { "time": "08:45-09:45", "Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": ["AVLSI 111", "SOC 112", "CB B03", "CDP B04"], "Friday": [], "Saturday": [] },
+    { "time": "09:45-10:45", "Monday": ["CB B03", "CDP B04"], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": [] },
+    { "time": "11:00-12:00", "Monday": ["UBC 105"], "Tuesday": ["WN 104"], "Wednesday": ["WN 104"], "Thursday": [], "Friday": ["UBC 105", "DIP 112"], "Saturday": [] },
+    { "time": "12:00-13:00", "Monday": [], "Tuesday": ["CB B03", "CDP B04"], "Wednesday": [], "Thursday": ["UBC 105", "DIP 112"], "Friday": [], "Saturday": [] },
+    { "time": "14:15-15:15", "Monday": ["AVLSI 104", "SOC 105", "DIP 112"], "Tuesday": [], "Wednesday": [], "Thursday": ["WN 104"], "Friday": [], "Saturday": [] },
+    { "time": "15:15-16:15", "Monday": [], "Tuesday": [], "Wednesday": ["AVLSI 111", "SOC 105"], "Thursday": [], "Friday": [], "Saturday": [] },
+    { "time": "16:30-17:30", "Monday": [], "Tuesday": [], "Wednesday": ["Faculty Meeting"], "Thursday": [], "Friday": ["BTP/Honors"], "Saturday": [] },
+    { "time": "17:30-18:30", "Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": [] }
+];
+
 
 const transformTimetable = (rawTimetable: any[]) => {
     const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -237,9 +241,14 @@ const transformTimetable = (rawTimetable: any[]) => {
             if (slot === '13:00-14:00') return { time: slot, entries: ['LUNCH'] };
             if (slot === '16:15-16:30') return { time: slot, entries: ['BREAK'] };
             
+            let entries: string[] = [];
+            if(rawSlot && rawSlot[day]) {
+              entries = Array.isArray(rawSlot[day]) ? rawSlot[day] : [rawSlot[day]];
+            }
+            
             return {
                 time: slot,
-                entries: rawSlot && rawSlot[day] ? rawSlot[day] : []
+                entries: entries
             };
         });
     });
@@ -261,8 +270,6 @@ export const dummyTimetable = {
   },
   "UG4": {
     "heading": "UG-4 Timetable",
-    "timetable": { "Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": [] }
+    "timetable": transformTimetable(ug4TimetableRaw)
   }
 };
-
-    
