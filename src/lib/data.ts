@@ -29,14 +29,14 @@ export const dummyAnnouncements = [
 ];
 
 export const dummyCourses = [
-  { id: 'PS', name: 'Probability and Statistics' },
-  { id: 'DSA', name: 'Data Structures and Algorithms' },
-  { id: 'SS', name: 'Signals and Systems' },
-  { id: 'CA', name: 'Computer Architecture' },
-  { id: 'BEC', name: 'Basic Electronics and Circuit' },
-  { id: 'OPC', name: 'Operational Coomunication' },
-  { id: 'EDL', name: 'Ethics in Every Day life' },
-  { id: 'AIV', name: 'Al and Visual Culture' }
+  { id: 'PS', name: 'Probability and Statistics', abbr: 'PS' },
+  { id: 'DSA', name: 'Data Structures and Algorithms', abbr: 'DSA' },
+  { id: 'SS', name: 'Signals and Systems', abbr: 'SS' },
+  { id: 'CA', name: 'Computer Architecture', abbr: 'CA' },
+  { id: 'BEC', name: 'Basic Electronics and Circuit', abbr: 'BEC' },
+  { id: 'OPC', name: 'Operational Communication', abbr: 'OPC' },
+  { id: 'EDL', name: 'Ethics in Every Day life', abbr: 'EDL' },
+  { id: 'AIV', name: 'AI and Visual Culture', abbr: 'AIV' }
 ];
 
 
