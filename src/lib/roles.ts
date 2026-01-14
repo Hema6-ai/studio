@@ -1,3 +1,4 @@
+
 export type UserRole = 'student' | 'faculty' | 'doctor' | 'academics' | 'director' | null;
 
 export const ROLES = {
@@ -18,22 +19,25 @@ export function getRoleFromEmail(email: string): UserRole {
     return null;
   }
 
-  if (email.toLowerCase() === 'director@iiits.in') {
+  const lowerCaseEmail = email.toLowerCase();
+
+  if (lowerCaseEmail === 'director@iiits.in') {
     return ROLES.DIRECTOR;
   }
 
-  if (email.toLowerCase().startsWith('academics')) {
+  if (lowerCaseEmail.startsWith('academics')) {
     return ROLES.ACADEMICS;
   }
 
-  if (email.toLowerCase().includes('doctor')) {
+  if (lowerCaseEmail.includes('doctor')) {
     return ROLES.DOCTOR;
   }
 
   const studentRegex = /\.p\d{2}@iiits\.in$/;
-  if (studentRegex.test(email.toLowerCase())) {
+  if (studentRegex.test(lowerCaseEmail)) {
     return ROLES.STUDENT;
   }
 
+  // If it's none of the above, it's faculty by default
   return ROLES.FACULTY;
 }
