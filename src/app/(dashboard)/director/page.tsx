@@ -11,41 +11,41 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Folder, AlertTriangle } from "lucide-react";
 import React from "react";
-
-// Mock data for requests approved by doctors
-const pendingRequests = [
-  {
-    id: "MR20240728-001",
-    studentName: "Hema P.",
-    age: 21,
-    ugNumber: "P23001",
-    dateRequested: "2024-07-28",
-    timeRequested: "10:30 AM",
-    doctorVerification: {
-      status: "Approved",
-      doctorName: "Dr. Vikram Singh",
-      timestamp: "2024-07-28 02:15 PM"
-    }
-  }
-];
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, doc, query, updateDoc, where } from "firebase/firestore";
+import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 export default function DirectorDashboard() {
-  const [requests, setRequests] = React.useState(pendingRequests);
+  const firestore = useFirestore();
   const [rejectionReasons, setRejectionReasons] = React.useState<Record<string, string>>({});
 
+  const pendingRequestsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'medicalRequests'), 
+      where('doctorVerificationStatus', '==', 'Approved'),
+      where('directorApprovalStatus', '==', null)
+    );
+  }, [firestore]);
+
+  const { data: requests, isLoading } = useCollection(pendingRequestsQuery);
+
   const handleApprove = (id: string) => {
-    // In a real app, this would update Firestore
-    setRequests(requests.filter(req => req.id !== id));
+    if (!firestore) return;
+    const requestRef = doc(firestore, "medicalRequests", id);
+    updateDocumentNonBlocking(requestRef, { directorApprovalStatus: 'Approved' });
   };
 
   const handleReject = (id: string) => {
-    if (!rejectionReasons[id]) {
+    if (!firestore || !rejectionReasons[id]) {
       alert("Please provide a reason for rejection.");
       return;
     }
-    // In a real app, this would update Firestore
-    console.log(`Rejecting ${id} with reason: ${rejectionReasons[id]}`);
-    setRequests(requests.filter(req => req.id !== id));
+    const requestRef = doc(firestore, "medicalRequests", id);
+    updateDocumentNonBlocking(requestRef, { 
+      directorApprovalStatus: 'Rejected',
+      rejectionReason: rejectionReasons[id]
+    });
   };
 
   return (
@@ -56,31 +56,34 @@ export default function DirectorDashboard() {
           <CardDescription>Review and finalize medical leave requests approved by doctors.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">You have {requests.length} pending request(s) for final approval.</p>
+          <p className="text-sm text-muted-foreground">You have {isLoading ? '...' : requests?.length ?? 0} pending request(s) for final approval.</p>
         </CardContent>
       </Card>
 
-      {requests.length === 0 && (
+      {isLoading && <p>Loading requests...</p>}
+
+      {!isLoading && requests?.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <p>No pending requests for final approval.</p>
         </div>
       )}
 
       <div className="grid gap-6 md:grid-cols-2">
-        {requests.map((request) => (
+        {requests?.map((request) => (
           <Card key={request.id}>
             <CardHeader>
-              <CardTitle>Request: {request.id}</CardTitle>
+              <CardTitle>Request: {request.id.slice(0, 8)}</CardTitle>
               <CardDescription>
-                From {request.studentName} (UG: {request.ugNumber})
+                From Student ID: {request.studentId}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-sm">
                 <p><strong>Age:</strong> {request.age}</p>
-                <p><strong>Requested on:</strong> {request.dateRequested} at {request.timeRequested}</p>
+                <p><strong>UG Number:</strong> {request.ugNumber}</p>
+                <p><strong>Requested on:</strong> {new Date(request.dateRequested).toLocaleString()}</p>
                 <p className="text-green-600 mt-2">
-                  <strong>Doctor Approved:</strong> {request.doctorVerification.status} by {request.doctorVerification.doctorName} on {request.doctorVerification.timestamp}
+                  <strong>Doctor Approved:</strong> {request.doctorVerificationStatus}
                 </p>
               </div>
               <Button variant="outline" className="w-full">

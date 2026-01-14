@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 export function SignupForm() {
   const { toast } = useToast();
+  const auth = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,7 +23,7 @@ export function SignupForm() {
     setMounted(true);
   }, []);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (password !== confirmPassword) {
       toast({
@@ -32,15 +35,23 @@ export function SignupForm() {
     }
     setIsLoading(true);
 
-    // Mock account creation
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSuccess(true);
-      toast({
-        title: "Account Created Successfully",
-        description: "You can now sign in with your new account.",
-      });
-    }, 1000);
+    try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        setIsLoading(false);
+        setIsSuccess(true);
+        toast({
+            title: "Account Created Successfully",
+            description: "You can now sign in with your new account.",
+        });
+
+    } catch (error: any) {
+        setIsLoading(false);
+        toast({
+            variant: "destructive",
+            title: "Sign up Failed",
+            description: error.message || "An unknown error occurred.",
+        });
+    }
   };
 
   if (!mounted) {

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -21,30 +21,59 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Folder, UserCheck, Check, X } from 'lucide-react';
-
-// Mock Data
-const pendingRequests = [
-  { id: 'MR001', studentName: 'Hema P.', age: 21, ugNumber: 'P23001', date: '2024-07-28', time: '10:30 AM' },
-  { id: 'MR002', studentName: 'Suresh G.', age: 20, ugNumber: 'P23045', date: '2024-07-28', time: '11:15 AM' },
-];
-
-const processedRequests = [
-    { id: 'MR003', studentName: 'Ravi K.', status: 'Approved', date: '2024-07-27' },
-    { id: 'MR004', studentName: 'Priya M.', status: 'Rejected', date: '2024-07-26', reason: 'Invalid document' },
-];
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, where } from 'firebase/firestore';
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 export default function DoctorDashboard() {
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [availability, setAvailability] = useState('available');
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'available': return 'bg-green-500';
-      case 'not available': return 'bg-red-500';
-      case 'nurse available': return 'bg-orange-500';
-      case 'on leave, nurse available': return 'bg-yellow-500 text-black';
-      default: return 'bg-gray-500';
-    }
+  const availabilityRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, `doctorAvailability/${user.uid}`);
+  }, [firestore, user]);
+  
+  const { data: availabilityData } = useDoc(availabilityRef);
+  
+  const pendingRequestsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'medicalRequests'), where('doctorVerificationStatus', '==', null));
+  }, [firestore]);
+
+  const processedRequestsQuery = useMemoFirebase(() => {
+     if (!firestore || !user) return null;
+     // This is a simplified query. A real app might need a dedicated `doctorId` field on the request.
+     return query(collection(firestore, 'medicalRequests'), where('doctorVerificationStatus', '!=', null));
+  }, [firestore, user]);
+
+  const { data: pendingRequests, isLoading: loadingPending } = useCollection(pendingRequestsQuery);
+  const { data: processedRequests, isLoading: loadingProcessed } = useCollection(processedRequestsQuery);
+
+  const handleAvailabilityUpdate = () => {
+    if (!availabilityRef) return;
+    setDocumentNonBlocking(availabilityRef, { 
+      availabilityStatus: availability,
+      doctorId: user?.uid 
+    }, { merge: true });
+  };
+  
+  const handleApprove = (id: string) => {
+    if (!firestore) return;
+    const requestRef = doc(firestore, 'medicalRequests', id);
+    updateDocumentNonBlocking(requestRef, { doctorVerificationStatus: 'Approved' });
+  };
+  
+  const handleReject = (id: string, reason: string) => {
+     if (!firestore) return;
+    const requestRef = doc(firestore, 'medicalRequests', id);
+    // In a real app, you'd likely open a dialog to get the reason
+    updateDocumentNonBlocking(requestRef, { 
+        doctorVerificationStatus: 'Rejected',
+        rejectionReason: 'Invalid document'
+    });
   };
 
   return (
@@ -57,7 +86,7 @@ export default function DoctorDashboard() {
         </Card>
 
         <div className="grid gap-6 md:grid-cols-2">
-            <Card>
+            <Card id="availability">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <UserCheck/> My Availability
@@ -65,7 +94,7 @@ export default function DoctorDashboard() {
                     <CardDescription>Let students and staff know your current status.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <RadioGroup defaultValue="available" onValueChange={setAvailability} className="space-y-2">
+                    <RadioGroup defaultValue={availabilityData?.availabilityStatus || "available"} onValueChange={setAvailability} className="space-y-2">
                         <div className="flex items-center space-x-2">
                             <RadioGroupItem value="available" id="r1" />
                             <Label htmlFor="r1">Available</Label>
@@ -89,11 +118,11 @@ export default function DoctorDashboard() {
                     </RadioGroup>
                 </CardContent>
                 <CardFooter>
-                    <Button className="w-full">Update Status</Button>
+                    <Button className="w-full" onClick={handleAvailabilityUpdate}>Update Status</Button>
                 </CardFooter>
             </Card>
 
-            <Card>
+            <Card id="history">
                 <CardHeader>
                     <CardTitle>Approval History</CardTitle>
                     <CardDescription>Your recently processed requests.</CardDescription>
@@ -103,22 +132,23 @@ export default function DoctorDashboard() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Request ID</TableHead>
-                                <TableHead>Student</TableHead>
+                                <TableHead>Student ID</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Date</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {processedRequests.map(req => (
+                            {loadingProcessed && <TableRow><TableCell colSpan={4}>Loading...</TableCell></TableRow>}
+                            {processedRequests?.map(req => (
                                 <TableRow key={req.id}>
-                                    <TableCell>{req.id}</TableCell>
-                                    <TableCell>{req.studentName}</TableCell>
+                                    <TableCell>{req.id.slice(0, 8)}</TableCell>
+                                    <TableCell>{req.studentId}</TableCell>
                                     <TableCell>
-                                        <Badge variant={req.status === 'Approved' ? 'default' : 'destructive'} className={req.status === 'Approved' ? "bg-green-600" : ""}>
-                                            {req.status}
+                                        <Badge variant={req.doctorVerificationStatus === 'Approved' ? 'default' : 'destructive'} className={req.doctorVerificationStatus === 'Approved' ? "bg-green-600" : ""}>
+                                            {req.doctorVerificationStatus}
                                         </Badge>
                                     </TableCell>
-                                     <TableCell>{req.date}</TableCell>
+                                     <TableCell>{new Date(req.dateRequested).toLocaleDateString()}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -127,27 +157,28 @@ export default function DoctorDashboard() {
             </Card>
         </div>
 
-        <Card>
+        <Card id="requests">
             <CardHeader>
                 <CardTitle>Pending Medical Requests</CardTitle>
-                <CardDescription>You have {pendingRequests.length} requests to review.</CardDescription>
+                <CardDescription>You have {loadingPending ? '...' : pendingRequests?.length ?? 0} requests to review.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6 md:grid-cols-2">
-                {pendingRequests.map(request => (
+                {loadingPending && <p>Loading requests...</p>}
+                {pendingRequests?.map(request => (
                     <Card key={request.id}>
                         <CardHeader>
-                            <CardTitle className="text-lg">{request.studentName}</CardTitle>
+                            <CardTitle className="text-lg">Student ID: {request.studentId}</CardTitle>
                             <CardDescription>UG Number: {request.ugNumber} | Age: {request.age}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <p className="text-sm">Requested on: {request.date} at {request.time}</p>
+                            <p className="text-sm">Requested on: {new Date(request.dateRequested).toLocaleString()}</p>
                             <Button variant="outline" className="w-full">
                                 <Folder className="mr-2 h-4 w-4"/> View Medical Documents
                             </Button>
                         </CardContent>
                         <CardFooter className="grid grid-cols-2 gap-2">
-                             <Button variant="destructive"><X className="mr-2 h-4 w-4"/> Reject</Button>
-                            <Button className="bg-green-600 hover:bg-green-700"><Check className="mr-2 h-4 w-4"/> Approve</Button>
+                             <Button variant="destructive" onClick={() => handleReject(request.id, "Invalid Document")}><X className="mr-2 h-4 w-4"/> Reject</Button>
+                            <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleApprove(request.id)}><Check className="mr-2 h-4 w-4"/> Approve</Button>
                         </CardFooter>
                     </Card>
                 ))}

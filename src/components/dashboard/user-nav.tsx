@@ -18,8 +18,10 @@ import {
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { useRouter, usePathname } from "next/navigation"
 import { getRoleFromEmail, UserRole } from "@/lib/roles"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
+import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase"
+import { doc } from "firebase/firestore"
 
 const availabilityColors: Record<string, string> = {
     available: 'ring-green-500',
@@ -31,14 +33,21 @@ const availabilityColors: Record<string, string> = {
 export function UserNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const role = pathname.split('/')[1] as UserRole;
 
-  const [availability, setAvailability] = useState('available'); // Mock state
+  const availabilityRef = useMemoFirebase(() => {
+    if (!firestore || !user || role !== 'doctor') return null;
+    return doc(firestore, `doctorAvailability/${user.uid}`);
+  }, [firestore, user, role]);
+
+  const { data: availabilityData } = useDoc(availabilityRef);
+  const availability = availabilityData?.availabilityStatus || 'available';
 
   const avatarImage = PlaceHolderImages.find(img => img.id === 'avatar-1');
 
-  // This is a mock. In a real app, you'd get the email from the user's session.
-  const userEmail = "hema.p23@iiits.in";
+  const userEmail = user?.email || "";
   const userRole = getRoleFromEmail(userEmail);
 
   return (
@@ -47,14 +56,14 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-9 w-9 rounded-full">
           <Avatar className={cn("h-9 w-9", role === 'doctor' && `ring-2 ring-offset-2 ring-offset-background ${availabilityColors[availability]}`)}>
             {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt="User avatar" data-ai-hint={avatarImage.imageHint} />}
-            <AvatarFallback>U</AvatarFallback>
+            <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Hema</p>
+            <p className="text-sm font-medium leading-none">{user?.displayName || user?.email}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {userEmail}
             </p>

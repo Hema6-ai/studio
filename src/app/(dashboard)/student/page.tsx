@@ -1,3 +1,4 @@
+'use client';
 import {
     Card,
     CardContent,
@@ -41,11 +42,38 @@ import {
     Search,
     Send,
   } from "lucide-react";
-  import { dummySchedule, dummyAnnouncements, dummyStaff } from "@/lib/data";
+  import { dummySchedule, dummyAnnouncements } from "@/lib/data";
   import Image from "next/image";
   import Link from "next/link";
+  import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+  import { collection } from "firebase/firestore";
   
   export default function StudentDashboard() {
+    const firestore = useFirestore();
+
+    const staffAvailabilityQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'doctorAvailability');
+    }, [firestore]);
+
+    const { data: staffAvailability, isLoading } = useCollection(staffAvailabilityQuery);
+
+    const getAvailabilityStatus = (s: any) => {
+        if (!s) return { text: "Unknown", variant: "secondary", className: "" };
+        switch (s.availabilityStatus) {
+            case "available":
+                return { text: "Available", variant: "default", className: "bg-green-600" };
+            case "not-available":
+                return { text: "Unavailable", variant: "destructive" };
+            case "nurse-available":
+                 return { text: "Nurse Available", variant: "secondary", className: "bg-orange-500" };
+            case "on-leave":
+                return { text: "On Leave", variant: "secondary", className: "bg-yellow-500 text-black" };
+            default:
+                return { text: "Unknown", variant: "secondary" };
+        }
+    }
+
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="lg:col-span-4">
@@ -183,11 +211,12 @@ import {
             <CardDescription>Submit medical leave, fee receipts, and other forms.</CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8">
-              <FileUp className="mx-auto h-12 w-12 text-muted-foreground/50" />
-              <p className="mt-4 text-sm text-muted-foreground">Drag & drop files or</p>
-              <Button variant="outline" className="mt-2">Browse Files</Button>
-            </div>
+             <Link href="/student/medical-leave">
+                <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 cursor-pointer hover:bg-muted/50">
+                <FileUp className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                <p className="mt-4 text-sm text-muted-foreground">Submit a Medical Leave Request</p>
+                </div>
+            </Link>
           </CardContent>
         </Card>
 
@@ -198,17 +227,21 @@ import {
           </CardHeader>
           <CardContent>
              <ul className="space-y-2">
-                {dummyStaff.map(staff => (
-                    <li key={staff.name} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                        <div>
-                            <p className="font-medium">{staff.name}</p>
-                            <p className="text-xs text-muted-foreground">{staff.role}</p>
-                        </div>
-                        <Badge variant={staff.available ? "default" : "destructive"} className={staff.available ? "bg-green-600" : ""}>
-                            {staff.available ? "Available" : "Unavailable"}
-                        </Badge>
-                    </li>
-                ))}
+                {isLoading && <li>Loading availability...</li>}
+                {staffAvailability?.map(staff => {
+                    const status = getAvailabilityStatus(staff);
+                    return (
+                        <li key={staff.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                            <div>
+                                <p className="font-medium">Dr. {staff.id.slice(0,5)}</p>
+                                <p className="text-xs text-muted-foreground">Campus Doctor</p>
+                            </div>
+                            <Badge variant={status.variant} className={status.className}>
+                                {status.text}
+                            </Badge>
+                        </li>
+                    )
+                })}
              </ul>
           </CardContent>
         </Card>

@@ -27,9 +27,3 @@ export const dummyAnnouncements = [
         image: PlaceHolderImages.find(img => img.id === 'announcement-3')!
     },
 ];
-
-export const dummyStaff = [
-    { name: "Dr. Ananya Sharma", role: "Faculty, CSE", available: true },
-    { name: "Dr. Vikram Singh", role: "Campus Doctor", available: false },
-    { name: "Academic Office", role: "Administration", available: true },
-];

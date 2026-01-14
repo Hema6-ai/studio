@@ -9,9 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { useAuth } from "@/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export function LoginForm() {
   const router = useRouter();
+  const auth = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,13 +25,14 @@ export function LoginForm() {
     setMounted(true);
   }, []);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
 
-    // Mock authentication
-    setTimeout(() => {
-      const role = getRoleFromEmail(email);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      const role = getRoleFromEmail(user.email || "");
 
       if (role) {
         toast({
@@ -37,14 +41,16 @@ export function LoginForm() {
         });
         router.push(`/${role}`);
       } else {
+        throw new Error("This email is not associated with a valid role.");
+      }
+    } catch (error: any) {
         toast({
           variant: "destructive",
           title: "Login Failed",
-          description: "This email is not authorized. Please use a valid @iiits.in email.",
+          description: error.message || "An unknown error occurred.",
         });
         setIsLoading(false);
-      }
-    }, 1000);
+    }
   };
 
   if (!mounted) {

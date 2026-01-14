@@ -1,21 +1,40 @@
 'use client';
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useCollection } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
+import { useFirestore } from "@/firebase";
+import { useMemo } from "react";
 
-// Mock Data - In a real app, this would come from Firestore
-const approvedRequests = [
+// In a real app, you would fetch this data from Firestore
+const approvedRequestsMock = [
   { id: 'MR001', studentName: 'Hema P.', date: '2024-07-28', reason: 'Fever and body aches.' },
   { id: 'MR003', studentName: 'Ravi K.', date: '2024-07-27', reason: 'Minor injury.' },
 ];
-const rejectedRequests = [
-  { id: 'MR002', studentName: 'Suresh G.', date: '2024-07-28', rejectionReason: 'Insufficient documentation provided.', doctor: 'Dr. Singh' },
+const rejectedRequestsMock = [
+  { id: 'MR002', studentName: 'Suresh G.', date: '2024-07-28', rejectionReason: 'Insufficient documentation provided.', rejectedBy: 'Dr. Singh' },
 ];
 
 
 export default function AcademicsDashboard() {
+  const firestore = useFirestore();
+
+  const approvedQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'medicalRequests'), where('directorApprovalStatus', '==', 'Approved'));
+  }, [firestore]);
+
+  const rejectedQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'medicalRequests'), where('directorApprovalStatus', '==', 'Rejected'));
+  }, [firestore]);
+  
+  const { data: approvedRequests, isLoading: loadingApproved } = useCollection(approvedQuery);
+  const { data: rejectedRequests, isLoading: loadingRejected } = useCollection(rejectedQuery);
+
+
   return (
     <div className="grid gap-6">
       <Card>
@@ -41,18 +60,17 @@ export default function AcademicsDashboard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Request ID</TableHead>
-                        <TableHead>Student Name</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Reason</TableHead>
+                        <TableHead>Student ID</TableHead>
+                        <TableHead>Date Requested</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {approvedRequests.map((req) => (
+                      {loadingApproved && <TableRow><TableCell colSpan={3}>Loading...</TableCell></TableRow>}
+                      {approvedRequests?.map((req) => (
                         <TableRow key={req.id}>
                           <TableCell>{req.id}</TableCell>
-                          <TableCell>{req.studentName}</TableCell>
-                          <TableCell>{req.date}</TableCell>
-                          <TableCell>{req.reason}</TableCell>
+                          <TableCell>{req.studentId}</TableCell>
+                          <TableCell>{new Date(req.dateRequested).toLocaleDateString()}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -70,20 +88,21 @@ export default function AcademicsDashboard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Request ID</TableHead>
-                        <TableHead>Student Name</TableHead>
-                        <TableHead>Date</TableHead>
+                        <TableHead>Student ID</TableHead>
+                        <TableHead>Date Requested</TableHead>
                         <TableHead>Rejected By</TableHead>
                         <TableHead>Rejection Reason</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {rejectedRequests.map((req) => (
+                       {loadingRejected && <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>}
+                      {rejectedRequests?.map((req) => (
                         <TableRow key={req.id}>
                           <TableCell>{req.id}</TableCell>
-                          <TableCell>{req.studentName}</TableCell>
-                          <TableCell>{req.date}</TableCell>
+                          <TableCell>{req.studentId}</TableCell>
+                           <TableCell>{new Date(req.dateRequested).toLocaleDateString()}</TableCell>
                           <TableCell>
-                            <Badge variant="destructive">{req.doctor}</Badge>
+                            <Badge variant="destructive">{req.doctorVerificationStatus === 'Rejected' ? 'Doctor' : 'Director'}</Badge>
                           </TableCell>
                           <TableCell>{req.rejectionReason}</TableCell>
                         </TableRow>
