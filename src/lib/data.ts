@@ -48,7 +48,12 @@ export const dummyCourses = [
   { id: 'DL', name: 'Deep Learning', abbr: 'DL' },
   { id: 'IDA', name: 'Introduction to Data Analysis', abbr: 'IDA' },
   { id: 'ACS', name: 'Advanced Communication Skills', abbr: 'ACS' },
-  { id: 'LR', name: 'Logical and Reasoning', abbr: 'LR' }
+  { id: 'LR', name: 'Logical and Reasoning', abbr: 'LR' },
+  { id: 'FFSD', name: 'FSD1 - Fundamentals of FSD', abbr: 'FFSD' },
+  { id: 'ADA', name: 'Advanced Data Analytics', abbr: 'ADA' },
+  { id: 'RL', name: 'Reinforcement Learning', abbr: 'RL' },
+  { id: 'CDP', name: 'Compressed Domain Processing', abbr: 'CDP' },
+  { id: 'DIP', name: 'Digital Image Processing', abbr: 'DIP' }
 ];
 
 
@@ -88,6 +93,9 @@ export const dummyFaculty = [
   { "id": "faculty-fsd-1", "name": "Dr. D Mallikarjuna Reddy", "email": "fsd1@iiits.in", "courseName": "FSD1 – Fundamentals of FSD", "courseAbbr": "FSD", "branch": "CSE", "section": "1", "ugYear": ["2"] },
   { "id": "faculty-fsd-2", "name": "Dr. Anushree Bablani", "email": "fsd2@iiits.in", "courseName": "FSD1 – Fundamentals of FSD", "courseAbbr": "FSD", "branch": "CSE", "section": "2", "ugYear": ["2"] },
   { "id": "faculty-fsd-3", "name": "Dr. Mrinmoy Ghorai", "email": "fsd3@iiits.in", "courseName": "FSD1 – Fundamentals of FSD", "courseAbbr": "FSD", "branch": "CSE", "section": "3", "ugYear": ["2"] },
+  { "id": "faculty-ffsd-1", "name": "Dr. D. Mallikarjuna Reddy", "email": "ffsd1@iiits.in", "courseName": "FSD1 - Fundamentals of FSD", "courseAbbr": "FFSD", "branch": "CSE", "section": "1", "ugYear": ["2"] },
+  { "id": "faculty-ffsd-2", "name": "Dr. Anushree Bablani", "email": "ffsd2@iiits.in", "courseName": "FSD1 - Fundamentals of FSD", "courseAbbr": "FFSD", "branch": "CSE", "section": "2", "ugYear": ["2"] },
+  { "id": "faculty-ffsd-3", "name": "Dr. Mrinmoy Ghosh", "email": "ffsd3@iiits.in", "courseName": "FSD1 - Fundamentals of FSD", "courseAbbr": "FFSD", "branch": "CSE", "section": "3", "ugYear": ["2"] },
   { "id": "faculty-ai-1", "name": "Dr. Priyambada Subudhi", "email": "ai1@iiits.in", "courseName": "Artificial Intelligence", "courseAbbr": "AI", "branch": "CSE", "section": "1", "ugYear": ["2"] },
   { "id": "faculty-ai-2", "name": "Dr. Piyush Joshi", "email": "ai2@iiits.in", "courseName": "Artificial Intelligence", "courseAbbr": "AI", "branch": "CSE", "section": "2", "ugYear": ["2"] },
   { "id": "faculty-ai-3", "name": "Dr. Bulla Rajesh", "email": "ai3@iiits.in", "courseName": "Artificial Intelligence", "courseAbbr": "AI", "branch": "CSE", "section": "3", "ugYear": ["2"] },
@@ -98,7 +106,7 @@ export const dummyFaculty = [
   { "id": "faculty-emtl-1", "name": "Dr. Lokendra Chauhan", "email": "emtl@iiits.in", "courseName": "Electromagnetics and Transmission Lines", "courseAbbr": "EMTL", "branch": "ECE", "section": "Common", "ugYear": ["2"] },
   { "id": "faculty-fcomm-1", "name": "Dr. Rajeev Kumar", "email": "fcomm@iiits.in", "courseName": "Fundamentals of Communication", "courseAbbr": "FComm", "branch": "ECE", "section": "Common", "ugYear": ["2"] },
   { "id": "faculty-aikr-1", "name": "Dr. Anushree Bablani", "email": "aikr@iiits.in", "courseName": "Artificial Intelligence & Knowledge Representation", "courseAbbr": "AIKR", "branch": "AIDS", "section": "Common", "ugYear": ["2"] },
-  { "id": "faculty-dl-1", "name": "Dr. Pavan Kumar Perepu", "email": "dl@iiits.in", "courseName": "Deep Learning", "courseAbbr": "DL", "branch": "AIDS", "section": "Common", "ugYear": ["2"] },
+  { "id": "faculty-dl-2-1", "name": "Dr. Pavan Kumar Perepu", "email": "dl@iiits.in", "courseName": "Deep Learning", "courseAbbr": "DL", "branch": "AIDS", "section": "Common", "ugYear": ["2"] },
   { "id": "faculty-ida-1", "name": "Dr. Pavan Kumar Perepu", "email": "ida@iiits.in", "courseName": "Introduction to Data Analysis", "courseAbbr": "IDA", "branch": "AIDS", "section": "Common", "ugYear": ["2"] },
   { "id": "faculty-acs-1", "name": "Dr. Vinay Kumar", "email": "acs1@iiits.in", "courseName": "Advanced Communication Skills", "courseAbbr": "ACS", "branch": "CSE,ECE,AIDS", "section": "1", "ugYear": ["2"] },
   { "id": "faculty-acs-2", "name": "Dr. Vinay Kumar", "email": "acs2@iiits.in", "courseName": "Advanced Communication Skills", "courseAbbr": "ACS", "branch": "CSE,ECE,AIDS", "section": "2", "ugYear": ["2"] },
@@ -107,7 +115,14 @@ export const dummyFaculty = [
   { "id": "faculty-lr-1", "name": "Mrs. Shabhana Imran", "email": "lr1@iiits.in", "courseName": "Logical and Reasoning", "courseAbbr": "LR", "branch": "CSE,ECE,AIDS", "section": "1", "ugYear": ["2"] },
   { "id": "faculty-lr-2", "name": "Mrs. Shabhana Imran", "email": "lr2@iiits.in", "courseName": "Logical and Reasoning", "courseAbbr": "LR", "branch": "CSE,ECE,AIDS", "section": "2", "ugYear": ["2"] },
   { "id": "faculty-lr-3", "name": "Mrs. Shabhana Imran", "email": "lr3@iiits.in", "courseName": "Logical and Reasoning", "courseAbbr": "LR", "branch": "CSE,ECE,AIDS", "section": "3", "ugYear": ["2"] },
-  { "id": "faculty-lr-4", "name": "Mrs. Shabhana Imran", "email": "lr4@iiits.in", "courseName": "Logical and Reasoning", "courseAbbr": "LR", "branch": "CSE,ECE,AIDS", "section": "4", "ugYear": ["2"] }
+  { "id": "faculty-lr-4", "name": "Mrs. Shabhana Imran", "email": "lr4@iiits.in", "courseName": "Logical and Reasoning", "courseAbbr": "LR", "branch": "CSE,ECE,AIDS", "section": "4", "ugYear": ["2"] },
+  // UG-3 Faculty
+  { "id": "faculty-ada-1", "name": "Dr. Mainak Thakur", "email": "ada@iiits.in", "courseName": "Advanced Data Analytics", "courseAbbr": "ADA", "branch": "CSE,AIDS", "section": "Common", "ugYear": ["3"] },
+  { "id": "faculty-dl-3-1", "name": "Dr. Shaik Mohammad Rafi", "email": "dl@iiits.in", "courseName": "Deep Learning", "courseAbbr": "DL", "branch": "CSE", "section": "Common", "ugYear": ["3"] },
+  { "id": "faculty-rl-1", "name": "Dr. Arun PV", "email": "rl@iiits.in", "courseName": "Reinforcement Learning", "courseAbbr": "RL", "branch": "CSE,AIDS", "section": "Common", "ugYear": ["3"] },
+  // UG-4 Faculty
+  { "id": "faculty-cdp-1", "name": "Dr. Bulla Rajesh", "email": "cdp@iiits.in", "courseName": "Compressed Domain Processing", "courseAbbr": "CDP", "branch": "CSE", "section": "Common", "ugYear": ["4"] },
+  { "id": "faculty-dip-1", "name": "Dr. Mrinmoy Ghosh", "email": "dip@iiits.in", "courseName": "Digital Image Processing", "courseAbbr": "DIP", "branch": "CSE,ECE", "section": "Common", "ugYear": ["4"] }
 ];
 
 export const dummyTimetable = {
