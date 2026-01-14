@@ -68,7 +68,12 @@ export const dummyCourses = [
   { id: 'MSA', name: 'Micro Sensors and Actuators', abbr: 'MSA' },
   { id: 'ONE', name: 'Opto and Nano Electronics', abbr: 'ONE' },
   { id: 'HDL', name: 'Verilog Hardware Description Language', abbr: 'HDL' },
-  { id: 'PE', name: 'Power Electronics', abbr: 'PE' }
+  { id: 'PE', name: 'Power Electronics', abbr: 'PE' },
+  { id: 'AVLSI', name: 'Advanced VLSI', abbr: 'AVLSI' },
+  { id: 'SOC', name: 'System on Chip', abbr: 'SOC' },
+  { id: 'CB', name: 'Computational Biology', abbr: 'CB' },
+  { id: 'UBC', name: 'Ubiquitous Computing', abbr: 'UBC' },
+  { id: 'WN', name: 'Wireless Networks', abbr: 'WN' }
 ];
 
 
@@ -151,7 +156,12 @@ export const dummyFaculty = [
   { "id": "faculty-pe-1", "name": "Dr. Paul Brainerd", "email": "pe@iiits.in", "courseName": "Power Electronics", "courseAbbr": "PE", "branch": "ECE", "section": "Common", "ugYear": ["3"] },
   // UG-4 Faculty
   { "id": "faculty-cdp-1", "name": "Dr. Bulla Rajesh", "email": "cdp@iiits.in", "courseName": "Compressed Domain Processing", "courseAbbr": "CDP", "branch": "CSE", "section": "Common", "ugYear": ["4"] },
-  { "id": "faculty-dip-1", "name": "Dr. Mrinmoy Ghosh", "email": "dip@iiits.in", "courseName": "Digital Image Processing", "courseAbbr": "DIP", "branch": "CSE,ECE", "section": "Common", "ugYear": ["4"] }
+  { "id": "faculty-dip-1", "name": "Dr. Mrinmoy Ghorai", "email": "dip@iiits.in", "courseName": "Digital Image Processing", "courseAbbr": "DIP", "branch": "CSE,ECE", "section": "Common", "ugYear": ["4"] },
+  { "id": "faculty-avlsi-1", "name": "Dr. Priyanka Dwivedi", "email": "avlsi@iiits.in", "courseName": "Advanced VLSI", "courseAbbr": "AVLSI", "branch": "CSE", "section": "Common", "ugYear": ["4"] },
+  { "id": "faculty-soc-1", "name": "Dr. V. Ramesh Kumar", "email": "soc@iiits.in", "courseName": "System on Chip", "courseAbbr": "SOC", "branch": "CSE", "section": "Common", "ugYear": ["4"] },
+  { "id": "faculty-cb-1", "name": "Dr. Santhosh A", "email": "cb@iiits.in", "courseName": "Computational Biology", "courseAbbr": "CB", "branch": "CSE", "section": "Common", "ugYear": ["4"] },
+  { "id": "faculty-ubc-1", "name": "Dr. Hemant Kumar", "email": "ubc@iiits.in", "courseName": "Ubiquitous Computing", "courseAbbr": "UBC", "branch": "CSE", "section": "Common", "ugYear": ["4"] },
+  { "id": "faculty-wn-1", "name": "Dr. Hrishikesh Venkataraman", "email": "wn@iiits.in", "courseName": "Wireless Networks", "courseAbbr": "WN", "branch": "CSE,ECE", "section": "Common", "ugYear": ["4"] }
 ];
 
 export const dummyTimetable = {
@@ -268,5 +278,7 @@ export const dummyTimetable = {
 };
 
 
+
+    
 
     
