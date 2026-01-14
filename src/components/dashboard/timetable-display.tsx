@@ -18,12 +18,7 @@ type TimetableEntry = {
 type DaySchedule = TimetableEntry[];
 
 type TimetableData = {
-  [ugYear: string]: {
-    semester: string;
-    timetable: {
-      [day: string]: DaySchedule;
-    };
-  };
+  [day: string]: DaySchedule;
 };
 
 interface TimetableDisplayProps {
@@ -70,7 +65,6 @@ const parseEntry = (entry: string) => {
 
 
 export function TimetableDisplay({ timetableData }: TimetableDisplayProps) {
-  const ug1Timetable = timetableData.UG1.timetable;
 
   return (
     <div className="w-full overflow-x-auto">
@@ -85,8 +79,10 @@ export function TimetableDisplay({ timetableData }: TimetableDisplayProps) {
         </TableHeader>
         <TableBody>
           {timeSlots.map(slot => {
-             const isBreak = ug1Timetable.Monday.find(e => e.time === slot)?.entries[0].toUpperCase() === 'BREAK';
-             const isLunch = ug1Timetable.Monday.find(e => e.time === slot)?.entries[0].toUpperCase() === 'LUNCH';
+             const firstDaySchedule = timetableData.Monday || [];
+             const breakEntry = firstDaySchedule.find(e => e.time === slot)?.entries[0]?.toUpperCase();
+             const isBreak = breakEntry === 'BREAK';
+             const isLunch = breakEntry === 'LUNCH';
 
              if(isBreak || isLunch) {
                 return (
@@ -103,7 +99,7 @@ export function TimetableDisplay({ timetableData }: TimetableDisplayProps) {
               <TableRow key={slot}>
                 <TableCell className="font-medium border">{slot}</TableCell>
                 {days.map(day => {
-                  const daySchedule = ug1Timetable[day as keyof typeof ug1Timetable] || [];
+                  const daySchedule = timetableData[day as keyof typeof timetableData] || [];
                   const entry = daySchedule.find(e => e.time === slot);
                   return (
                     <TableCell key={`${day}-${slot}`} className="border p-1 align-top h-24">

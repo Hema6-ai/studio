@@ -451,8 +451,13 @@ export default function AcademicsDashboard() {
                     <CardTitle>Timetable Management</CardTitle>
                     <CardDescription>View and manage class timetables.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                   <TimetableDisplay timetableData={dummyTimetable} />
+                <CardContent className="space-y-8">
+                   {Object.entries(dummyTimetable).map(([ugYear, data]) => (
+                    <div key={ugYear}>
+                        <h2 className="text-2xl font-bold mb-4 font-headline">{data.heading}</h2>
+                        <TimetableDisplay timetableData={data.timetable} />
+                    </div>
+                   ))}
                 </CardContent>
              </Card>
         </TabsContent>

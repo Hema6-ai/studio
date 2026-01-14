@@ -160,6 +160,7 @@ export const dummyFaculty = [
 
 export const dummyTimetable = {
   "UG1": {
+    "heading": "UG-1 Timetable",
     "semester": "Spring 2026",
     "timetable": {
       "Monday": [
@@ -229,5 +230,17 @@ export const dummyTimetable = {
         { "time": "12:00-13:00", "entries": ["EDL2/G09"] }
       ]
     }
+  },
+  "UG2": {
+    "heading": "UG-2 Timetable",
+    "timetable": { "Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": [] }
+  },
+  "UG3": {
+    "heading": "UG-3 Timetable",
+    "timetable": { "Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": [] }
+  },
+  "UG4": {
+    "heading": "UG-4 Timetable",
+    "timetable": { "Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": [] }
   }
 };
