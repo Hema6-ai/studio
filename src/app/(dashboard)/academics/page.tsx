@@ -273,21 +273,16 @@ export default function AcademicsDashboard() {
     }
   };
 
-  const facultyByGroup = useMemo(() => {
+  const facultyByYear = useMemo(() => {
     const groups: { [key: string]: any[] } = {};
     faculty?.forEach(f => {
-        const branches = f.branch.split(',').map((b: string) => b.trim());
-        const years = f.ugYear;
-        
-        branches.forEach((branch: string) => {
-            years.forEach((year: string) => {
-                const key = `${branch}-UG${year}`;
-                if (!groups[key]) groups[key] = [];
-                // Avoid duplicates if a faculty is somehow listed twice for same group
-                if (!groups[key].find(existing => existing.id === f.id)) {
-                    groups[key].push(f);
-                }
-            });
+        const years = f.ugYear; // This is an array e.g., ['1', '2']
+        years.forEach((year: string) => {
+            const key = `UG${year}`;
+            if (!groups[key]) groups[key] = [];
+            if (!groups[key].find(existing => existing.id === f.id)) {
+                groups[key].push(f);
+            }
         });
     });
     return groups;
@@ -425,54 +420,49 @@ export default function AcademicsDashboard() {
             <Card>
                 <CardHeader>
                     <CardTitle>Faculty Management</CardTitle>
-                    <CardDescription>View and manage faculty assignments by branch and year.</CardDescription>
+                    <CardDescription>View and manage faculty assignments by year.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     {branches.map(branch => (
-                        <div key={branch} className="mb-8">
-                            <h3 className="text-xl font-semibold mb-4 border-b pb-2">{branch}</h3>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {years.map(year => {
-                                    const groupKey = `${branch}-UG${year}`;
-                                    const groupFaculty = facultyByGroup[groupKey] || [];
-                                    return (
-                                        <Card key={groupKey}>
-                                            <CardHeader className="flex flex-row items-center justify-between">
-                                                <CardTitle className="text-lg">UG {year}</CardTitle>
-                                                <FacultyForm onSave={handleSaveFaculty} />
-                                            </CardHeader>
-                                            <CardContent>
-                                                {loadingFaculty ? <p>Loading...</p> : (
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Name</TableHead>
-                                                            <TableHead>Email</TableHead>
-                                                            <TableHead>Actions</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {groupFaculty.length === 0 && <TableRow><TableCell colSpan={3} className="text-center">No faculty found.</TableCell></TableRow>}
-                                                        {groupFaculty.map(f => (
-                                                            <TableRow key={f.id}>
-                                                                <TableCell>{f.name}</TableCell>
-                                                                <TableCell>{f.email}</TableCell>
-                                                                <TableCell className="flex gap-2">
-                                                                     <FacultyForm faculty={f} onSave={handleSaveFaculty} />
-                                                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(f.id)}><Trash2 className="h-4 w-4 text-red-500"/></Button>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {years.map(year => {
+                            const groupKey = `UG${year}`;
+                            const groupFaculty = facultyByYear[groupKey] || [];
+                            return (
+                                <Card key={groupKey}>
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <CardTitle className="text-lg">UG {year}</CardTitle>
+                                        <FacultyForm onSave={handleSaveFaculty} />
+                                    </CardHeader>
+                                    <CardContent>
+                                        {loadingFaculty ? <p>Loading...</p> : (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Name</TableHead>
+                                                    <TableHead>Email</TableHead>
+                                                    <TableHead>Actions</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {groupFaculty.length === 0 && <TableRow><TableCell colSpan={3} className="text-center">No faculty found.</TableCell></TableRow>}
+                                                {groupFaculty.map(f => (
+                                                    <TableRow key={f.id}>
+                                                        <TableCell>{f.name}</TableCell>
+                                                        <TableCell>{f.email}</TableCell>
+                                                        <TableCell className="flex gap-2">
+                                                            <FacultyForm faculty={f} onSave={handleSaveFaculty} />
+                                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(f.id)}><Trash2 className="h-4 w-4 text-red-500"/></Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
                 </CardContent>
             </Card>
         </TabsContent>
