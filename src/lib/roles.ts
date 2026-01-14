@@ -24,7 +24,7 @@ export function getRoleFromEmail(email: string): UserRole {
   if (lowerCaseEmail === 'director@iiits.in') {
     return ROLES.DIRECTOR;
   }
-
+  
   if (lowerCaseEmail.startsWith('academics')) {
     return ROLES.ACADEMICS;
   }
