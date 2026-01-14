@@ -369,3 +369,97 @@ export const cseCurriculum = {
     }
   ]
 };
+
+export const eceCurriculum = {
+  "branch": "ECE",
+  "branchFullName": "Electronics and Communication Engineering",
+  "infoLink": "https://iiits.ac.in/academics/b-tech-programme/electronics-communication-engineering/curriculum/",
+  "program": "B.Tech",
+  "curriculum": [
+    {
+      "semester": 1,
+      "courses": [
+        { "type": "Institute Core", "credits": 4, "courseName": "Computer Programming", "courseAbbr": "CP" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Discrete Structures and Matrix Algebra", "courseAbbr": "DSMA" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Overview of Computers Workshop", "courseAbbr": "OCW" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Digital Logic Design", "courseAbbr": "DLD" },
+        { "type": "SEED", "credits": 2, "courseName": "Essential English (Bridge Course)", "courseAbbr": "SEED-1" },
+        { "type": "SEED", "credits": 2, "courseName": "Foundations in Human Values and Ethics / Energy and Environment", "courseAbbr": "SEED-2/3" }
+      ]
+    },
+    {
+      "semester": 2,
+      "courses": [
+        { "type": "Institute Core", "credits": 4, "courseName": "Probability and Statistics", "courseAbbr": "PS" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Data Structures and Algorithms", "courseAbbr": "DSA" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Signals and Systems", "courseAbbr": "SS" },
+        { "type": "Program Core", "credits": 4, "courseName": "Basic Electronics Circuits", "courseAbbr": "BEC" },
+        { "type": "SEED", "credits": 2, "courseName": "Operational Communication", "courseAbbr": "OPC" },
+        { "type": "SEED", "credits": 2, "courseName": "Foundations in Human Values and Ethics / Energy and Environment", "courseAbbr": "SEED-2/3" }
+      ]
+    },
+    {
+      "semester": 3,
+      "note": "Students may opt for BTP (2 semesters) or Honors (4 semesters) starting from this semester.",
+      "courses": [
+        { "type": "Institute Core", "credits": 4, "courseName": "Real Analysis, Numerical Analysis and Calculus", "courseAbbr": "RANAC" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Object Oriented Programming", "courseAbbr": "OOP" },
+        { "type": "Program Core", "credits": 4, "courseName": "Control Systems", "courseAbbr": "CS" },
+        { "type": "Program Core", "credits": 4, "courseName": "Circuit and Network Analysis", "courseAbbr": "CNA" },
+        { "type": "Program Core", "credits": 4, "courseName": "Embedded Systems", "courseAbbr": "ES" },
+        { "type": "SEED", "credits": 2, "courseName": "Professional Communication", "courseAbbr": "PC" }
+      ]
+    },
+    {
+      "semester": 4,
+      "courses": [
+        { "type": "Institute Core", "credits": 4, "courseName": "Computer and Communication Networks", "courseAbbr": "CCN" },
+        { "type": "Program Core", "credits": 4, "courseName": "Fundamentals of Communication", "courseAbbr": "FCOM" },
+        { "type": "Program Core", "credits": 4, "courseName": "Analog Circuits", "courseAbbr": "AC" },
+        { "type": "Program Core", "credits": 4, "courseName": "Electromagnetics and Transmission Lines", "courseAbbr": "EMTL" },
+        { "type": "Program Core", "credits": 4, "courseName": "Advanced Communication Skills", "courseAbbr": "ACS" },
+        { "type": "SEED", "credits": 2, "courseName": "SEED 7", "courseAbbr": "SEED-7" }
+      ]
+    },
+    {
+      "semester": 5,
+      "courses": [
+        { "type": "Program Core", "credits": 4, "courseName": "Digital Signal Processing", "courseAbbr": "DSP" },
+        { "type": "Program Core", "credits": 4, "courseName": "Introduction to VLSI", "courseAbbr": "VLSI" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 1", "courseAbbr": "PE-1" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 2", "courseAbbr": "PE-2" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 3", "courseAbbr": "PE-3" },
+        { "type": "SEED", "credits": 2, "courseName": "Skills for Employability / Personal Growth Programme / Business Analytics", "courseAbbr": "SEED-8/9" }
+      ]
+    },
+    {
+      "semester": 6,
+      "courses": [
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 4", "courseAbbr": "PE-4" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 5", "courseAbbr": "PE-5" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 6", "courseAbbr": "PE-6" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 7", "courseAbbr": "PE-7" },
+        { "type": "Institute Elective", "credits": 3, "courseName": "Institute Elective – 1", "courseAbbr": "IE-1" },
+        { "type": "SEED", "credits": 2, "courseName": "SEED 10", "courseAbbr": "SEED-10" }
+      ]
+    },
+    {
+      "semester": 7,
+      "note": "Optional Semester Long Project (SLP)",
+      "courses": [
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 8", "courseAbbr": "PE-8" },
+        { "type": "Institute Elective", "credits": 3, "courseName": "Institute Elective – 2", "courseAbbr": "IE-2" },
+        { "type": "SEED", "credits": 2, "courseName": "SEED 11", "courseAbbr": "SEED-11" }
+      ]
+    },
+    {
+      "semester": 8,
+      "note": "Optional Semester Long Project (SLP)",
+      "courses": [
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 9", "courseAbbr": "PE-9" },
+        { "type": "Institute Elective", "credits": 3, "courseName": "Institute Elective – 3", "courseAbbr": "IE-3" },
+        { "type": "SEED", "credits": 2, "courseName": "SEED 12", "courseAbbr": "SEED-12" }
+      ]
+    }
+  ]
+};

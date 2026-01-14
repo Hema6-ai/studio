@@ -1,13 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useUser } from '@/firebase';
+import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { cseCurriculum } from '@/lib/data'; // Using static data for now
+import { cseCurriculum, eceCurriculum } from '@/lib/data'; // Using static data for now
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
+import { collection, query, where } from 'firebase/firestore';
 
 
 function CurriculumDisplay({ curriculumData }: { curriculumData: any }) {
@@ -68,11 +69,31 @@ function CurriculumDisplay({ curriculumData }: { curriculumData: any }) {
 
 export default function StudentCurriculumPage() {
   const { user } = useUser();
-  // This is a placeholder for fetching student profile.
-  // In a real app, you would fetch the student's branch from Firestore.
-  const studentBranch = 'CSE'; // Assume CSE for now
+  const firestore = useFirestore();
 
-  const curriculumToDisplay = studentBranch === 'CSE' ? cseCurriculum : null;
+  const studentQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.email) return null;
+    return query(collection(firestore, 'students'), where('email', '==', user.email));
+  }, [firestore, user]);
+
+  const { data: studentData, isLoading: studentLoading } = useCollection(studentQuery);
+  const student = studentData?.[0];
+
+  const curriculumToDisplay = useMemo(() => {
+    if (!student) return null;
+    switch(student.branch) {
+      case 'CSE':
+        return cseCurriculum;
+      case 'ECE':
+        return eceCurriculum;
+      default:
+        return null;
+    }
+  }, [student]);
+
+  if(studentLoading) {
+    return <p>Loading curriculum...</p>;
+  }
 
   return (
     <div>

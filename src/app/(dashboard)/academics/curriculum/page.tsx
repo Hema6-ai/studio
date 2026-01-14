@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
-import { cseCurriculum } from '@/lib/data';
+import { cseCurriculum, eceCurriculum } from '@/lib/data';
 
 function CurriculumDisplay({ curriculumData }: { curriculumData: any }) {
     if (!curriculumData) return <p>No curriculum data available.</p>;
@@ -69,8 +69,12 @@ export default function CurriculumManagementPage() {
   const [activeBranch, setActiveBranch] = useState('CSE');
   const branches = ['CSE', 'ECE', 'AIDS'];
 
-  // In a real app, you'd fetch this based on activeBranch
-  const curriculumToDisplay = activeBranch === 'CSE' ? cseCurriculum : null;
+  const curriculumMap = {
+    CSE: cseCurriculum,
+    ECE: eceCurriculum,
+  };
+
+  const curriculumToDisplay = curriculumMap[activeBranch as keyof typeof curriculumMap] || null;
 
   return (
     <div className="space-y-6">
