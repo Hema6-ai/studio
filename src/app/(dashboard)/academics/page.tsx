@@ -119,7 +119,6 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
         id: faculty?.id || undefined,
         name: faculty?.name || '',
         email: faculty?.email || '',
-        courses: faculty?.courses || [],
         ugYear: faculty?.ugYear || [],
         branch: faculty?.branch || '',
         section: faculty?.section || ''
@@ -135,7 +134,7 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
         onSave(formData);
         setIsOpen(false);
         if (!faculty) {
-             setFormData({ id: undefined, name: '', email: '', courses: [], ugYear: [], branch: '', section: '' });
+             setFormData({ id: undefined, name: '', email: '', ugYear: [], branch: '', section: '' });
         }
     };
 
@@ -146,16 +145,6 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
                 ? prev.ugYear.filter((y: string) => y !== year)
                 : [...prev.ugYear, year];
             return { ...prev, ugYear: newYears };
-        });
-    }
-
-    // Assuming courses is an array of strings
-    const handleCourseChange = (course: string) => {
-        setFormData(prev => {
-            const newCourses = prev.courses.includes(course)
-                ? prev.courses.filter((c: string) => c !== course)
-                : [...prev.courses, course];
-            return { ...prev, courses: newCourses };
         });
     }
 
@@ -200,21 +189,6 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
                                         onCheckedChange={() => handleUgYearChange(year)}
                                     />
                                     <label htmlFor={`year-${year}`} className="text-sm font-medium">{year}</label>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-start gap-4">
-                        <Label className="text-right pt-2">Courses</Label>
-                        <div className="col-span-3 grid grid-cols-2 gap-2">
-                           {dummyCourses.map(course => (
-                                <div key={course.id} className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id={`course-faculty-${course.id}`}
-                                        checked={formData.courses.includes(course.id)}
-                                        onCheckedChange={() => handleCourseChange(course.id)}
-                                    />
-                                    <label htmlFor={`course-faculty-${course.id}`} className="text-sm font-medium">{course.name}</label>
                                 </div>
                             ))}
                         </div>
@@ -473,7 +447,7 @@ export default function AcademicsDashboard() {
                                                     <TableHeader>
                                                         <TableRow>
                                                             <TableHead>Name</TableHead>
-                                                            <TableHead>Courses</TableHead>
+                                                            <TableHead>Email</TableHead>
                                                             <TableHead>Actions</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
@@ -482,7 +456,7 @@ export default function AcademicsDashboard() {
                                                         {groupFaculty.map(f => (
                                                             <TableRow key={f.id}>
                                                                 <TableCell>{f.name}</TableCell>
-                                                                <TableCell>{Array.isArray(f.courses) ? f.courses.join(', ') : ''}</TableCell>
+                                                                <TableCell>{f.email}</TableCell>
                                                                 <TableCell className="flex gap-2">
                                                                      <FacultyForm faculty={f} onSave={handleSaveFaculty} />
                                                                     <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(f.id)}><Trash2 className="h-4 w-4 text-red-500"/></Button>
