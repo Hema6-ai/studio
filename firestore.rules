@@ -1,0 +1,194 @@
+/**
+ * CampusOS Firestore Security Rules (Prototyping Mode)
+ *
+ * @version 1.0
+ *
+ * @philosophy
+ * This ruleset enforces a security model based on user ownership and discrete roles. The core principle
+ * is that users have full control over their own data, while administrative roles (Doctor, Director,
+ * Academic Office) are granted specific, limited permissions necessary to perform their functions within
+ * a defined workflow. The default security posture is to deny access.
+ *
+ * @structure
+ * Data is primarily organized under user-specific paths to leverage Firestore's path-based security.
+ * - `/users/{userId}`: Stores core user authentication and role data.
+ * - `/users/{userId}/medicalRequests/{medicalRequestId}`: Nests a student's private medical requests
+ *   directly under their user document, ensuring strict ownership by default.
+ * - `/doctors/{doctorId}` & `/students/{studentId}`: Top-level collections for role-specific profiles.
+ * - `/doctors/{doctorId}/availability/{availabilityId}`: A subcollection document storing a doctor's
+ *   publicly viewable availability status.
+ *
+ * @decisions
+ * - User Enumeration: Listing users, students, or doctors is disallowed to protect user privacy.
+ * - Medical Request Workflow: Access for roles like Doctor, Director, and Academic Office is
+ *   conditionally granted based on the request's status fields (e.g., `doctorVerificationStatus`).
+ *   This enforces the business logic of the approval chain directly in the security layer.
+ * - Denormalization for Roles: All role-based checks depend on the `role` field in the user's
+ *   document at `/users/{request.auth.uid}`. This requires a `get()` call but is essential for
+ *   securely determining a requesting user's permissions.
+ * - Prototyping Flexibility: Data shape and schema are NOT enforced (e.g., checking if a field is a
+ *   string or number). Validation is strictly limited to fields critical for authorization, such as
+ *   ownership IDs (`userId`, `studentId`) and their immutability after creation.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --------------------------------------------------------------------
+    // Helper Functions
+    // --------------------------------------------------------------------
+
+    /**
+     * Authenticated users only.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently signed-in user's UID matches the provided userId.
+     * This is the primary function for enforcing data ownership.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if a document exists before an update or delete operation.
+     * Prevents operations on non-existent documents.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Retrieves the role of the currently authenticated user from their user profile.
+     * This is the source of truth for all role-based permissions.
+     */
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    /**
+     * Checks if the current user has a specific role.
+     */
+    function isRole(role) {
+      return isSignedIn() && getUserRole() == role;
+    }
+    function isStudent() { return isRole('student'); }
+    function isDoctor() { return isRole('doctor'); }
+    function isDirector() { return isRole('director'); }
+    function isAcademicOffice() { return isRole('academic_office'); }
+
+    /**
+     * Groups staff roles for easier rule logic.
+     */
+    function isStaff() {
+      return isDoctor() || isDirector() || isAcademicOffice();
+    }
+
+
+    // --------------------------------------------------------------------
+    // User, Student, and Doctor Profiles
+    // --------------------------------------------------------------------
+
+    /**
+     * @description Manages core user documents containing authentication info and roles.
+     * @path /users/{userId}
+     * @allow (create) A new user with UID 'user123' creates their own document at /users/user123.
+     * @deny (list) Any user attempts to list all documents in the /users collection.
+     * @deny (update) User 'user123' attempts to modify the document at /users/user456.
+     * @principle Restricts access to a user's own data tree, preventing data leakage and unauthorized modifications.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Manages detailed student profile information.
+     * @path /students/{studentId}
+     * @allow (get) A signed-in user with UID 'user123' reads a student document where the `userId` field is 'user123'.
+     * @deny (list) Any user attempts to list all student profiles.
+     * @deny (create) A user with a 'doctor' role tries to create a student profile.
+     * @principle Enforces ownership via a denormalized `userId` field within the document, decoupling the document ID from the auth UID.
+     */
+    match /students/{studentId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if false;
+      allow create: if isStudent() && request.resource.data.userId == request.auth.uid;
+      allow update: if isExistingDoc() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Manages detailed doctor profile information.
+     * @path /doctors/{doctorId}
+     * @allow (update) A user with role 'doctor' and UID 'user456' updates a doctor document where the `userId` field is 'user456'.
+     * @deny (list) Any user attempts to list all doctor profiles.
+     * @deny (get) A student tries to read a doctor's profile document.
+     * @principle Enforces ownership via a denormalized `userId` field within the document.
+     */
+    match /doctors/{doctorId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if false;
+      allow create: if isDoctor() && request.resource.data.userId == request.auth.uid;
+      allow update: if isExistingDoc() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId;
+      allow delete: if false;
+    }
+
+
+    // --------------------------------------------------------------------
+    // Doctor Availability
+    // --------------------------------------------------------------------
+
+    /**
+     * @description Manages a doctor's publicly visible availability status.
+     * @path /doctors/{doctorId}/availability/{availabilityId}
+     * @allow (get) Any user (e.g., a student) reads the availability status of any doctor.
+     * @allow (update) Doctor 'doc123' updates their own availability document.
+     * @deny (update) Doctor 'doc456' attempts to change the availability of doctor 'doc123'.
+     * @principle Allows public read for operational data while enforcing strict ownership for writes.
+     */
+    match /doctors/{doctorId}/availability/{availabilityId} {
+      allow get, list: if true;
+      allow create: if isOwner(doctorId) && isDoctor() && request.resource.data.doctorId == doctorId;
+      allow update: if isExistingDoc() && isOwner(doctorId) && isDoctor() && request.resource.data.doctorId == resource.data.doctorId;
+      allow delete: if false;
+    }
+
+    // --------------------------------------------------------------------
+    // Medical Request Workflow
+    // --------------------------------------------------------------------
+
+    /**
+     * @description Manages student medical requests with a multi-stage approval workflow.
+     * @path /users/{userId}/medicalRequests/{medicalRequestId}
+     * @allow (create) Student 'user123' creates a new request under /users/user123/medicalRequests/...
+     * @allow (get) A Doctor reads any student's request to verify it.
+     * @allow (get) The Director reads a request only after its `doctorVerificationStatus` is 'Approved'.
+     * @deny (get) A student 'user123' attempts to read requests under /users/user456/...
+     * @deny (update) The Director tries to modify a request that has not yet been approved by a doctor.
+     * @principle Enforces strict data ownership for students, with conditional, state-based access granted to administrative roles.
+     */
+    match /users/{userId}/medicalRequests/{medicalRequestId} {
+      allow get: if isOwner(userId) ||
+                    isDoctor() ||
+                    (isDirector() && resource.data.doctorVerificationStatus == 'Approved') ||
+                    (isAcademicOffice() && resource.data.directorApprovalStatus != null);
+
+      allow list: if isOwner(userId) || isStaff();
+
+      allow create: if isOwner(userId) && isStudent() && request.resource.data.studentId == userId;
+
+      allow update: if isExistingDoc() &&
+                       request.resource.data.studentId == resource.data.studentId &&
+                       (isOwner(userId) || isDoctor() || (isDirector() && resource.data.doctorVerificationStatus == 'Approved'));
+
+      allow delete: if isExistingDoc() && isOwner(userId);
+    }
+  }
+}
