@@ -42,6 +42,8 @@ import {
     Search,
     Send,
     User,
+    CheckCircle,
+    XCircle,
   } from "lucide-react";
   import { dummyAnnouncements, dummyTimetable } from "@/lib/data";
   import Image from "next/image";
@@ -58,6 +60,8 @@ import {
       'not-available': 'ring-red-500',
       'nurse-available': 'ring-orange-500',
       'on-leave': 'ring-yellow-500',
+      'YES': 'ring-green-500',
+      'NO': 'ring-red-500'
   }
 
   const parseEntry = (entry: string) => {
@@ -118,26 +122,46 @@ import {
     }, [student]);
 
 
-    const staffAvailabilityQuery = useMemoFirebase(() => {
+    const doctorAvailabilityQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return collection(firestore, 'doctorAvailability');
     }, [firestore]);
+    const { data: doctorAvailability, isLoading: loadingDoctors } = useCollection(doctorAvailabilityQuery);
 
-    const { data: staffAvailability, isLoading } = useCollection(staffAvailabilityQuery);
+    const facultyAvailabilityQuery = useMemoFirebase(() => {
+        if(!firestore) return null;
+        return collection(firestore, 'availability/faculty');
+    }, [firestore]);
+    const {data: facultyAvailability, isLoading: loadingFaculty} = useCollection(facultyAvailabilityQuery);
+    
+    const academicAvailabilityQuery = useMemoFirebase(() => {
+        if(!firestore) return null;
+        return collection(firestore, 'availability');
+    }, [firestore]);
+    const {data: academicAvailability, isLoading: loadingAcademics} = useCollection(academicAvailabilityQuery);
 
+    const academicOffice = academicAvailability?.find(doc => doc.id === 'academic');
+    const allStaff = [
+        ...(doctorAvailability || []),
+        ...(facultyAvailability || []),
+        ...(academicOffice ? [academicOffice] : [])
+    ];
+    
     const getAvailabilityStatus = (s: any) => {
-        if (!s) return { text: "Unknown", variant: "secondary", className: "" };
-        switch (s.availabilityStatus) {
+        const status = s?.availabilityStatus || s?.status;
+        switch (status) {
             case "available":
+            case "YES":
                 return { text: "Available", variant: "default", className: "bg-green-600" };
             case "not-available":
+            case "NO":
                 return { text: "Unavailable", variant: "destructive" };
             case "nurse-available":
                  return { text: "Nurse Available", variant: "secondary", className: "bg-orange-500" };
             case "on-leave":
                 return { text: "On Leave", variant: "secondary", className: "bg-yellow-500 text-black" };
             default:
-                return { text: "Unknown", variant: "secondary" };
+                return { text: "Unavailable", variant: "destructive" };
         }
     }
 
@@ -314,27 +338,36 @@ import {
             <CardDescription>Check who's available before you visit.</CardDescription>
           </CardHeader>
           <CardContent>
-             <ul className="space-y-3">
-                {isLoading && <li>Loading availability...</li>}
-                {staffAvailability?.map(staff => {
+             <ul className="space-y-4">
+                {(loadingDoctors || loadingFaculty || loadingAcademics) && <li>Loading availability...</li>}
+                {allStaff?.map(staff => {
                     const status = getAvailabilityStatus(staff);
-                    const availability = staff?.availabilityStatus || 'not-available';
+                    const availability = staff?.availabilityStatus || staff?.status || 'NO';
+                    const name = staff.doctorName || staff.name || "Academic Office";
+                    const role = staff.role || "Doctor";
                     return (
-                        <li key={staff.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                            <div className="flex items-center gap-3">
-                                <Avatar className={cn("h-10 w-10", `ring-2 ring-offset-2 ring-offset-background ${availabilityColors[availability]}`)}>
-                                    {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt="User avatar" data-ai-hint={avatarImage.imageHint} />}
-                                    <AvatarFallback>{staff.doctorName?.charAt(0).toUpperCase() || 'D'}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-medium">{staff.doctorName || `Dr. ${staff.id.slice(0,5)}`}</p>
-                                    <p className="text-xs text-muted-foreground">Campus Doctor</p>
+                        <li key={staff.id} className="flex flex-col p-3 rounded-lg bg-muted/50 gap-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Avatar className={cn("h-10 w-10", `ring-2 ring-offset-2 ring-offset-background ${availabilityColors[availability]}`)}>
+                                        {avatarImage && <AvatarImage src={avatarImage.imageUrl} alt="User avatar" data-ai-hint={avatarImage.imageHint} />}
+                                        <AvatarFallback>{name?.charAt(0).toUpperCase() || 'S'}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="font-medium capitalize">{name}</p>
+                                        <p className="text-xs text-muted-foreground">{role}</p>
+                                    </div>
                                 </div>
+                                <Badge variant={status.variant} className={cn('text-xs', status.className)}>
+                                    {status.text}
+                                </Badge>
                             </div>
-                            <Badge variant={status.variant} className={cn('text-xs', status.className)}>
-                                {status.text}
-                            </Badge>
-                        </li>
+                            {availability === 'NO' && (
+                                <p className="text-xs text-red-500 pl-12 flex items-center gap-1">
+                                    <XCircle className="h-3 w-3" /> Not available — please mail your query.
+                                </p>
+                            )}
+                         </li>
                     )
                 })}
              </ul>
@@ -362,4 +395,3 @@ import {
       </div>
     );
   }
-  

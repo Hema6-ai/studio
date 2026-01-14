@@ -1,12 +1,12 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { CalendarIcon, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -16,9 +16,10 @@ import { dummyCourses, dummyFaculty, dummyTimetable } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { TimetableDisplay } from '@/components/dashboard/timetable-display';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Switch } from '@/components/ui/switch';
 
 
 // --- Reusable Student Form ---
@@ -231,6 +232,20 @@ export default function AcademicsDashboard() {
 
   const {data: students, isLoading: loadingStudents } = useCollection(studentsQuery);
 
+  const academicAvailabilityRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'availability', 'academic');
+  }, [firestore]);
+
+  const { data: academicAvailability, isLoading: loadingAcademicAvailability } = useDoc(academicAvailabilityRef);
+  const isAvailable = academicAvailability?.status === 'YES';
+
+  const handleAvailabilityChange = (checked: boolean) => {
+    if (!academicAvailabilityRef) return;
+    setDocumentNonBlocking(academicAvailabilityRef, { status: checked ? 'YES' : 'NO' }, { merge: true });
+    toast({ title: 'Availability Updated', description: `Academic office is now ${checked ? 'available' : 'unavailable'}.`});
+  };
+
   const approvedRequests: any[] = []; // This would be fetched
   const rejectedRequests: any[] = []; // This would be fetched
   const loadingApproved = false;
@@ -349,34 +364,69 @@ export default function AcademicsDashboard() {
         </div>
 
         <TabsContent value="dashboard">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Welcome to the Academic Office</CardTitle>
-                    <CardDescription>Select a tab to manage students, faculty, timetables, or view medical records.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                   <div className="grid grid-cols-2 gap-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Quick Stats</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p>Total Students: {loadingStudents ? '...' : students?.length ?? 0}</p>
-                                <p>Total Faculty: {loadingFaculty ? '...' : faculty?.length ?? 0}</p>
-                                <p>Pending Approvals: 0</p>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Recent Activity</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-muted-foreground">No recent activity.</p>
-                            </CardContent>
-                        </Card>
-                   </div>
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Welcome to the Academic Office</CardTitle>
+                        <CardDescription>Select a tab to manage students, faculty, timetables, or view medical records.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                    <div className="grid grid-cols-2 gap-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Quick Stats</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p>Total Students: {loadingStudents ? '...' : students?.length ?? 0}</p>
+                                    <p>Total Faculty: {loadingFaculty ? '...' : faculty?.length ?? 0}</p>
+                                    <p>Pending Approvals: 0</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Recent Activity</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-muted-foreground">No recent activity.</p>
+                                </CardContent>
+                            </Card>
+                    </div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Office Availability</CardTitle>
+                        <CardDescription>Set the global availability for the Academic Office.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       {loadingAcademicAvailability ? <p>Loading status...</p> : (
+                        <div className="flex items-center space-x-4 rounded-md border p-4">
+                            <div className="flex-1 space-y-1">
+                                <p className="text-sm font-medium leading-none">
+                                Academic Office Availability
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                This status is visible to all students.
+                                </p>
+                            </div>
+                            <Switch
+                                checked={isAvailable}
+                                onCheckedChange={handleAvailabilityChange}
+                                aria-readonly
+                            />
+                        </div>
+                       )}
+                    </CardContent>
+                    <CardFooter>
+                       <div className="flex items-center w-full">
+                           {isAvailable ? 
+                                <span className="flex items-center text-sm text-green-600"><CheckCircle className="h-4 w-4 mr-2" /> Office is currently available.</span> :
+                                <span className="flex items-center text-sm text-red-600"><XCircle className="h-4 w-4 mr-2" /> Office is currently unavailable.</span>
+                            }
+                       </div>
+                    </CardFooter>
+                </Card>
+            </div>
         </TabsContent>
 
         <TabsContent value="students" id="students">
@@ -601,5 +651,3 @@ export default function AcademicsDashboard() {
     </Tabs>
   );
 }
-
-    
