@@ -15,6 +15,9 @@ import {
     History,
     LogOut,
     User,
+    Users,
+    GraduationCap,
+    Book,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -72,15 +75,12 @@ export const navLinks: Record<string, NavItem[]> = {
     ],
     academics: [
         { href: '/academics', label: 'Dashboard', icon: LayoutDashboard },
-        {
-            key: 'medical-leave',
-            label: 'Medical Leave',
-            icon: FileUp,
-            subLinks: [
-                { href: '/academics#approved', label: 'Approved', icon: FileCheck2 },
-                { href: '/academics#rejected', label: 'Rejected', icon: FileCheck2 },
-            ]
-        }
+        { href: '/academics#students', label: 'Students', icon: Users },
+        { href: '/academics#faculty', label: 'Faculty', icon: GraduationCap },
+        { href: '/academics#timetables', label: 'Timetables', icon: CalendarDays },
+        { href: '/academics#medical-records', label: 'Medical Records', icon: Book },
+        { href: '#', label: 'Profile', icon: User },
+        { href: '/login', label: 'Logout', icon: LogOut },
     ],
     director: [
         { href: '/director', label: 'Dashboard', icon: LayoutDashboard },
