@@ -14,26 +14,32 @@ import { Input } from '@/components/ui/input';
 import { UserNav } from './user-nav';
 import { NavMenu } from './nav-menu';
 import { Logo } from '../icons';
-import { getRoleFromEmail } from '@/lib/roles';
 import type { UserRole } from '@/lib/roles';
 import Link from 'next/link';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  // Handle nested routes like /student/medical-leave
   const role = pathname.split('/')[1] as UserRole;
+  
+  const isSubPage = pathname.split('/').length > 2;
+  const layoutClass = !isSubPage || role !== 'student' ? 'sm:pl-64' : '';
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-background sm:flex">
-        <div className="flex h-16 items-center gap-2 border-b px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Logo className="h-6 w-6 text-primary" />
-              <span className="font-headline">CampusOS</span>
-            </Link>
-        </div>
-        <NavMenu role={role} />
-      </aside>
-      <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-64">
+      {(!isSubPage || role !== 'student') && (
+         <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-background sm:flex">
+            <div className="flex h-16 items-center gap-2 border-b px-6">
+                <Link href="/" className="flex items-center gap-2 font-semibold">
+                  <Logo className="h-6 w-6 text-primary" />
+                  <span className="font-headline">CampusOS</span>
+                </Link>
+            </div>
+            <NavMenu role={role} />
+        </aside>
+      )}
+     
+      <div className={`flex flex-col sm:gap-4 sm:py-4 ${layoutClass}`}>
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
           <Sheet>
             <SheetTrigger asChild>
