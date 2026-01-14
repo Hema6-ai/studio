@@ -80,7 +80,7 @@ export default function MedicalLeavePage() {
     try {
         const storage = getStorage();
         // Create a storage reference
-        const storageRef = ref(storage, `medical-documents/${user.uid}/${selectedFile.name}`);
+        const storageRef = ref(storage, `medical-documents/${user.uid}/${Date.now()}-${selectedFile.name}`);
         
         // Upload file
         const snapshot = await uploadBytes(storageRef, selectedFile);
@@ -126,6 +126,9 @@ export default function MedicalLeavePage() {
     setAge('');
     setUgNumber('');
     setSelectedFile(null);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
     setIsSubmitting(false);
   }
 

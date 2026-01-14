@@ -79,8 +79,8 @@ export default function DoctorDashboard() {
   };
 
   const handleViewDocuments = (documentUrl: string) => {
-    if(documentUrl) {
-      window.open(documentUrl, '_blank');
+    if (documentUrl) {
+      window.open(documentUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
