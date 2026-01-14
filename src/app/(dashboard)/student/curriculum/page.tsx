@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { cseCurriculum, eceCurriculum } from '@/lib/data'; // Using static data for now
+import { cseCurriculum, eceCurriculum, aidsCurriculum } from '@/lib/data'; // Using static data for now
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
@@ -86,6 +86,8 @@ export default function StudentCurriculumPage() {
         return cseCurriculum;
       case 'ECE':
         return eceCurriculum;
+      case 'AIDS':
+        return aidsCurriculum;
       default:
         return null;
     }

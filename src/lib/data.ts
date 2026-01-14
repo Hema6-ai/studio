@@ -463,3 +463,98 @@ export const eceCurriculum = {
     }
   ]
 };
+
+export const aidsCurriculum = {
+  "branch": "AIDS",
+  "branchFullName": "Artificial Intelligence and Data Science",
+  "infoLink": "https://iiits.ac.in/academics/b-tech-programme/artificial-intelligence-and-data-science/b-tech-ai-ds-curriculum/",
+  "program": "B.Tech",
+  "curriculum": [
+    {
+      "semester": 1,
+      "courses": [
+        { "type": "Institute Core", "credits": 4, "courseName": "Computer Programming", "courseAbbr": "CP" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Discrete Structures and Matrix Algebra", "courseAbbr": "DSMA" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Overview of Computers Workshop", "courseAbbr": "OCW" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Digital Logic Design", "courseAbbr": "DLD" },
+        { "type": "SEED", "credits": 2, "courseName": "Essential English (Bridge Course)", "courseAbbr": "EE" },
+        { "type": "SEED", "credits": 2, "courseName": "Foundations in Human Values, Ethics, Energy and Environment", "courseAbbr": "SEED-2/3" }
+      ]
+    },
+    {
+      "semester": 2,
+      "courses": [
+        { "type": "Institute Core", "credits": 4, "courseName": "Probability and Statistics", "courseAbbr": "PS" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Data Structures and Algorithms", "courseAbbr": "DSA" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Signals and Systems", "courseAbbr": "SS" },
+        { "type": "Program Core", "credits": 4, "courseName": "Computer Architecture", "courseAbbr": "CA" },
+        { "type": "SSHAM", "credits": 2, "courseName": "Operational Communication", "courseAbbr": "OPC" },
+        { "type": "SSHAM", "credits": 2, "courseName": "Foundations in Human Values and Ethics / Energy and Environment", "courseAbbr": "SSHAM-2/3" }
+      ]
+    },
+    {
+      "semester": 3,
+      "note": "Students may opt for BTP (2 semesters) or Honors (4 semesters) starting from this semester.",
+      "courses": [
+        { "type": "Institute Core", "credits": 4, "courseName": "Real Analysis, Numerical Analysis and Calculus", "courseAbbr": "RANAC" },
+        { "type": "Institute Core", "credits": 4, "courseName": "Object Oriented Programming", "courseAbbr": "OOP" },
+        { "type": "Program Core", "credits": 4, "courseName": "Advanced Data Structures and Algorithms", "courseAbbr": "ADSA" },
+        { "type": "Program Core", "credits": 4, "courseName": "Machine Learning", "courseAbbr": "ML" },
+        { "type": "Program Core", "credits": 4, "courseName": "Database Management Systems", "courseAbbr": "DBMS" },
+        { "type": "SEED", "credits": 2, "courseName": "Professional Communication", "courseAbbr": "PC" }
+      ]
+    },
+    {
+      "semester": 4,
+      "courses": [
+        { "type": "Institute Core", "credits": 4, "courseName": "Computer and Communication Networks", "courseAbbr": "CCN" },
+        { "type": "Program Core", "credits": 4, "courseName": "Artificial Intelligence & Knowledge Representation", "courseAbbr": "AIKR" },
+        { "type": "Program Core", "credits": 4, "courseName": "Deep Learning", "courseAbbr": "DL" },
+        { "type": "Program Core", "credits": 4, "courseName": "Introduction to Data Analysis", "courseAbbr": "IDA" },
+        { "type": "SEED", "credits": 2, "courseName": "Advanced Communication Skills", "courseAbbr": "ACS" },
+        { "type": "SEED", "credits": 2, "courseName": "SEED 7", "courseAbbr": "SEED-7" }
+      ]
+    },
+    {
+      "semester": 5,
+      "courses": [
+        { "type": "Program Core", "credits": 4, "courseName": "Operating Systems", "courseAbbr": "OS" },
+        { "type": "Program Core", "credits": 4, "courseName": "Python for Data Science", "courseAbbr": "PDS" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 1", "courseAbbr": "PE-1" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 2", "courseAbbr": "PE-2" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 3", "courseAbbr": "PE-3" },
+        { "type": "SEED", "credits": 2, "courseName": "SEED 8", "courseAbbr": "SEED-8" },
+        { "type": "SEED", "credits": 2, "courseName": "SEED 9", "courseAbbr": "SEED-9" }
+      ]
+    },
+    {
+      "semester": 6,
+      "courses": [
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 4", "courseAbbr": "PE-4" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 5", "courseAbbr": "PE-5" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 6", "courseAbbr": "PE-6" },
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 7", "courseAbbr": "PE-7" },
+        { "type": "Institute Elective", "credits": 3, "courseName": "Institute Elective – 1", "courseAbbr": "IE-1" },
+        { "type": "SEED", "credits": 2, "courseName": "SEED 10", "courseAbbr": "SEED-10" }
+      ]
+    },
+    {
+      "semester": 7,
+      "note": "Optional Semester Long Project (SLP)",
+      "courses": [
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 8", "courseAbbr": "PE-8" },
+        { "type": "Institute Elective", "credits": 3, "courseName": "Institute Elective – 2", "courseAbbr": "IE-2" },
+        { "type": "SEED", "credits": 2, "courseName": "SEED 11", "courseAbbr": "SEED-11" }
+      ]
+    },
+    {
+      "semester": 8,
+      "note": "Optional Semester Long Project (SLP)",
+      "courses": [
+        { "type": "Program Elective", "credits": 3, "courseName": "Program Elective – 9", "courseAbbr": "PE-9" },
+        { "type": "Institute Elective", "credits": 3, "courseName": "Institute Elective – 3", "courseAbbr": "IE-3" },
+        { "type": "SEED", "credits": 2, "courseName": "SEED 12", "courseAbbr": "SEED-12" }
+      ]
+    }
+  ]
+};
