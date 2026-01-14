@@ -174,11 +174,13 @@ export default function DoctorDashboard() {
                 {pendingRequests?.map(request => (
                     <Card key={request.id}>
                         <CardHeader>
-                            <CardTitle className="text-lg">Student ID: {request.studentId.slice(0,12)}...</CardTitle>
-                            <CardDescription>UG Number: {request.ugNumber} | Age: {request.age}</CardDescription>
+                            <CardTitle className="text-lg">Student: {request.studentName}</CardTitle>
+                            <CardDescription>ID: {request.studentId}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <p className="text-sm">Requested on: {new Date(request.dateRequested).toLocaleString()}</p>
+                            <p className="text-sm"><strong>UG Number:</strong> {request.ugNumber}</p>
+                            <p className="text-sm"><strong>Age:</strong> {request.age}</p>
+                            <p className="text-sm"><strong>Requested:</strong> {new Date(request.dateRequested).toLocaleString()}</p>
                             <Button variant="outline" className="w-full">
                                 <Folder className="mr-2 h-4 w-4"/> View Medical Documents
                             </Button>

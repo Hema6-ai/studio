@@ -131,15 +131,20 @@ export default function MedicalLeavePage() {
                 <Label htmlFor="student-name">Student Name</Label>
                 <Input id="student-name" value={user?.displayName || user?.email || 'Loading...'} readOnly />
               </div>
+               <div className="space-y-2">
+                <Label htmlFor="student-id">Student ID</Label>
+                <Input id="student-id" value={user?.uid || 'Loading...'} readOnly />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="age">Age</Label>
                 <Input id="age" placeholder="Enter your age" required type="number" value={age} onChange={e => setAge(e.target.value)} />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="ug-number">UG Number</Label>
+                <Input id="ug-number" placeholder="e.g., P23001" required value={ugNumber} onChange={e => setUgNumber(e.target.value)} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="ug-number">UG Number</Label>
-              <Input id="ug-number" placeholder="e.g., P23001" required value={ugNumber} onChange={e => setUgNumber(e.target.value)} />
-            </div>
+            
             <div className="space-y-2">
               <Label>Upload Medical Documents (PDF/Image)</Label>
               <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center">
