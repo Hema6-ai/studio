@@ -18,8 +18,6 @@ import {
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { useRouter, usePathname } from "next/navigation"
 import { getRoleFromEmail, UserRole } from "@/lib/roles"
-import { useEffect, useState } from "react"
-import { cn } from "@/lib/utils"
 import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
 
@@ -43,7 +41,7 @@ export function UserNav() {
   }, [firestore, user, role]);
 
   const { data: availabilityData } = useDoc(availabilityRef);
-  const availability = availabilityData?.availabilityStatus || 'available';
+  const availability = availabilityData?.availabilityStatus || 'not-available';
 
   const avatarImage = PlaceHolderImages.find(img => img.id === 'avatar-1');
 

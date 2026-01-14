@@ -33,10 +33,11 @@ export default function DoctorDashboard() {
 
   const availabilityRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
+    // The document ID for an availability status is the doctor's UID
     return doc(firestore, `doctorAvailability/${user.uid}`);
   }, [firestore, user]);
   
-  const { data: availabilityData } = useDoc(availabilityRef);
+  const { data: availabilityData, isLoading: loadingAvailability } = useDoc(availabilityRef);
   
   const pendingRequestsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -45,7 +46,7 @@ export default function DoctorDashboard() {
 
   const processedRequestsQuery = useMemoFirebase(() => {
      if (!firestore || !user) return null;
-     // This is a simplified query. A real app might need a dedicated `doctorId` field on the request.
+     // This is a simplified query. A real app might need a dedicated `processedByDoctorId` field on the request.
      return query(collection(firestore, 'medicalRequests'), where('doctorVerificationStatus', '!=', null));
   }, [firestore, user]);
 
@@ -53,10 +54,11 @@ export default function DoctorDashboard() {
   const { data: processedRequests, isLoading: loadingProcessed } = useCollection(processedRequestsQuery);
 
   const handleAvailabilityUpdate = () => {
-    if (!availabilityRef) return;
+    if (!availabilityRef || !user) return;
     setDocumentNonBlocking(availabilityRef, { 
       availabilityStatus: availability,
-      doctorId: user?.uid 
+      // Storing doctorId inside the document is redundant if the doc ID is the UID, but can be useful.
+      doctorId: user.uid 
     }, { merge: true });
   };
   
@@ -66,13 +68,13 @@ export default function DoctorDashboard() {
     updateDocumentNonBlocking(requestRef, { doctorVerificationStatus: 'Approved' });
   };
   
-  const handleReject = (id: string, reason: string) => {
+  const handleReject = (id: string) => {
      if (!firestore) return;
     const requestRef = doc(firestore, 'medicalRequests', id);
     // In a real app, you'd likely open a dialog to get the reason
     updateDocumentNonBlocking(requestRef, { 
         doctorVerificationStatus: 'Rejected',
-        rejectionReason: 'Invalid document'
+        rejectionReason: 'Invalid or insufficient documentation.' // Example reason
     });
   };
 
@@ -112,7 +114,7 @@ export default function DoctorDashboard() {
                         </div>
                          <div className="flex items-center space-x-2">
                             <RadioGroupItem value="on-leave" id="r4" />
-                            <Label htmlFor="r4">Doctor on leave, Nurse available</Label>
+                            <Label htmlFor="r4">On Leave, Nurse available</Label>
                              <div className="h-3 w-3 rounded-full bg-yellow-500 ml-auto" />
                         </div>
                     </RadioGroup>
@@ -164,10 +166,15 @@ export default function DoctorDashboard() {
             </CardHeader>
             <CardContent className="grid gap-6 md:grid-cols-2">
                 {loadingPending && <p>Loading requests...</p>}
+                {!loadingPending && pendingRequests?.length === 0 && (
+                    <div className="col-span-full text-center py-12 text-muted-foreground">
+                        <p>No pending requests to review.</p>
+                    </div>
+                )}
                 {pendingRequests?.map(request => (
                     <Card key={request.id}>
                         <CardHeader>
-                            <CardTitle className="text-lg">Student ID: {request.studentId}</CardTitle>
+                            <CardTitle className="text-lg">Student ID: {request.studentId.slice(0,12)}...</CardTitle>
                             <CardDescription>UG Number: {request.ugNumber} | Age: {request.age}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -177,7 +184,7 @@ export default function DoctorDashboard() {
                             </Button>
                         </CardContent>
                         <CardFooter className="grid grid-cols-2 gap-2">
-                             <Button variant="destructive" onClick={() => handleReject(request.id, "Invalid Document")}><X className="mr-2 h-4 w-4"/> Reject</Button>
+                             <Button variant="destructive" onClick={() => handleReject(request.id)}><X className="mr-2 h-4 w-4"/> Reject</Button>
                             <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleApprove(request.id)}><Check className="mr-2 h-4 w-4"/> Approve</Button>
                         </CardFooter>
                     </Card>

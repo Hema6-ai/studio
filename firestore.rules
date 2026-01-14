@@ -15,8 +15,8 @@
  * - `/users/{userId}/medicalRequests/{medicalRequestId}`: Nests a student's private medical requests
  *   directly under their user document, ensuring strict ownership by default.
  * - `/doctors/{doctorId}` & `/students/{studentId}`: Top-level collections for role-specific profiles.
- * - `/doctors/{doctorId}/availability/{availabilityId}`: A subcollection document storing a doctor's
- *   publicly viewable availability status.
+ * - `/doctorAvailability/{availabilityId}`: A collection storing doctors'
+ *   publicly viewable availability statuses.
  *
  * @decisions
  * - User Enumeration: Listing users, students, or doctors is disallowed to protect user privacy.
@@ -101,11 +101,8 @@ service cloud.firestore {
      * @principle Restricts access to a user's own data tree, preventing data leakage and unauthorized modifications.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if false;
+      allow get, create, update: if isOwner(userId);
+      allow list, delete: if false;
     }
 
     /**
@@ -144,19 +141,19 @@ service cloud.firestore {
     // --------------------------------------------------------------------
     // Doctor Availability
     // --------------------------------------------------------------------
-
+    
     /**
      * @description Manages a doctor's publicly visible availability status.
-     * @path /doctors/{doctorId}/availability/{availabilityId}
-     * @allow (get) Any user (e.g., a student) reads the availability status of any doctor.
-     * @allow (update) Doctor 'doc123' updates their own availability document.
-     * @deny (update) Doctor 'doc456' attempts to change the availability of doctor 'doc123'.
+     * @path /doctorAvailability/{availabilityId}
+     * @allow (get, list) Any signed-in user can read availability statuses.
+     * @allow (create, update) A doctor can update their own availability.
+     * @deny (delete) No one can delete availability documents.
      * @principle Allows public read for operational data while enforcing strict ownership for writes.
      */
-    match /doctors/{doctorId}/availability/{availabilityId} {
-      allow get, list: if true;
-      allow create: if isOwner(doctorId) && isDoctor() && request.resource.data.doctorId == doctorId;
-      allow update: if isExistingDoc() && isOwner(doctorId) && isDoctor() && request.resource.data.doctorId == resource.data.doctorId;
+    match /doctorAvailability/{availabilityId} {
+      allow get, list: if isSignedIn();
+      allow create: if isDoctor() && request.auth.uid == availabilityId;
+      allow update: if isDoctor() && request.auth.uid == availabilityId;
       allow delete: if false;
     }
 
@@ -165,30 +162,40 @@ service cloud.firestore {
     // --------------------------------------------------------------------
 
     /**
-     * @description Manages student medical requests with a multi-stage approval workflow.
-     * @path /users/{userId}/medicalRequests/{medicalRequestId}
-     * @allow (create) Student 'user123' creates a new request under /users/user123/medicalRequests/...
-     * @allow (get) A Doctor reads any student's request to verify it.
-     * @allow (get) The Director reads a request only after its `doctorVerificationStatus` is 'Approved'.
-     * @deny (get) A student 'user123' attempts to read requests under /users/user456/...
-     * @deny (update) The Director tries to modify a request that has not yet been approved by a doctor.
-     * @principle Enforces strict data ownership for students, with conditional, state-based access granted to administrative roles.
+     * @description Manages all medical requests in a single collection.
+     * @path /medicalRequests/{requestId}
+     * @principle This structure simplifies cross-user queries for staff roles (Doctor, Director, etc.)
+     * while still enforcing strict student ownership for read/write on their own documents.
      */
-    match /users/{userId}/medicalRequests/{medicalRequestId} {
-      allow get: if isOwner(userId) ||
-                    isDoctor() ||
-                    (isDirector() && resource.data.doctorVerificationStatus == 'Approved') ||
-                    (isAcademicOffice() && resource.data.directorApprovalStatus != null);
+    match /medicalRequests/{requestId} {
+      // READ access
+      allow get: if isSignedIn() && 
+                    (resource.data.studentId == request.auth.uid || // Student owns it
+                     isDoctor() || // Doctors can see all for review
+                     (isDirector() && resource.data.doctorVerificationStatus == 'Approved') || // Director sees only doctor-approved
+                     isAcademicOffice()); // Academic office can see all for record-keeping
+                     
+      // LIST access - Students can only list their own. Staff can list all for their dashboards.
+      allow list: if isStaff() || (isStudent() && query.filters.studentId == request.auth.uid);
 
-      allow list: if isOwner(userId) || isStaff();
+      // WRITE access
+      allow create: if isStudent() && request.resource.data.studentId == request.auth.uid;
 
-      allow create: if isOwner(userId) && isStudent() && request.resource.data.studentId == userId;
+      allow update: if isSignedIn() && isExistingDoc() &&
+                       // Student ID cannot be changed
+                       request.resource.data.studentId == resource.data.studentId && 
+                       (
+                         // Student can update their request ONLY IF it hasn't been touched by a doctor yet
+                         (isOwner(resource.data.studentId) && resource.data.doctorVerificationStatus == null) ||
+                         
+                         // Doctor can update to approve/reject
+                         isDoctor() ||
 
-      allow update: if isExistingDoc() &&
-                       request.resource.data.studentId == resource.data.studentId &&
-                       (isOwner(userId) || isDoctor() || (isDirector() && resource.data.doctorVerificationStatus == 'Approved'));
+                         // Director can update only if already doctor-approved
+                         (isDirector() && resource.data.doctorVerificationStatus == 'Approved')
+                       );
 
-      allow delete: if isExistingDoc() && isOwner(userId);
+      allow delete: if isOwner(resource.data.studentId) && resource.data.doctorVerificationStatus == null;
     }
   }
 }
