@@ -48,6 +48,12 @@ export default function DirectorDashboard() {
     });
   };
 
+  const handleViewDocuments = (documentUrl: string) => {
+    if (documentUrl) {
+      window.open(documentUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <div className="grid gap-6">
       <Card>
@@ -86,7 +92,7 @@ export default function DirectorDashboard() {
                   <strong>Doctor Approved:</strong> {request.doctorVerificationStatus}
                 </p>
               </div>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={() => handleViewDocuments(request.medicalDocuments[0])}>
                 <Folder className="mr-2 h-4 w-4" />
                 View Medical Documents
               </Button>
