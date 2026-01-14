@@ -22,6 +22,8 @@ export default function MedicalLeavePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
+  const [studentName, setStudentName] = useState('');
+  const [studentId, setStudentId] = useState('');
   const [age, setAge] = useState('');
   const [ugNumber, setUgNumber] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -69,8 +71,8 @@ export default function MedicalLeavePage() {
     }
 
     const requestData = {
-        studentId: user.uid,
-        studentName: user.displayName || user.email, // Save name for easy display
+        studentId: studentId,
+        studentName: studentName,
         age: Number(age),
         ugNumber: ugNumber,
         dateRequested: new Date().toISOString(),
@@ -90,6 +92,8 @@ export default function MedicalLeavePage() {
         description: "Medical leave request submitted successfully."
     });
     // Clear form
+    setStudentName('');
+    setStudentId('');
     setAge('');
     setUgNumber('');
     setSelectedFile(null);
@@ -129,11 +133,11 @@ export default function MedicalLeavePage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="student-name">Student Name</Label>
-                <Input id="student-name" value={user?.displayName || user?.email || 'Loading...'} readOnly />
+                <Input id="student-name" placeholder="Enter your name" required value={studentName} onChange={e => setStudentName(e.target.value)} />
               </div>
                <div className="space-y-2">
                 <Label htmlFor="student-id">Student ID</Label>
-                <Input id="student-id" value={user?.uid || 'Loading...'} readOnly />
+                <Input id="student-id" placeholder="Enter your student ID" required value={studentId} onChange={e => setStudentId(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="age">Age</Label>

@@ -72,9 +72,9 @@ export default function DirectorDashboard() {
         {requests?.map((request) => (
           <Card key={request.id}>
             <CardHeader>
-              <CardTitle>Request: {request.id.slice(0, 8)}</CardTitle>
+              <CardTitle>Request from {request.studentName}</CardTitle>
               <CardDescription>
-                From Student ID: {request.studentId}
+                Student ID: {request.studentId}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

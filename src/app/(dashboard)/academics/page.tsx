@@ -8,16 +8,6 @@ import { collection, query, where } from "firebase/firestore";
 import { useFirestore } from "@/firebase";
 import { useMemo } from "react";
 
-// In a real app, you would fetch this data from Firestore
-const approvedRequestsMock = [
-  { id: 'MR001', studentName: 'Hema P.', date: '2024-07-28', reason: 'Fever and body aches.' },
-  { id: 'MR003', studentName: 'Ravi K.', date: '2024-07-27', reason: 'Minor injury.' },
-];
-const rejectedRequestsMock = [
-  { id: 'MR002', studentName: 'Suresh G.', date: '2024-07-28', rejectionReason: 'Insufficient documentation provided.', rejectedBy: 'Dr. Singh' },
-];
-
-
 export default function AcademicsDashboard() {
   const firestore = useFirestore();
 
@@ -59,7 +49,7 @@ export default function AcademicsDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Request ID</TableHead>
+                        <TableHead>Student Name</TableHead>
                         <TableHead>Student ID</TableHead>
                         <TableHead>Date Requested</TableHead>
                       </TableRow>
@@ -68,7 +58,7 @@ export default function AcademicsDashboard() {
                       {loadingApproved && <TableRow><TableCell colSpan={3}>Loading...</TableCell></TableRow>}
                       {approvedRequests?.map((req) => (
                         <TableRow key={req.id}>
-                          <TableCell>{req.id}</TableCell>
+                          <TableCell>{req.studentName}</TableCell>
                           <TableCell>{req.studentId}</TableCell>
                           <TableCell>{new Date(req.dateRequested).toLocaleDateString()}</TableCell>
                         </TableRow>
@@ -87,7 +77,7 @@ export default function AcademicsDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Request ID</TableHead>
+                        <TableHead>Student Name</TableHead>
                         <TableHead>Student ID</TableHead>
                         <TableHead>Date Requested</TableHead>
                         <TableHead>Rejected By</TableHead>
@@ -98,7 +88,7 @@ export default function AcademicsDashboard() {
                        {loadingRejected && <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>}
                       {rejectedRequests?.map((req) => (
                         <TableRow key={req.id}>
-                          <TableCell>{req.id}</TableCell>
+                          <TableCell>{req.studentName}</TableCell>
                           <TableCell>{req.studentId}</TableCell>
                            <TableCell>{new Date(req.dateRequested).toLocaleDateString()}</TableCell>
                           <TableCell>
