@@ -150,13 +150,39 @@ export const dummyFaculty = [
   {"id":"faculty-hdl-1","name":"Dr. V. Ramesh Kumar","email":"hdl@iiits.in","courseName":"Verilog Hardware Description Language","courseAbbr":"HDL","branch":"ECE","section":"Common","ugYear":["3"]},
   {"id":"faculty-pe-1","name":"Dr. Paul Brainerd","email":"pe@iiits.in","courseName":"Power Electronics","courseAbbr":"PE","branch":"ECE","section":"Common","ugYear":["3"]},
   {"id":"faculty-cdp-1","name":"Dr. Bulla Rajesh","email":"cdp@iiits.in","courseName":"Compressed Domain Processing","courseAbbr":"CDP","branch":"CSE","section":"Common","ugYear":["4"]},
-  {"id":"faculty-dip-1","name":"Dr. Mrinmoy Ghorai","email":"dip@iiits.in","courseName":"Digital Image Processing","courseAbbr":"DIP","branch":"CSE,ECE","section":"Common","ugYear":["4"]},
+  {"id":"faculty-dip-1","name":"Dr. Mrinmoy Ghosh","email":"dip@iiits.in","courseName":"Digital Image Processing","courseAbbr":"DIP","branch":"CSE,ECE","section":"Common","ugYear":["4"]},
   {"id":"faculty-avlsi-1","name":"Dr. Priyanka Dwivedi","email":"avlsi@iiits.in","courseName":"Advanced VLSI","courseAbbr":"AVLSI","branch":"CSE","section":"Common","ugYear":["4"]},
   {"id":"faculty-soc-1","name":"Dr. V. Ramesh Kumar","email":"soc@iiits.in","courseName":"System on Chip","courseAbbr":"SOC","branch":"CSE","section":"Common","ugYear":["4"]},
   {"id":"faculty-cb-1","name":"Dr. Santhosh A","email":"cb@iiits.in","courseName":"Computational Biology","courseAbbr":"CB","branch":"CSE","section":"Common","ugYear":["4"]},
   {"id":"faculty-ubc-1","name":"Dr. Hemant Kumar","email":"ubc@iiits.in","courseName":"Ubiquitous Computing","courseAbbr":"UBC","branch":"CSE","section":"Common","ugYear":["4"]},
   {"id":"faculty-wn-1","name":"Dr. Hrishikesh Venkataraman","email":"wn@iiits.in","courseName":"Wireless Networks","courseAbbr":"WN","branch":"CSE,ECE","section":"Common","ugYear":["4"]}
 ];
+
+const ug2TimetableRaw = [
+    { "time": "08:45-09:45", "Monday": ["ACS4 G06", "TOC1 G05"], "Tuesday": ["FFSD1 G06", "DL 112", "AC G05"], "Wednesday": ["TOC1 G05", "TOC3 G06", "ACS4 B03", "IDA 112"], "Thursday": ["FFSD1 Lab 103", "LR4 G05"], "Friday": ["FFSD3 G06", "DL 112"], "Saturday": [] },
+    { "time": "09:45-10:45", "Monday": ["CCN1 G06", "CCN3 G07"], "Tuesday": ["FFSD1 G06", "ACS2 G09", "CCN4 G04"], "Wednesday": ["EMTL G06", "TOC2 G05", "AIKR 104"], "Thursday": ["FFSD1 Lab 103", "LR4 G05", "IDA Lab 104"], "Friday": ["ACS1 B03", "FFSD3 G06"], "Saturday": [] },
+    { "time": "10:45-11:00", "Monday": ["BREAK"], "Tuesday": ["BREAK"], "Wednesday": ["BREAK"], "Thursday": ["BREAK"], "Friday": ["BREAK"], "Saturday": [] },
+    { "time": "11:00-12:00", "Monday": ["CCN4 G05", "FFSD2 G06", "DL Lab 104"], "Tuesday": ["CCN1 G06", "TOC2 G07", "TOC3 G05"], "Wednesday": ["AC Lab 102/114", "DL Lab 106", "FFSD3 G06"], "Thursday": ["ACS3 G05", "FCOMM G06"], "Friday": ["AC G06", "AIKR 104", "AI2 G05"], "Saturday": [] },
+    { "time": "12:00-13:00", "Monday": ["FFSD2 G06", "EMTL B03", "DL Lab 104"], "Tuesday": ["AIKR 104"], "Wednesday": ["AC Lab 102/114", "DL Lab 106", "AI1 G05", "AI3 G06"], "Thursday": ["AI2 G06", "AI3 G07", "AI1 G04"], "Friday": ["TOC1 G06", "TOC2 G04", "TOC3 G05", "FCOMM G07"], "Saturday": [] },
+    { "time": "13:00-14:00", "Monday": ["LUNCH"], "Tuesday": ["LUNCH"], "Wednesday": ["LUNCH"], "Thursday": ["LUNCH"], "Friday": ["LUNCH"], "Saturday": [] },
+    { "time": "14:15-15:15", "Monday": ["AIKR G05", "FCOMM Lab 114/102", "TOC2 G06", "AI G04"], "Tuesday": ["IDA 112", "EMTL G06", "TOC1 G07", "AI2 B03"], "Wednesday": ["FFSD3 Lab G05", "AI2 G06", "DL 112"], "Thursday": ["ACS2 B03", "CCN4 G06", "LR3 G07"], "Friday": ["FFSD1 G06", "ACS3 G07"], "Saturday": [] },
+    { "time": "15:15-16:15", "Monday": ["FCOMM Lab 114/102", "ACS1 G06", "AI3 G07", "CCN2 G05"], "Tuesday": ["CCN2 G06", "AC G05", "CCN3 G04", "AI1 G07"], "Wednesday": ["CCN1 B03", "CCN2 G06", "FFSD3 Lab G05"], "Thursday": ["EMTL G06", "LR3 G07", "FFSD2 Lab G05"], "Friday": ["CCN2 G08", "CCN4 G06", "CCN1 G05", "CCN3 G07"], "Saturday": [] },
+     { "time": "16:15-16:30", "Monday": ["BREAK"], "Tuesday": ["BREAK"], "Wednesday": ["BREAK"], "Thursday": ["BREAK"], "Friday": ["BREAK"], "Saturday": [] },
+    { "time": "16:30-17:30", "Monday": ["IDA 112", "TOC3 G05"], "Tuesday": ["FFSD2 G05", "FCOMM G06", "AI3 G04"], "Wednesday": ["Faculty Meeting"], "Thursday": ["LR1 G07", "CCN3 G06", "FFSD2 Lab G05"], "Friday": ["BTP/Honors"], "Saturday": [] },
+    { "time": "17:30-18:30", "Monday": [], "Tuesday": [], "Wednesday": ["LR2 G05"], "Thursday": ["LR1 G07"], "Friday": [], "Saturday": [] }
+];
+
+const transformTimetable = (rawTimetable: any[]) => {
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const timetable: any = {};
+    days.forEach(day => {
+        timetable[day] = rawTimetable.map(slot => ({
+            time: slot.time,
+            entries: slot[day] || []
+        }));
+    });
+    return timetable;
+};
 
 export const dummyTimetable = {
   "UG1": {
@@ -233,7 +259,7 @@ export const dummyTimetable = {
   },
   "UG2": {
     "heading": "UG-2 Timetable",
-    "timetable": { "Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": [] }
+    "timetable": transformTimetable(ug2TimetableRaw)
   },
   "UG3": {
     "heading": "UG-3 Timetable",
@@ -244,3 +270,5 @@ export const dummyTimetable = {
     "timetable": { "Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": [] }
   }
 };
+
+    
