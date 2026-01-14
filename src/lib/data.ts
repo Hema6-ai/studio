@@ -39,6 +39,7 @@ export const dummyCourses = [
   { id: 'AIV', name: 'AI and Visual Culture', abbr: 'AIV' },
   { id: 'CCN', name: 'Computer and Communication Networks', abbr: 'CCN' },
   { id: 'FSD', name: 'FSD1 – Fundamentals of FSD', abbr: 'FSD' },
+  { id: 'FFSD', name: 'FSD1 - Fundamentals of FSD', abbr: 'FFSD' },
   { id: 'AI', name: 'Artificial Intelligence', abbr: 'AI' },
   { id: 'ToC', name: 'Theory of Computation', abbr: 'ToC' },
   { id: 'AC', name: 'Analog Circuits', abbr: 'AC' },
@@ -49,7 +50,6 @@ export const dummyCourses = [
   { id: 'IDA', name: 'Introduction to Data Analysis', abbr: 'IDA' },
   { id: 'ACS', name: 'Advanced Communication Skills', abbr: 'ACS' },
   { id: 'LR', name: 'Logical and Reasoning', abbr: 'LR' },
-  { id: 'FFSD', name: 'FSD1 - Fundamentals of FSD', abbr: 'FFSD' },
   { id: 'ADA', name: 'Advanced Data Analytics', abbr: 'ADA' },
   { id: 'RL', name: 'Reinforcement Learning', abbr: 'RL' },
   { id: 'CDP', name: 'Compressed Domain Processing', abbr: 'CDP' },
@@ -75,7 +75,6 @@ export const dummyCourses = [
   { id: 'UBC', name: 'Ubiquitous Computing', abbr: 'UBC' },
   { id: 'WN', name: 'Wireless Networks', abbr: 'WN' }
 ];
-
 
 export const dummyFaculty = [
   {"id":"faculty-ps-1","name":"Dr. Mansoori","email":"ps1@iiits.in","courseName":"Probability and Statistics","courseAbbr":"PS","branch":"CSE,ECE,AIDS","section":"1","ugYear":["1"]},
@@ -132,7 +131,7 @@ export const dummyFaculty = [
   {"id":"faculty-lr-3","name":"Mrs. Shabhana Imran","email":"lr3@iiits.in","courseName":"Logical and Reasoning","courseAbbr":"LR","branch":"CSE,ECE,AIDS","section":"3","ugYear":["2"]},
   {"id":"faculty-lr-4","name":"Mrs. Shabhana Imran","email":"lr4@iiits.in","courseName":"Logical and Reasoning","courseAbbr":"LR","branch":"CSE,ECE,AIDS","section":"4","ugYear":["2"]},
   {"id":"faculty-ada-1","name":"Dr. Mainak Thakur","email":"ada@iiits.in","courseName":"Advanced Data Analytics","courseAbbr":"ADA","branch":"CSE,AIDS","section":"Common","ugYear":["3"]},
-  {"id":"faculty-dl-3-1","name":"Dr. Shaik Mohammad Rafi","email":"dl@iiits.in","courseName":"Deep Learning","courseAbbr":"DL","branch":"CSE","section":"Common","ugYear":["3"]},
+  {"id":"faculty-dl-3-1","name":"Dr. Shaik Mohammad Rafi","email":"dl-3@iiits.in","courseName":"Deep Learning","courseAbbr":"DL","branch":"CSE","section":"Common","ugYear":["3"]},
   {"id":"faculty-rl-1","name":"Dr. Arun PV","email":"rl@iiits.in","courseName":"Reinforcement Learning","courseAbbr":"RL","branch":"CSE,AIDS","section":"Common","ugYear":["3"]},
   {"id":"faculty-mot-1","name":"Dr. Mohd Shanawaz Mansoori","email":"mot@iiits.in","courseName":"Mathematical Optimization Techniques","courseAbbr":"MOT","branch":"SE,DS,PEAI","section":"Common","ugYear":["3"]},
   {"id":"faculty-fda-1","name":"Dr. Shiv Mohan","email":"fda@iiits.in","courseName":"Financial Data Analysis","courseAbbr":"FDA","branch":"SE,DS,PEAI","section":"Common","ugYear":["3"]},

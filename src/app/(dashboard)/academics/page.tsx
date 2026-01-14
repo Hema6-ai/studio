@@ -3,8 +3,6 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, where, doc } from "firebase/firestore";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -15,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { dummyCourses, dummyFaculty, dummyTimetable } from '@/lib/data';
-import { setDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TimetableDisplay } from '@/components/dashboard/timetable-display';
@@ -190,7 +187,6 @@ const FacultyForm = ({ faculty, onSave, ugYear }: { faculty?: any, onSave: (data
 
 // --- Main Dashboard Component ---
 export default function AcademicsDashboard() {
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
 
@@ -198,36 +194,26 @@ export default function AcademicsDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
-  // --- Firestore Queries ---
-  const approvedQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'medicalRequests'), where('directorApprovalStatus', '==', 'Approved')) : null, [firestore]);
-  const rejectedQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'medicalRequests'), where('directorApprovalStatus', '==', 'Rejected')) : null, [firestore]);
-  const studentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'students') : null, [firestore]);
-  const facultyQuery = useMemoFirebase(() => firestore ? collection(firestore, 'faculty') : null, [firestore]);
-
-  const { data: approvedRequests, isLoading: loadingApproved } = useCollection(approvedQuery);
-  const { data: rejectedRequests, isLoading: loadingRejected } = useCollection(rejectedQuery);
-  const { data: students, isLoading: loadingStudents } = useCollection(studentsQuery);
-  const { data: faculty, isLoading: loadingFaculty } = useCollection(facultyQuery);
+  // --- Data from dummy file ---
+  const [students, setStudents] = useState<any[]>([]); // This would be fetched
+  const [faculty, setFaculty] = useState(dummyFaculty);
+  const approvedRequests: any[] = []; // This would be fetched
+  const rejectedRequests: any[] = []; // This would be fetched
+  const loadingApproved = false;
+  const loadingRejected = false;
+  const loadingStudents = false;
+  const loadingFaculty = false;
 
 
   // --- Student Management Logic ---
   const handleSaveStudent = (studentData: any) => {
-    if (!firestore) return;
-    const studentRef = doc(firestore, 'students', studentData.id || doc(collection(firestore, 'students')).id);
-    const { id, ...dataToSave } = studentData;
-    if (studentData.id) {
-        setDocumentNonBlocking(studentRef, dataToSave, { merge: true });
-    } else {
-        addDocumentNonBlocking(collection(firestore, 'students'), dataToSave);
-    }
+    // This is a placeholder for actual save logic
     toast({ title: "Success", description: `Student ${studentData.id ? 'updated' : 'added'} successfully.` });
   };
   
   const handleDeleteStudent = (studentId: string) => {
-    if(!firestore) return;
     if(window.confirm("Are you sure you want to delete this student?")) {
-        const studentRef = doc(firestore, 'students', studentId);
-        deleteDocumentNonBlocking(studentRef);
+        // This is a placeholder for actual delete logic
         toast({ title: "Success", description: "Student deleted successfully." });
     }
   };
@@ -243,27 +229,23 @@ export default function AcademicsDashboard() {
   }, [students]);
 
   // --- Faculty Management Logic ---
-  const handleSaveFaculty = (facultyData: any) => {
-    if (!firestore) return;
-    const facultyCollection = collection(firestore, 'faculty');
-    if (facultyData.id) {
-        const facultyRef = doc(firestore, 'faculty', facultyData.id);
-        const { id, ...dataToSave } = facultyData;
-        setDocumentNonBlocking(facultyRef, dataToSave, { merge: true });
-    } else {
-        addDocumentNonBlocking(facultyCollection, facultyData);
-    }
-    toast({ title: "Success", description: `Faculty ${facultyData.id ? 'updated' : 'added'} successfully.` });
-  };
+    const handleSaveFaculty = (facultyData: any) => {
+        const newFaculty = { ...facultyData, id: facultyData.id || `faculty-${Date.now()}` };
+        if (facultyData.id) {
+            setFaculty(faculty.map(f => f.id === facultyData.id ? newFaculty : f));
+        } else {
+            setFaculty([...faculty, newFaculty]);
+        }
+        toast({ title: "Success", description: `Faculty ${facultyData.id ? 'updated' : 'added'} successfully.` });
+    };
 
-  const handleDeleteFaculty = (facultyId: string) => {
-    if(!firestore) return;
-    if(window.confirm("Are you sure you want to delete this faculty member?")) {
-        const facultyRef = doc(firestore, 'faculty', facultyId);
-        deleteDocumentNonBlocking(facultyRef);
-        toast({ title: "Success", description: "Faculty member deleted successfully." });
-    }
-  };
+    const handleDeleteFaculty = (facultyId: string) => {
+        if (window.confirm("Are you sure you want to delete this faculty member?")) {
+            setFaculty(faculty.filter(f => f.id !== facultyId));
+            toast({ title: "Success", description: "Faculty member deleted successfully." });
+        }
+    };
+
 
   const facultyByYear = useMemo(() => {
     const groups: { [key: string]: any[] } = {};
