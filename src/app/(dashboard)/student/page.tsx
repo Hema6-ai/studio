@@ -41,6 +41,7 @@ import {
     Clock,
     Search,
     Send,
+    User,
   } from "lucide-react";
   import { dummyAnnouncements, dummyTimetable } from "@/lib/data";
   import Image from "next/image";
@@ -150,6 +151,37 @@ import {
             </CardDescription>
           </CardHeader>
         </Card>
+
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" /> Student Profile
+                </CardTitle>
+                <CardDescription>Your academic information at a glance.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {studentLoading ? <p>Loading profile...</p> : student ? (
+                    <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Name:</span>
+                            <span className="font-medium">{student.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Student ID:</span>
+                            <span className="font-medium">{student.studentId}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Branch:</span>
+                            <span className="font-medium">{student.branch}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Year:</span>
+                            <span className="font-medium">UG-{student.ugYear}</span>
+                        </div>
+                    </div>
+                ) : <p>Could not load student profile.</p>}
+            </CardContent>
+        </Card>
   
         <Card className="lg:col-span-2" id="schedule">
           <CardHeader>
@@ -184,22 +216,6 @@ import {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2" id="burnout">
-          <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5"/>
-                Burnout Detection
-              </CardTitle>
-              <CardDescription>Continuous study for 4 hours detected. Remember to take a break!</CardDescription>
-          </CardHeader>
-          <CardContent>
-              <div className="p-6 bg-accent/20 rounded-lg text-center">
-                  <p className="font-medium">"The mind is a garden; it needs its seasons of rest."</p>
-                  <Button variant="link" className="mt-2">Stretch your legs</Button>
-              </div>
-          </CardContent>
-        </Card>
-  
         <Card className="lg:col-span-4" id="schedule-planner">
           <CardHeader>
             <CardTitle>AI Schedule Planner</CardTitle>
@@ -347,5 +363,3 @@ import {
     );
   }
   
-
-    
