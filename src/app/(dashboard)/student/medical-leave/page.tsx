@@ -10,11 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FileUp, CheckCircle, Clock, XCircle, Shield, Building, AlertTriangle } from "lucide-react";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { FileUp, CheckCircle, Clock, XCircle, Shield, Building, AlertTriangle, UserCheck } from "lucide-react";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { collection } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,33 +25,38 @@ export default function MedicalLeavePage() {
   const [age, setAge] = useState('');
   const [ugNumber, setUgNumber] = useState('');
 
-  // Let's assume for now the user has only one medical request for simplicity.
-  // A real app would have a list of requests and a way to select one.
-  const medicalRequestRef = useMemoFirebase(() => {
+  const medicalRequestsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // This is not a robust way to get a user's *latest* request.
-    // We are querying the whole collection and will just display the first result.
-    // In a real app, you would query for requests where studentId === user.uid
-    return doc(collection(firestore, "medicalRequests"), user.uid); // This is not correct for getting a specific request
+    return query(collection(firestore, "medicalRequests"), where("studentId", "==", user.uid));
   }, [firestore, user]);
 
-  const { data: medicalRequestStatus, isLoading } = useDoc(medicalRequestRef);
-
+  const { data: medicalRequests, isLoading } = useCollection(medicalRequestsQuery);
+  const medicalRequestStatus = medicalRequests?.[0]; // Get the most recent one for this demo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if(!firestore || !user) return;
 
+    if (medicalRequestStatus && !medicalRequestStatus.directorApprovalStatus && !medicalRequestStatus.doctorVerificationStatus?.includes('Rejected')) {
+        toast({
+            variant: "destructive",
+            title: "Existing Request Pending",
+            description: "You already have a medical leave request in progress."
+        });
+        return;
+    }
+
     const requestData = {
         studentId: user.uid,
+        studentName: user.displayName || user.email, // Save name for easy display
         age: Number(age),
         ugNumber: ugNumber,
         dateRequested: new Date().toISOString(),
         timeRequested: new Date().toISOString(),
-        medicalDocuments: [], // Placeholder
+        medicalDocuments: [], // Placeholder for uploaded file URLs
         statusUpdates: ['Student Applied'],
-        doctorVerificationStatus: null,
-        directorApprovalStatus: null,
+        doctorVerificationStatus: null, // null | 'Approved' | 'Rejected'
+        directorApprovalStatus: null, // null | 'Approved' | 'Rejected'
         rejectionReason: null
     };
 
@@ -63,6 +67,9 @@ export default function MedicalLeavePage() {
         title: "Success",
         description: "Medical leave request submitted successfully."
     });
+    // Clear form
+    setAge('');
+    setUgNumber('');
   }
 
   const getStatusIcon = (isComplete: boolean, isApproved?: boolean | null, isCurrent?: boolean) => {
@@ -99,7 +106,7 @@ export default function MedicalLeavePage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="student-name">Student Name</Label>
-                <Input id="student-name" value={user?.displayName || 'Loading...'} readOnly />
+                <Input id="student-name" value={user?.displayName || user?.email || 'Loading...'} readOnly />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="age">Age</Label>
@@ -124,7 +131,7 @@ export default function MedicalLeavePage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" type="submit">Submit Request</Button>
+            <Button className="w-full" type="submit" disabled={isLoading}>Submit Request</Button>
           </CardFooter>
           </form>
         </Card>
@@ -137,7 +144,7 @@ export default function MedicalLeavePage() {
                 <CardDescription>Track your medical leave request through the approval process.</CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoading && <p>Loading status...</p>}
+                {isLoading && <p className="text-muted-foreground text-center">Loading status...</p>}
                 {!hasApplied && !isLoading && <p className="text-muted-foreground text-center">Submit a request to see its status here.</p>}
                 
                 {hasApplied && medicalRequestStatus && (
@@ -172,7 +179,7 @@ export default function MedicalLeavePage() {
                     </div>
                     
                     {(doctorRejected || directorRejected) && (
-                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center flex flex-col items-center gap-2">
+                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center flex flex-col items-center gap-2 mt-4">
                             <AlertTriangle className="h-6 w-6 text-red-600" />
                             <p className="text-sm text-red-700 font-semibold">Your request was rejected.</p>
                              {medicalRequestStatus.rejectionReason && <p className="text-xs text-red-600 mt-1">Reason: {medicalRequestStatus.rejectionReason}</p>}

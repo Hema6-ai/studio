@@ -26,7 +26,7 @@ export function NavMenu({ role }: { role: UserRole }) {
     return (
         <nav className="flex flex-col h-full">
             <div className="flex-1 p-4">
-                <Accordion type="single" collapsible defaultValue={activeParent?.key}>
+                <Accordion type="single" collapsible defaultValue={activeParent?.key} className="w-full">
                     <ul className="grid items-start gap-1">
                         {links.map((link) => {
                             if (isNavLinkParent(link)) {

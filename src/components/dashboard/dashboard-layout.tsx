@@ -23,11 +23,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const role = pathname.split('/')[1] as UserRole;
   
   const isSubPage = pathname.split('/').length > 2;
-  const layoutClass = !isSubPage || role !== 'student' ? 'sm:pl-64' : '';
+  // Conditional class to avoid extra padding on student sub-pages which have their own layout
+  const mainContentClass = role === 'student' && isSubPage ? '' : 'sm:pl-64';
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      {(!isSubPage || role !== 'student') && (
+       {/* Main sidebar - hidden on student sub-pages */}
+      {!(role === 'student' && isSubPage) && (
          <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-background sm:flex">
             <div className="flex h-16 items-center gap-2 border-b px-6">
                 <Link href="/" className="flex items-center gap-2 font-semibold">
@@ -39,7 +41,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </aside>
       )}
      
-      <div className={`flex flex-col sm:gap-4 sm:py-4 ${layoutClass}`}>
+      <div className={`flex flex-col sm:gap-4 sm:py-4 ${mainContentClass}`}>
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
           <Sheet>
             <SheetTrigger asChild>
@@ -48,7 +50,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="sm:max-w-xs">
+            <SheetContent side="left" className="sm:max-w-xs p-0">
                 <div className="flex h-16 items-center gap-2 border-b px-6">
                     <Link href="/" className="flex items-center gap-2 font-semibold">
                         <Logo className="h-6 w-6 text-primary" />
