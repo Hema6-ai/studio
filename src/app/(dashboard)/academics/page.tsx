@@ -165,7 +165,7 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
                 {faculty ? (
                     <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
                 ) : (
-                    <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Faculty</Button>
+                    <Button size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Add Faculty</Button>
                 )}
             </DialogTrigger>
             <DialogContent>
@@ -255,8 +255,8 @@ export default function AcademicsDashboard() {
     if (!firestore) return;
     const studentId = studentData.id || doc(collection(firestore, 'students')).id;
     const studentRef = doc(firestore, 'students', studentId);
-    const dataToSave = { ...studentData, id: studentId };
-    delete dataToSave.id; // Don't save the id within the document itself
+    // Don't save the id within the document itself
+    const { id, ...dataToSave } = studentData;
     setDocumentNonBlocking(studentRef, dataToSave, { merge: true });
     toast({ title: "Success", description: `Student ${studentData.id ? 'updated' : 'added'} successfully.` });
   };
@@ -285,8 +285,7 @@ export default function AcademicsDashboard() {
     if (!firestore) return;
     const facultyId = facultyData.id || doc(collection(firestore, 'faculty')).id;
     const facultyRef = doc(firestore, 'faculty', facultyId);
-    const dataToSave = { ...facultyData, id: facultyId };
-    delete dataToSave.id;
+    const { id, ...dataToSave } = facultyData;
     setDocumentNonBlocking(facultyRef, dataToSave, { merge: true });
     toast({ title: "Success", description: `Faculty ${facultyData.id ? 'updated' : 'added'} successfully.` });
   };
@@ -299,6 +298,26 @@ export default function AcademicsDashboard() {
         toast({ title: "Success", description: "Faculty member deleted successfully." });
     }
   };
+
+  const facultyByGroup = useMemo(() => {
+    const groups: { [key: string]: any[] } = {};
+    faculty?.forEach(f => {
+        const branches = f.branch.split(',').map((b: string) => b.trim());
+        const years = f.ugYear;
+        
+        branches.forEach((branch: string) => {
+            years.forEach((year: string) => {
+                const key = `${branch}-UG${year}`;
+                if (!groups[key]) groups[key] = [];
+                // Avoid duplicates if a faculty is somehow listed twice for same group
+                if (!groups[key].find(existing => existing.id === f.id)) {
+                    groups[key].push(f);
+                }
+            });
+        });
+    });
+    return groups;
+  }, [faculty]);
 
   // --- Filtering for Medical Records ---
   const filterRequests = (requests: any[]) => {
@@ -429,48 +448,59 @@ export default function AcademicsDashboard() {
         </TabsContent>
 
         <TabsContent value="faculty" id="faculty">
-             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
+            <Card>
+                <CardHeader>
                     <CardTitle>Faculty Management</CardTitle>
-                    <CardDescription>View and manage faculty assignments and details.</CardDescription>
-                  </div>
-                  <FacultyForm onSave={handleSaveFaculty} />
+                    <CardDescription>View and manage faculty assignments by branch and year.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Courses</TableHead>
-                                <TableHead>UG Year(s)</TableHead>
-                                <TableHead>Branch</TableHead>
-                                <TableHead>Section</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                           {loadingFaculty && <TableRow><TableCell colSpan={7}>Loading...</TableCell></TableRow>}
-                            {!loadingFaculty && faculty?.length === 0 && <TableRow><TableCell colSpan={7} className="text-center">No faculty found.</TableCell></TableRow>}
-                            {faculty?.map(f => (
-                                <TableRow key={f.id}>
-                                    <TableCell>{f.name}</TableCell>
-                                    <TableCell>{f.email}</TableCell>
-                                    <TableCell>{Array.isArray(f.courses) ? f.courses.join(', ') : ''}</TableCell>
-                                    <TableCell>{Array.isArray(f.ugYear) ? f.ugYear.join(', ') : ''}</TableCell>
-                                    <TableCell>{f.branch}</TableCell>
-                                    <TableCell>{f.section}</TableCell>
-                                    <TableCell className="flex gap-2">
-                                        <FacultyForm faculty={f} onSave={handleSaveFaculty} />
-                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(f.id)}><Trash2 className="h-4 w-4 text-red-500"/></Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                     {branches.map(branch => (
+                        <div key={branch} className="mb-8">
+                            <h3 className="text-xl font-semibold mb-4 border-b pb-2">{branch}</h3>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {years.map(year => {
+                                    const groupKey = `${branch}-UG${year}`;
+                                    const groupFaculty = facultyByGroup[groupKey] || [];
+                                    return (
+                                        <Card key={groupKey}>
+                                            <CardHeader className="flex flex-row items-center justify-between">
+                                                <CardTitle className="text-lg">UG {year}</CardTitle>
+                                                <FacultyForm onSave={handleSaveFaculty} />
+                                            </CardHeader>
+                                            <CardContent>
+                                                {loadingFaculty ? <p>Loading...</p> : (
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Name</TableHead>
+                                                            <TableHead>Courses</TableHead>
+                                                            <TableHead>Actions</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {groupFaculty.length === 0 && <TableRow><TableCell colSpan={3} className="text-center">No faculty found.</TableCell></TableRow>}
+                                                        {groupFaculty.map(f => (
+                                                            <TableRow key={f.id}>
+                                                                <TableCell>{f.name}</TableCell>
+                                                                <TableCell>{Array.isArray(f.courses) ? f.courses.join(', ') : ''}</TableCell>
+                                                                <TableCell className="flex gap-2">
+                                                                     <FacultyForm faculty={f} onSave={handleSaveFaculty} />
+                                                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(f.id)}><Trash2 className="h-4 w-4 text-red-500"/></Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
                 </CardContent>
-             </Card>
+            </Card>
         </TabsContent>
 
         <TabsContent value="timetables" id="timetables">
@@ -581,5 +611,3 @@ export default function AcademicsDashboard() {
     </Tabs>
   );
 }
-
-    
