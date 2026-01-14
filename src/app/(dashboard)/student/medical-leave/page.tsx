@@ -16,6 +16,8 @@ import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { collection, query, where } from "firebase/firestore";
 import React, { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 
 export default function MedicalLeavePage() {
   const { user } = useUser();
@@ -28,6 +30,7 @@ export default function MedicalLeavePage() {
   const [ugNumber, setUgNumber] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
 
   const medicalRequestsQuery = useMemoFirebase(() => {
@@ -48,9 +51,10 @@ export default function MedicalLeavePage() {
     fileInputRef.current?.click();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if(!firestore || !user) return;
+    setIsSubmitting(true);
 
     if (medicalRequestStatus && !medicalRequestStatus.directorApprovalStatus && !medicalRequestStatus.doctorVerificationStatus?.includes('Rejected')) {
         toast({
@@ -58,6 +62,7 @@ export default function MedicalLeavePage() {
             title: "Existing Request Pending",
             description: "You already have a medical leave request in progress."
         });
+        setIsSubmitting(false);
         return;
     }
 
@@ -67,6 +72,30 @@ export default function MedicalLeavePage() {
             title: "No File Selected",
             description: "Please upload your medical document.",
         });
+        setIsSubmitting(false);
+        return;
+    }
+
+    let fileURL = '';
+    try {
+        const storage = getStorage();
+        // Create a storage reference
+        const storageRef = ref(storage, `medical-documents/${user.uid}/${selectedFile.name}`);
+        
+        // Upload file
+        const snapshot = await uploadBytes(storageRef, selectedFile);
+        
+        // Get download URL
+        fileURL = await getDownloadURL(snapshot.ref);
+
+    } catch (error) {
+        console.error("Error uploading file: ", error);
+        toast({
+            variant: "destructive",
+            title: "File Upload Failed",
+            description: "Could not upload your medical document. Please try again.",
+        });
+        setIsSubmitting(false);
         return;
     }
 
@@ -77,7 +106,7 @@ export default function MedicalLeavePage() {
         ugNumber: ugNumber,
         dateRequested: new Date().toISOString(),
         timeRequested: new Date().toISOString(),
-        medicalDocuments: [selectedFile.name], // In a real app, you'd upload this to storage and save the URL
+        medicalDocuments: [fileURL], // Save the URL of the uploaded file
         statusUpdates: ['Student Applied'],
         doctorVerificationStatus: null, // null | 'Approved' | 'Rejected'
         directorApprovalStatus: null, // null | 'Approved' | 'Rejected'
@@ -97,6 +126,7 @@ export default function MedicalLeavePage() {
     setAge('');
     setUgNumber('');
     setSelectedFile(null);
+    setIsSubmitting(false);
   }
 
   const getStatusIcon = (isComplete: boolean, isApproved?: boolean | null, isCurrent?: boolean) => {
@@ -176,7 +206,9 @@ export default function MedicalLeavePage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" type="submit" disabled={isLoading}>Submit Request</Button>
+            <Button className="w-full" type="submit" disabled={isLoading || isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit Request'}
+            </Button>
           </CardFooter>
           </form>
         </Card>

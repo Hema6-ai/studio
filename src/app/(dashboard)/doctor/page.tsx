@@ -78,6 +78,12 @@ export default function DoctorDashboard() {
     });
   };
 
+  const handleViewDocuments = (documentUrl: string) => {
+    if(documentUrl) {
+      window.open(documentUrl, '_blank');
+    }
+  };
+
   return (
     <div className="grid gap-6">
         <Card>
@@ -181,7 +187,7 @@ export default function DoctorDashboard() {
                             <p className="text-sm"><strong>UG Number:</strong> {request.ugNumber}</p>
                             <p className="text-sm"><strong>Age:</strong> {request.age}</p>
                             <p className="text-sm"><strong>Requested:</strong> {new Date(request.dateRequested).toLocaleString()}</p>
-                            <Button variant="outline" className="w-full">
+                            <Button variant="outline" className="w-full" onClick={() => handleViewDocuments(request.medicalDocuments[0])}>
                                 <Folder className="mr-2 h-4 w-4"/> View Medical Documents
                             </Button>
                         </CardContent>
