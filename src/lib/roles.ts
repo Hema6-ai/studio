@@ -11,33 +11,33 @@ export const ROLES = {
 
 
 export function getRoleFromEmail(email: string): UserRole {
-  if (typeof email !== 'string') {
-    return null;
-  }
-  
-  if (!email.endsWith('@iiits.in')) {
-    return null;
+  if (typeof email !== 'string' || !email.endsWith('@iiits.in')) {
+    return null; // Not a valid institutional email
   }
 
   const lowerCaseEmail = email.toLowerCase();
 
+  // Rule 1: Director
   if (lowerCaseEmail === 'director@iiits.in') {
     return ROLES.DIRECTOR;
   }
-  
-  if (lowerCaseEmail.startsWith('academics')) {
+
+  // Rule 2: Academic Office
+  if (lowerCaseEmail.includes('academic') || lowerCaseEmail.includes('academics')) {
     return ROLES.ACADEMICS;
   }
 
+  // Rule 3: Doctor
   if (lowerCaseEmail.includes('doctor')) {
     return ROLES.DOCTOR;
   }
 
+  // Rule 4: Student
   const studentRegex = /\.p\d{2}@iiits\.in$/;
   if (studentRegex.test(lowerCaseEmail)) {
     return ROLES.STUDENT;
   }
 
-  // If it's none of the above, it's faculty by default
+  // Rule 5: Faculty (as the default for any other @iiits.in email)
   return ROLES.FACULTY;
 }
