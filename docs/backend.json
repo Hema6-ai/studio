@@ -6,69 +6,19 @@
       "type": "object",
       "description": "Represents a medical leave request submitted by a student.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the medical request."
-        },
-        "studentId": {
-          "type": "string",
-          "description": "Reference to the Student who submitted the request. (Relationship: Student 1:N MedicalRequest)"
-        },
-        "age": {
-          "type": "number",
-          "description": "Age of the student at the time of the request."
-        },
-        "ugNumber": {
-          "type": "string",
-          "description": "UG (Undergraduate) number of the student."
-        },
-        "dateRequested": {
-          "type": "string",
-          "description": "Date the medical leave was requested.",
-          "format": "date-time"
-        },
-        "timeRequested": {
-          "type": "string",
-          "description": "Time the medical leave was requested.",
-          "format": "date-time"
-        },
-        "medicalDocuments": {
-          "type": "array",
-          "description": "Array of URIs to the uploaded medical documents.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "statusUpdates": {
-          "type": "array",
-          "description": "Array of status updates for the medical request.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "doctorVerificationStatus": {
-          "type": "string",
-          "description": "The approval/rejection status from the doctor who is in charge of the document. For example, Approved, Rejected."
-        },
-        "directorApprovalStatus": {
-          "type": "string",
-          "description": "The approval/rejection status from the director after the doctor's initial approval. For example, Approved, Rejected."
-        },
-        "rejectionReason": {
-          "type": "string",
-          "description": "Reason for rejection, if the request was rejected by the doctor or director.  May be null."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the medical request." },
+        "studentId": { "type": "string", "description": "Reference to the Student who submitted the request. (Relationship: Student 1:N MedicalRequest)" },
+        "age": { "type": "number", "description": "Age of the student at the time of the request." },
+        "ugNumber": { "type": "string", "description": "UG (Undergraduate) number of the student." },
+        "dateRequested": { "type": "string", "description": "Date the medical leave was requested.", "format": "date-time" },
+        "timeRequested": { "type": "string", "description": "Time the medical leave was requested.", "format": "date-time" },
+        "medicalDocuments": { "type": "array", "description": "Array of URIs to the uploaded medical documents.", "items": { "type": "string" } },
+        "statusUpdates": { "type": "array", "description": "Array of status updates for the medical request.", "items": { "type": "string" } },
+        "doctorVerificationStatus": { "type": "string", "description": "The approval/rejection status from the doctor who is in charge of the document. For example, Approved, Rejected." },
+        "directorApprovalStatus": { "type": "string", "description": "The approval/rejection status from the director after the doctor's initial approval. For example, Approved, Rejected." },
+        "rejectionReason": { "type": "string", "description": "Reason for rejection, if the request was rejected by the doctor or director.  May be null." }
       },
-      "required": [
-        "id",
-        "studentId",
-        "age",
-        "ugNumber",
-        "dateRequested",
-        "timeRequested",
-        "medicalDocuments",
-        "statusUpdates"
-      ]
+      "required": ["id", "studentId", "age", "ugNumber", "dateRequested", "timeRequested", "medicalDocuments", "statusUpdates"]
     },
     "DoctorAvailability": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -76,19 +26,10 @@
       "type": "object",
       "description": "Represents a doctor's availability status.",
       "properties": {
-        "doctorId": {
-          "type": "string",
-          "description": "Reference to the Doctor. (Relationship: Doctor 1:1 DoctorAvailability)"
-        },
-        "availabilityStatus": {
-          "type": "string",
-          "description": "Availability status of the doctor (e.g., Available, Not Available, Nurse Available, On Leave)."
-        }
+        "doctorId": { "type": "string", "description": "Reference to the Doctor. (Relationship: Doctor 1:1 DoctorAvailability)" },
+        "availabilityStatus": { "type": "string", "description": "Availability status of the doctor (e.g., Available, Not Available, Nurse Available, On Leave)." }
       },
-      "required": [
-        "doctorId",
-        "availabilityStatus"
-      ]
+      "required": ["doctorId", "availabilityStatus"]
     },
     "FacultyAvailability": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -96,18 +37,9 @@
       "type": "object",
       "description": "Represents a faculty member's availability status.",
       "properties": {
-        "name": {
-          "type": "string",
-          "description": "The name of the faculty member, used as the document ID."
-        },
-        "status": {
-          "type": "string",
-          "description": "Availability status (e.g., YES, NO)."
-        },
-        "role": {
-            "type": "string",
-            "description": "The role of the person (e.g. Faculty)."
-        }
+        "name": { "type": "string", "description": "The name of the faculty member, used as the document ID." },
+        "status": { "type": "string", "description": "Availability status (e.g., YES, NO)." },
+        "role": { "type": "string", "description": "The role of the person (e.g. Faculty)." }
       },
       "required": ["name", "status", "role"]
     },
@@ -116,12 +48,7 @@
       "title": "AcademicOfficeAvailability",
       "type": "object",
       "description": "Represents the global availability of the Academic Office.",
-      "properties": {
-        "status": {
-          "type": "string",
-          "description": "Global availability status for the office (e.g., YES, NO)."
-        }
-      },
+      "properties": { "status": { "type": "string", "description": "Global availability status for the office (e.g., YES, NO)." } },
       "required": ["status"]
     },
     "Student": {
@@ -130,65 +57,27 @@
       "type": "object",
       "description": "Represents a student entity.",
       "properties": {
-        "name": {
-          "type": "string",
-          "description": "The full name of the student."
-        },
-        "studentId": {
-          "type": "string",
-          "description": "Unique student identifier, used as document ID."
-        },
-        "ugYear": {
-          "type": "number",
-          "description": "The student's undergraduate year (1-4)."
-        },
-        "branch": {
-          "type": "string",
-          "description": "The student's branch (e.g., CSE, ECE, AIDS)."
-        },
-        "email": {
-          "type": "string",
-          "description": "The student's institutional email address.",
-          "format": "email"
-        },
+        "name": { "type": "string", "description": "The full name of the student." },
+        "studentId": { "type": "string", "description": "Unique student identifier, used as document ID." },
+        "ugYear": { "type": "number", "description": "The student's undergraduate year (1-4)." },
+        "branch": { "type": "string", "description": "The student's branch (e.g., CSE, ECE, AIDS)." },
+        "email": { "type": "string", "description": "The student's institutional email address.", "format": "email" },
         "enrolledCourses": {
           "type": "array",
           "description": "List of courses the student is enrolled in.",
           "items": {
             "type": "object",
             "properties": {
-              "courseAbbr": {
-                "type": "string",
-                "description": "The abbreviation of the course (e.g., DSA, PS)."
-              },
-              "section": {
-                "type": "string",
-                "description": "The section number or 'Common'."
-              }
+              "courseAbbr": { "type": "string", "description": "The abbreviation of the course (e.g., DSA, PS)." },
+              "section": { "type": "string", "description": "The section number or 'Common'." }
             },
             "required": ["courseAbbr", "section"]
           }
         },
-        "createdBy": {
-            "type": "string",
-            "description": "Identifier for who created the record."
-        },
-        "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Timestamp of when the record was created."
-        }
+        "createdBy": { "type": "string", "description": "Identifier for who created the record." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the record was created." }
       },
-      "required": [
-        "name",
-        "studentId",
-        "ugYear",
-        "branch",
-        "email",
-        "enrolledCourses",
-        "createdBy",
-        "createdAt"
-      ]
+      "required": ["name", "studentId", "ugYear", "branch", "email", "enrolledCourses", "createdBy", "createdAt"]
     },
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -196,31 +85,12 @@
       "type": "object",
       "description": "Represents a user entity.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the user."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address.",
-          "format": "email"
-        },
-        "role": {
-          "type": "string",
-          "description": "The user's role (e.g., student, doctor, director, academic_office)."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "The date and time the user account was created.",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the user." },
+        "email": { "type": "string", "description": "The user's email address.", "format": "email" },
+        "role": { "type": "string", "description": "The user's role (e.g., student, doctor, director, academic_office)." },
+        "createdAt": { "type": "string", "description": "The date and time the user account was created.", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "email",
-        "role",
-        "createdAt"
-      ]
+      "required": ["id", "email", "role", "createdAt"]
     },
     "Doctor": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -228,37 +98,30 @@
       "type": "object",
       "description": "Represents a doctor entity.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the doctor."
-        },
-        "subjectsHandled": {
-          "type": "array",
-          "description": "List of subjects handled by the doctor.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "schedule": {
-          "type": "string",
-          "description": "The doctor's schedule."
-        },
-        "availability": {
-          "type": "string",
-          "description": "The doctor's availability status."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:1 Doctor)"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the doctor." },
+        "subjectsHandled": { "type": "array", "description": "List of subjects handled by the doctor.", "items": { "type": "string" } },
+        "schedule": { "type": "string", "description": "The doctor's schedule." },
+        "availability": { "type": "string", "description": "The doctor's availability status." },
+        "userId": { "type": "string", "description": "Reference to User. (Relationship: User 1:1 Doctor)" }
       },
-      "required": [
-        "id",
-        "subjectsHandled",
-        "schedule",
-        "availability",
-        "userId"
-      ]
+      "required": ["id", "subjectsHandled", "schedule", "availability", "userId"]
+    },
+    "Curriculum": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Curriculum",
+      "type": "object",
+      "description": "Represents a single course within a curriculum.",
+      "properties": {
+        "branch": { "type": "string", "description": "The branch this course belongs to (CSE, ECE, AIDS)." },
+        "ugYear": { "type": "number", "description": "The undergraduate year (1-4)." },
+        "courseAbbr": { "type": "string", "description": "The course abbreviation (e.g., DL, RL)." },
+        "courseName": { "type": "string", "description": "The full name of the course." },
+        "courseType": { "type": "string", "description": "Type of course (Institute Core, Program Core, etc.)." },
+        "semester": { "type": "string", "description": "The semester the course is offered in." },
+        "credits": { "type": "number", "description": "The number of credits for the course." },
+        "description": { "type": "string", "description": "A brief description of the course." }
+      },
+      "required": ["branch", "ugYear", "courseAbbr", "courseName", "courseType"]
     }
   },
   "auth": {
@@ -269,108 +132,15 @@
   },
   "firestore": {
     "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profile information. Includes denormalized data to facilitate role-based access control.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/medicalRequests/{medicalRequestId}",
-        "definition": {
-          "entityName": "MedicalRequest",
-          "schema": {
-            "$ref": "#/backend/entities/MedicalRequest"
-          },
-          "description": "Stores medical requests submitted by students.  This path enforces ownership and simplifies security rules ensuring only the student and authorized roles can access the request.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user (student)."
-            },
-            {
-              "name": "medicalRequestId",
-              "description": "The unique identifier of the medical request."
-            }
-          ]
-        }
-      },
-       {
-        "path": "/availability/faculty/{facultyName}",
-        "definition": {
-          "entityName": "FacultyAvailability",
-          "schema": { "$ref": "#/backend/entities/FacultyAvailability" },
-          "description": "Stores availability for individual faculty members.",
-           "params": [{ "name": "facultyName", "description": "The name of the faculty member." }]
-        }
-      },
-      {
-        "path": "/availability/academic",
-        "definition": {
-          "entityName": "AcademicOfficeAvailability",
-          "schema": { "$ref": "#/backend/entities/AcademicOfficeAvailability" },
-          "description": "Stores global availability for the Academic Office."
-        }
-      },
-      {
-        "path": "/doctors/{doctorId}/availability",
-        "definition": {
-          "entityName": "DoctorAvailability",
-          "schema": {
-            "$ref": "#/backend/entities/DoctorAvailability"
-          },
-          "description": "Stores the availability status of doctors. This collection allows students to view doctor availability in real time.",
-          "params": [
-            {
-              "name": "doctorId",
-              "description": "The unique identifier of the doctor."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/students/{studentId}",
-        "definition": {
-          "entityName": "Student",
-          "schema": {
-            "$ref": "#/backend/entities/Student"
-          },
-          "description": "Stores student profile information. The document ID is the student's unique ID.",
-          "params": [
-            {
-              "name": "studentId",
-              "description": "The unique identifier of the student."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/doctors/{doctorId}",
-        "definition": {
-          "entityName": "Doctor",
-          "schema": {
-            "$ref": "#/backend/entities/Doctor"
-          },
-          "description": "Stores doctor profile information.",
-          "params": [
-            {
-              "name": "doctorId",
-              "description": "The unique identifier of the doctor."
-            }
-          ]
-        }
-      }
+      { "path": "/users/{userId}", "definition": { "entityName": "User", "schema": { "$ref": "#/backend/entities/User" }, "description": "Stores user profile information. Includes denormalized data to facilitate role-based access control.", "params": [{ "name": "userId", "description": "The unique identifier of the user." }] } },
+      { "path": "/users/{userId}/medicalRequests/{medicalRequestId}", "definition": { "entityName": "MedicalRequest", "schema": { "$ref": "#/backend/entities/MedicalRequest" }, "description": "Stores medical requests submitted by students.  This path enforces ownership and simplifies security rules ensuring only the student and authorized roles can access the request.", "params": [{ "name": "userId", "description": "The unique identifier of the user (student)." }, { "name": "medicalRequestId", "description": "The unique identifier of the medical request." }] } },
+       { "path": "/availability/faculty/{facultyName}", "definition": { "entityName": "FacultyAvailability", "schema": { "$ref": "#/backend/entities/FacultyAvailability" }, "description": "Stores availability for individual faculty members.", "params": [{ "name": "facultyName", "description": "The name of the faculty member." }] } },
+      { "path": "/availability/academic", "definition": { "entityName": "AcademicOfficeAvailability", "schema": { "$ref": "#/backend/entities/AcademicOfficeAvailability" }, "description": "Stores global availability for the Academic Office." } },
+      { "path": "/doctors/{doctorId}/availability", "definition": { "entityName": "DoctorAvailability", "schema": { "$ref": "#/backend/entities/DoctorAvailability" }, "description": "Stores the availability status of doctors. This collection allows students to view doctor availability in real time.", "params": [{ "name": "doctorId", "description": "The unique identifier of the doctor." }] } },
+      { "path": "/students/{studentId}", "definition": { "entityName": "Student", "schema": { "$ref": "#/backend/entities/Student" }, "description": "Stores student profile information. The document ID is the student's unique ID.", "params": [{ "name": "studentId", "description": "The unique identifier of the student." }] } },
+      { "path": "/doctors/{doctorId}", "definition": { "entityName": "Doctor", "schema": { "$ref": "#/backend/entities/Doctor" }, "description": "Stores doctor profile information.", "params": [{ "name": "doctorId", "description": "The unique identifier of the doctor." }] } },
+      { "path": "/curriculums/{curriculumId}", "definition": { "entityName": "Curriculum", "schema": { "$ref": "#/backend/entities/Curriculum" }, "description": "Stores individual course details for all curricula.", "params": [{ "name": "curriculumId", "description": "The unique identifier for a curriculum entry." }] } }
     ],
-    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability for the CampusOS application, especially focusing on the Digital Medical & Document Approval System (Module 5). Key design considerations include denormalization for authorization, segregation of data based on access needs, and consistent access modeling.\n\n**Authorization Independence and QAPs:**\n\n*   **/users/{userId}/medicalRequests/{medicalRequestId}**: Medical requests are stored as subcollections under each user's document. This ensures that a student can only access their own requests, achieving path-based ownership and simplifies security rules.\n\n*   **/doctors/{doctorId}/availability**: Doctor availability is stored in a separate collection, enabling easy querying and updates to doctor availability.  This ensures that students can see doctor availability in real-time.\n\n**Structural Segregation:**\n\n*   The data is separated based on access requirements:\n    *   Student medical requests are stored under `/users/{userId}/medicalRequests/{medicalRequestId}`.\n    *   Doctor availability statuses are stored in `/doctors/{doctorId}/availability`.\n\n**Access Modeling:**\n\n*   **Private Data (Student Medical Requests):** Uses path-based ownership `/users/{userId}/medicalRequests/{medicalRequestId}` to ensure students can only access their own requests.\n\n*   **Role-Based Access Control:** The application logic determines roles based on email prefixes and domains (e.g., `doctor.name@iiits.in` for doctors). This allows for role-based access in the UI and application code.\n\nThis structure supports QAPs by:\n\n*   Enabling secure `list` operations. For example, a student can securely list only their own medical requests because of the path-based ownership.\n*   Providing clear segregation for different roles (student, doctor, director, academic office), which simplifies the implementation of Firestore security rules."
+    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability for the CampusOS application, especially focusing on the Digital Medical & Document Approval System (Module 5). Key design considerations include denormalization for authorization, segregation of data based on access needs, and consistent access modeling.\n\n**Authorization Independence and QAPs:**\n\n*   **/users/{userId}/medicalRequests/{medicalRequestId}**: Medical requests are stored as subcollections under each user's document. This ensures that a student can only access their own requests, achieving path-based ownership and simplifies security rules.\n\n*   **/doctors/{doctorId}/availability**: Doctor availability is stored in a separate collection, enabling easy querying and updates to doctor availability.  This ensures that students can see doctor availability in real-time.\n\n**Structural Segregation:**\n\n*   The data is separated based on access requirements:\n    *   Student medical requests are stored under `/users/{userId}/medicalRequests/{medicalRequestId}`.\n    *   Doctor availability statuses are stored in `/doctors/{doctorId}/availability`.\n    *   Curriculum data is stored centrally in `/curriculums` to be queried by branch and year.\n\n**Access Modeling:**\n\n*   **Private Data (Student Medical Requests):** Uses path-based ownership `/users/{userId}/medicalRequests/{medicalRequestId}` to ensure students can only access their own requests.\n\n*   **Role-Based Access Control:** The application logic determines roles based on email prefixes and domains (e.g., `doctor.name@iiits.in` for doctors). This allows for role-based access in the UI and application code.\n\nThis structure supports QAPs by:\n\n*   Enabling secure `list` operations. For example, a student can securely list only their own medical requests because of the path-based ownership.\n*   Providing clear segregation for different roles (student, doctor, director, academic office), which simplifies the implementation of Firestore security rules."
   }
 }

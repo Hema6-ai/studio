@@ -13,7 +13,8 @@ import {
   Menu,
   Briefcase,
   Stethoscope,
-  Users2
+  Users2,
+  Book,
 } from "lucide-react"
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,15 @@ export default function StudentSubLayout({ children }: { children: ReactNode }) 
     const docSubNavLinks = isNavLinkParent(docSubmissionParent) ? docSubmissionParent.subLinks : [];
     const availabilitySubLinks = isNavLinkParent(availabilityParent) ? availabilityParent.subLinks : [];
     
+    const isCurriculumPage = pathname.startsWith('/student/curriculum');
+    const isAvailabilityPage = pathname.startsWith('/student/availability');
+    const isDocSubmissionPage = pathname.startsWith('/student/medical-leave');
+    
+    // Don't show this specialized layout on the main student dashboard page
+    if (!isCurriculumPage && !isAvailabilityPage && !isDocSubmissionPage) {
+        return <>{children}</>;
+    }
+    
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
@@ -41,6 +51,16 @@ export default function StudentSubLayout({ children }: { children: ReactNode }) 
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+             <Link
+                href="/student/curriculum"
+                className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-base",
+                    isCurriculumPage && "bg-muted text-primary"
+                )}
+                >
+                <Book className="h-4 w-4" />
+                Curriculum
+              </Link>
               <Accordion type="multiple" defaultValue={['document-submission', 'availability']} className="w-full">
                 <AccordionItem value="document-submission" className="border-b-0">
                   <AccordionTrigger className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:no-underline text-base">
@@ -114,6 +134,16 @@ export default function StudentSubLayout({ children }: { children: ReactNode }) 
                 </SheetTrigger>
                 <SheetContent side="left" className="flex flex-col">
                  <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+                  <Link
+                    href="/student/curriculum"
+                    className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-base",
+                        isCurriculumPage && "bg-muted text-primary"
+                    )}
+                    >
+                    <Book className="h-5 w-5" />
+                    Curriculum
+                  </Link>
                   <Accordion type="multiple" defaultValue={['document-submission', 'availability']} className="w-full">
                     <AccordionItem value="document-submission" className="border-b-0">
                       <AccordionTrigger className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:no-underline text-base">

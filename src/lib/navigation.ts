@@ -46,6 +46,7 @@ export function isNavLinkParent(item: NavItem): item is NavLinkParent {
 export const navLinks: Record<string, NavItem[]> = {
     student: [
         { href: '/student', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/student/curriculum', label: 'Curriculum', icon: Book },
         { href: '#schedule-planner', label: 'AI Schedule Planner', icon: CalendarDays },
         { href: '#doubt-clearing', label: 'Gemini AI Chat', icon: BotMessageSquare },
         { href: '#feed', label: 'Campus Feed', icon: Newspaper },
@@ -90,6 +91,7 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '/academics#students', label: 'Students', icon: Users },
         { href: '/academics#faculty', label: 'Faculty', icon: GraduationCap },
         { href: '/academics#timetables', label: 'Timetables', icon: CalendarDays },
+        { href: '/academics/curriculum', label: 'Curriculum', icon: Book },
         { href: '/academics#medical-records', label: 'Medical Records', icon: Book },
         { href: '#', label: 'Profile', icon: User },
         { href: '/login', label: 'Logout', icon: LogOut },

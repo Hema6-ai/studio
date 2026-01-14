@@ -20,6 +20,7 @@ import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Switch } from '@/components/ui/switch';
+import Link from 'next/link';
 
 
 // --- Reusable Student Form ---
@@ -354,12 +355,15 @@ export default function AcademicsDashboard() {
                 <h1 className="text-3xl font-bold font-headline">Academic Office Dashboard</h1>
                 <p className="text-muted-foreground">Central hub for all academic operations.</p>
             </div>
-            <TabsList>
-                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                <TabsTrigger value="students">Students</TabsTrigger>
-                <TabsTrigger value="faculty">Faculty</TabsTrigger>
-                <TabsTrigger value="timetables">Timetables</TabsTrigger>
-                <TabsTrigger value="medical-records">Medical Records</TabsTrigger>
+             <TabsList>
+                 <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                 <TabsTrigger value="students">Students</TabsTrigger>
+                 <TabsTrigger value="faculty">Faculty</TabsTrigger>
+                 <TabsTrigger value="timetables">Timetables</TabsTrigger>
+                 <TabsTrigger asChild>
+                    <Link href="/academics/curriculum">Curriculum</Link>
+                 </TabsTrigger>
+                 <TabsTrigger value="medical-records">Medical Records</TabsTrigger>
             </TabsList>
         </div>
 
