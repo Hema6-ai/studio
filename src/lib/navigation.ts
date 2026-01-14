@@ -72,8 +72,15 @@ export const navLinks: Record<string, NavItem[]> = {
     ],
     academics: [
         { href: '/academics', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/academics#approved', label: 'Approved', icon: FileCheck2 },
-        { href: '/academics#rejected', label: 'Rejected', icon: FileCheck2 },
+        {
+            key: 'medical-leave',
+            label: 'Medical Leave',
+            icon: FileUp,
+            subLinks: [
+                { href: '/academics#approved', label: 'Approved', icon: FileCheck2 },
+                { href: '/academics#rejected', label: 'Rejected', icon: FileCheck2 },
+            ]
+        }
     ],
     director: [
         { href: '/director', label: 'Dashboard', icon: LayoutDashboard },
