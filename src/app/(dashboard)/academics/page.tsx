@@ -3,20 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useCollection } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
-import { useMemo } from "react";
 
 export default function AcademicsDashboard() {
   const firestore = useFirestore();
 
-  const approvedQuery = useMemo(() => {
+  const approvedQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'medicalRequests'), where('directorApprovalStatus', '==', 'Approved'));
   }, [firestore]);
 
-  const rejectedQuery = useMemo(() => {
+  const rejectedQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'medicalRequests'), where('directorApprovalStatus', '==', 'Rejected'));
   }, [firestore]);
