@@ -10,11 +10,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FileUp, CheckCircle, Clock, XCircle, Shield, Building, AlertTriangle, UserCheck } from "lucide-react";
+import { FileUp, CheckCircle, Clock, XCircle, Shield, Building, AlertTriangle, UserCheck, Paperclip } from "lucide-react";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { collection, query, where } from "firebase/firestore";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function MedicalLeavePage() {
@@ -24,6 +24,9 @@ export default function MedicalLeavePage() {
 
   const [age, setAge] = useState('');
   const [ugNumber, setUgNumber] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const medicalRequestsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -32,6 +35,16 @@ export default function MedicalLeavePage() {
 
   const { data: medicalRequests, isLoading } = useCollection(medicalRequestsQuery);
   const medicalRequestStatus = medicalRequests?.[0]; // Get the most recent one for this demo
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+        setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +59,15 @@ export default function MedicalLeavePage() {
         return;
     }
 
+    if (!selectedFile) {
+        toast({
+            variant: "destructive",
+            title: "No File Selected",
+            description: "Please upload your medical document.",
+        });
+        return;
+    }
+
     const requestData = {
         studentId: user.uid,
         studentName: user.displayName || user.email, // Save name for easy display
@@ -53,7 +75,7 @@ export default function MedicalLeavePage() {
         ugNumber: ugNumber,
         dateRequested: new Date().toISOString(),
         timeRequested: new Date().toISOString(),
-        medicalDocuments: [], // Placeholder for uploaded file URLs
+        medicalDocuments: [selectedFile.name], // In a real app, you'd upload this to storage and save the URL
         statusUpdates: ['Student Applied'],
         doctorVerificationStatus: null, // null | 'Approved' | 'Rejected'
         directorApprovalStatus: null, // null | 'Approved' | 'Rejected'
@@ -70,6 +92,7 @@ export default function MedicalLeavePage() {
     // Clear form
     setAge('');
     setUgNumber('');
+    setSelectedFile(null);
   }
 
   const getStatusIcon = (isComplete: boolean, isApproved?: boolean | null, isCurrent?: boolean) => {
@@ -124,9 +147,22 @@ export default function MedicalLeavePage() {
                 <p className="mt-4 text-sm text-muted-foreground">
                   Drag & drop files or
                 </p>
-                <Button variant="outline" className="mt-2" type="button">
+                <Input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleFileChange}
+                  accept="image/*,application/pdf"
+                />
+                <Button variant="outline" className="mt-2" type="button" onClick={handleBrowseClick}>
                   Browse Files
                 </Button>
+                {selectedFile && (
+                  <div className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-2">
+                    <Paperclip className="h-4 w-4" />
+                    <span>{selectedFile.name}</span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
