@@ -20,6 +20,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { getRoleFromEmail, UserRole } from "@/lib/roles"
 import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
+import { cn } from "@/lib/utils"
 
 const availabilityColors: Record<string, string> = {
     available: 'ring-green-500',
