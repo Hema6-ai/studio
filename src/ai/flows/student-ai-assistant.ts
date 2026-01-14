@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { campusAssistant } from './campus-assistant';
 
 const StudentAIAssistantInputSchema = z.object({
   query: z.string().describe('The question from the student.'),
@@ -21,25 +22,9 @@ const StudentAIAssistantOutputSchema = z.object({
 });
 export type StudentAIAssistantOutput = z.infer<typeof StudentAIAssistantOutputSchema>;
 
+/**
+ * @deprecated Use campusAssistant instead.
+ */
 export async function studentAIAssistant(input: StudentAIAssistantInput): Promise<StudentAIAssistantOutput> {
-  return studentAIAssistantFlow(input);
+  return campusAssistant(input);
 }
-
-const prompt = ai.definePrompt({
-  name: 'studentAIAssistantPrompt',
-  input: {schema: StudentAIAssistantInputSchema},
-  output: {schema: StudentAIAssistantOutputSchema},
-  prompt: `You are a helpful AI assistant for university students. Your goal is to answer their academic questions to the best of your ability.\n\nQuestion: {{{query}}}`,
-});
-
-const studentAIAssistantFlow = ai.defineFlow(
-  {
-    name: 'studentAIAssistantFlow',
-    inputSchema: StudentAIAssistantInputSchema,
-    outputSchema: StudentAIAssistantOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);

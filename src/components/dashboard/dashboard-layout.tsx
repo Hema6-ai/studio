@@ -16,6 +16,8 @@ import { NavMenu } from './nav-menu';
 import { Logo } from '../icons';
 import type { UserRole } from '@/lib/roles';
 import Link from 'next/link';
+import { AppLauncher } from './app-launcher';
+import { AiChat } from './ai-chat';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -68,12 +70,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
             />
           </div>
+          <AppLauncher />
           <UserNav />
         </header>
         <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
             {children}
         </main>
       </div>
+       <AiChat />
     </div>
   );
 }

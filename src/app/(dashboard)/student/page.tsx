@@ -55,7 +55,7 @@ import {
   import { cn } from "@/lib/utils";
   import { PlaceHolderImages } from "@/lib/placeholder-images";
   import { useMemo, useState } from "react";
-  import { studentAIAssistant } from "@/ai/flows/student-ai-assistant";
+  import { campusAssistant } from "@/ai/flows/campus-assistant";
   
   const parseEntry = (entry: string) => {
       const match = entry.match(/^([A-Z\d]+)-?([\w\d]+)?\s*(.*)$/);
@@ -72,13 +72,6 @@ import {
   export default function StudentDashboard() {
     const firestore = useFirestore();
     const { user } = useUser();
-
-    // AI Chat State
-    const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
-      { role: 'ai', content: "Hello! How can I help you with your studies today?" }
-    ]);
-    const [chatInput, setChatInput] = useState('');
-    const [isAiLoading, setIsAiLoading] = useState(false);
 
     const studentQuery = useMemoFirebase(() => {
         if (!firestore || !user?.email) return null;
@@ -124,26 +117,6 @@ import {
         return scheduleByDay[today] || [];
 
     }, [student]);
-
-
-    const handleAiChatSubmit = async () => {
-      if (!chatInput.trim() || isAiLoading) return;
-  
-      const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', content: chatInput }];
-      setChatHistory(newHistory);
-      setChatInput('');
-      setIsAiLoading(true);
-  
-      try {
-        const result = await studentAIAssistant({ query: chatInput });
-        setChatHistory([...newHistory, { role: 'ai', content: result.answer }]);
-      } catch (error) {
-        console.error("AI assistant error:", error);
-        setChatHistory([...newHistory, { role: 'ai', content: "Sorry, I'm having trouble connecting. Please try again later." }]);
-      } finally {
-        setIsAiLoading(false);
-      }
-    };
 
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -333,46 +306,11 @@ import {
             <CardDescription>Have a doubt? Ask our AI assistant for help.</CardDescription>
           </CardHeader>
           <CardContent>
-          <div className="h-48 overflow-y-auto p-4 border rounded-lg bg-muted/50 mb-4 space-y-4">
-              {chatHistory.map((msg, index) => (
-                <div key={index} className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                  {msg.role === 'ai' && <Avatar className="h-8 w-8"><AvatarFallback>AI</AvatarFallback></Avatar>}
-                  <div className={`p-3 rounded-lg max-w-[80%] ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}>
-                    <p className="text-sm">{msg.content}</p>
-                  </div>
-                  {msg.role === 'user' && <Avatar className="h-8 w-8"><AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback></Avatar>}
-                </div>
-              ))}
-               {isAiLoading && (
-                <div className="flex items-start gap-2">
-                    <Avatar className="h-8 w-8"><AvatarFallback>AI</AvatarFallback></Avatar>
-                    <div className="p-3 rounded-lg bg-background">
-                      <p className="text-sm text-muted-foreground">Typing...</p>
-                    </div>
-                </div>
-              )}
+            <div className="text-center text-muted-foreground">
+              <p>Your AI Assistant is now available globally!</p>
+              <p className="text-sm">Click the chat bubble at the bottom-right to start.</p>
             </div>
           </CardContent>
-          <CardFooter>
-            <div className="flex w-full items-center space-x-2">
-              <Textarea 
-                placeholder="Type your question here..." 
-                className="min-h-0"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleAiChatSubmit();
-                  }
-                }}
-                disabled={isAiLoading}
-              />
-              <Button type="submit" size="icon" onClick={handleAiChatSubmit} disabled={isAiLoading}>
-                <Send className="h-4 w-4"/>
-              </Button>
-            </div>
-          </CardFooter>
         </Card>
   
       </div>

@@ -168,7 +168,7 @@ export const dummyFaculty = [
   {"id":"faculty-soc-1","name":"Dr. V. Ramesh Kumar","email":"soc@iiits.in","courseName":"System on Chip","courseAbbr":"SOC","branch":"CSE","section":"Common","ugYear":["4"]},
   {"id":"faculty-cb-1","name":"Dr. Santhosh A","email":"cb@iiits.in","courseName":"Computational Biology","courseAbbr":"CB","branch":"CSE","section":"Common","ugYear":["4"]},
   {"id":"faculty-ubc-1","name":"Dr. Hemant Kumar","email":"ubc@iiits.in","courseName":"Ubiquitous Computing","courseAbbr":"UBC","branch":"CSE","section":"Common","ugYear":["4"]},
-  {"id":"faculty-wn-1","name":"Dr. Hrishikesh Venkataraman","email":"wn@iiits.in","courseName":"Wireless Networks","courseAbbr":"WN","branch":"CSE,ECE","section":"Common","ugYear":["4"]}
+  {"id":"faculty-wn-1","name":"Dr. Hrishikesh Venkataraman","email":"wn@iiits.in","courseName":"Wireless Networks","courseAbbr":"WN","branch":"CSE,ECE","section":"Common","ugYear":["4"]},
 ];
 
 const ug1TimetableRaw = [
@@ -558,3 +558,20 @@ export const aidsCurriculum = {
     }
   ]
 };
+
+export const googleApps = [
+    { name: 'Gmail', icon: 'https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r5.png', url: 'https://mail.google.com' },
+    { name: 'Drive', icon: 'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png', url: 'https://drive.google.com' },
+    { name: 'Docs', icon: 'https://ssl.gstatic.com/images/branding/product/1x/docs_2020q4_48dp.png', url: 'https://docs.google.com' },
+    { name: 'Sheets', icon: 'https://ssl.gstatic.com/images/branding/product/1x/sheets_2020q4_48dp.png', url: 'https://sheets.google.com' },
+    { name: 'Slides', icon: 'https://ssl.gstatic.com/images/branding/product/1x/slides_2020q4_48dp.png', url: 'https://slides.google.com' },
+    { name: 'Calendar', icon: 'https://ssl.gstatic.com/images/branding/product/1x/calendar_2020q4_48dp.png', url: 'https://calendar.google.com' },
+    { name: 'Classroom', icon: 'https://ssl.gstatic.com/images/branding/product/1x/classroom_48dp.png', url: 'https://classroom.google.com' },
+    { name: 'Meet', icon: 'https://ssl.gstatic.com/images/branding/product/1x/meet_2020q4_48dp.png', url: 'https://meet.google.com' },
+    { name: 'Chat', icon: 'https://ssl.gstatic.com/images/branding/product/1x/chat_2020q4_48dp.png', url: 'https://chat.google.com' },
+    { name: 'Gemini', icon: 'https://ssl.gstatic.com/images/branding/product/1x/gemini_48dp.png', url: 'https://gemini.google.com' },
+    { name: 'YouTube', icon: 'https://ssl.gstatic.com/images/branding/product/1x/youtube_48dp.png', url: 'https://youtube.com' },
+    { name: 'Maps', icon: 'https://ssl.gstatic.com/images/branding/product/1x/maps_2020q4_48dp.png', url: 'https://maps.google.com' },
+    { name: 'Translate', icon: 'https://ssl.gstatic.com/images/branding/product/1x/translate_48dp.png', url: 'https://translate.google.com' },
+    { name: 'Photos', icon: 'https://ssl.gstatic.com/images/branding/product/1x/photos_2020q4_48dp.png', url: 'https://photos.google.com' },
+];
