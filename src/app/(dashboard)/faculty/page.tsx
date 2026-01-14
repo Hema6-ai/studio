@@ -1,5 +1,4 @@
 'use client';
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -19,20 +18,30 @@ export default function FacultyDashboard() {
     const facultyAvailabilityRef = useMemoFirebase(() => {
         if (!firestore || !facultyName) return null;
         // Use faculty name as the document ID. This assumes names are unique.
-        return doc(firestore, 'availability/faculty', facultyName);
+        return doc(firestore, 'availability', 'faculty');
     }, [firestore, facultyName]);
     
     const { data: availabilityData, isLoading: loadingAvailability } = useDoc(facultyAvailabilityRef);
-    const isAvailable = availabilityData?.status === 'YES';
+    
+    const facultyList = availabilityData?.faculty || [];
+    const currentFaculty = facultyList.find((f: any) => f.name === facultyName);
+    const isAvailable = currentFaculty?.status === 'YES';
 
     const handleAvailabilityChange = (checked: boolean) => {
         if (!facultyAvailabilityRef) return;
         const status = checked ? 'YES' : 'NO';
-        setDocumentNonBlocking(facultyAvailabilityRef, { 
-            status: status,
+
+        const updatedFacultyList = facultyList.filter((f: any) => f.name !== facultyName);
+        updatedFacultyList.push({
             name: facultyName,
+            status: status,
             role: 'Faculty'
+        });
+
+        setDocumentNonBlocking(facultyAvailabilityRef, { 
+            faculty: updatedFacultyList
         }, { merge: true });
+
         toast({ title: 'Availability Updated', description: `You are now set to ${status === 'YES' ? 'available' : 'unavailable'}.`});
     };
 
@@ -79,3 +88,5 @@ export default function FacultyDashboard() {
       </div>
     );
   }
+
+    

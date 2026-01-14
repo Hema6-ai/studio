@@ -128,22 +128,18 @@ import {
     }, [firestore]);
     const { data: doctorAvailability, isLoading: loadingDoctors } = useCollection(doctorAvailabilityQuery);
 
-    const facultyAvailabilityQuery = useMemoFirebase(() => {
-        if(!firestore) return null;
-        return collection(firestore, 'availability/faculty');
-    }, [firestore]);
-    const {data: facultyAvailability, isLoading: loadingFaculty} = useCollection(facultyAvailabilityQuery);
-    
-    const academicAvailabilityQuery = useMemoFirebase(() => {
+    const availabilityQuery = useMemoFirebase(() => {
         if(!firestore) return null;
         return collection(firestore, 'availability');
     }, [firestore]);
-    const {data: academicAvailability, isLoading: loadingAcademics} = useCollection(academicAvailabilityQuery);
+    const {data: allAvailability, isLoading: loadingAvailability} = useCollection(availabilityQuery);
 
-    const academicOffice = academicAvailability?.find(doc => doc.id === 'academic');
+    const facultyAvailability = useMemo(() => allAvailability?.filter(doc => doc.id === 'faculty'), [allAvailability]);
+    const academicOffice = useMemo(() => allAvailability?.find(doc => doc.id === 'academic'), [allAvailability]);
+    
     const allStaff = [
         ...(doctorAvailability || []),
-        ...(facultyAvailability || []),
+        ...(facultyAvailability?.[0]?.faculty || []),
         ...(academicOffice ? [academicOffice] : [])
     ];
     
@@ -339,14 +335,14 @@ import {
           </CardHeader>
           <CardContent>
              <ul className="space-y-4">
-                {(loadingDoctors || loadingFaculty || loadingAcademics) && <li>Loading availability...</li>}
+                {(loadingDoctors || loadingAvailability) && <li>Loading availability...</li>}
                 {allStaff?.map(staff => {
                     const status = getAvailabilityStatus(staff);
                     const availability = staff?.availabilityStatus || staff?.status || 'NO';
                     const name = staff.doctorName || staff.name || "Academic Office";
                     const role = staff.role || "Doctor";
                     return (
-                        <li key={staff.id} className="flex flex-col p-3 rounded-lg bg-muted/50 gap-3">
+                        <li key={staff.id || name} className="flex flex-col p-3 rounded-lg bg-muted/50 gap-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <Avatar className={cn("h-10 w-10", `ring-2 ring-offset-2 ring-offset-background ${availabilityColors[availability]}`)}>
@@ -362,7 +358,7 @@ import {
                                     {status.text}
                                 </Badge>
                             </div>
-                            {availability === 'NO' && (
+                            {(availability === 'NO' || availability === 'not-available') && (
                                 <p className="text-xs text-red-500 pl-12 flex items-center gap-1">
                                     <XCircle className="h-3 w-3" /> Not available — please mail your query.
                                 </p>
@@ -395,3 +391,5 @@ import {
       </div>
     );
   }
+
+    
