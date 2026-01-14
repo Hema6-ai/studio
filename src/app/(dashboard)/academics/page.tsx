@@ -3,7 +3,6 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, where, doc } from "firebase/firestore";
 import { Input } from '@/components/ui/input';
@@ -12,14 +11,14 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { CalendarIcon, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { dummyCourses, dummyFaculty } from '@/lib/data';
-import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { dummyCourses, dummyFaculty, dummyTimetable } from '@/lib/data';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { TimetableDisplay } from '@/components/dashboard/timetable-display';
 
 
 // --- Reusable Student Form ---
@@ -114,14 +113,13 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
 
 
 // --- Reusable Faculty Form ---
-const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) => void }) => {
+const FacultyForm = ({ faculty, onSave, ugYear }: { faculty?: any, onSave: (data: any) => void, ugYear: string }) => {
     const [formData, setFormData] = useState({
         id: faculty?.id || undefined,
         name: faculty?.name || '',
         email: faculty?.email || '',
         courseAbbr: faculty?.courseAbbr || '',
         courseName: faculty?.courseName || '',
-        ugYear: faculty?.ugYear || [],
         branch: faculty?.branch || '',
         section: faculty?.section || ''
     });
@@ -133,24 +131,14 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
     };
 
     const handleSubmit = () => {
-        onSave(formData);
+        onSave({ ...formData, ugYear: [ugYear.replace('UG','')] });
         setIsOpen(false);
         if (!faculty) {
-             setFormData({ id: undefined, name: '', email: '', courseAbbr: '', courseName: '', ugYear: [], branch: '', section: '' });
+             setFormData({ id: undefined, name: '', email: '', courseAbbr: '', courseName: '', branch: '', section: '' });
         }
     };
-
-    // Assuming ugYear is an array of strings like ['1', '2']
-    const handleUgYearChange = (year: string) => {
-        setFormData(prev => {
-            const newYears = prev.ugYear.includes(year)
-                ? prev.ugYear.filter((y: string) => y !== year)
-                : [...prev.ugYear, year];
-            return { ...prev, ugYear: newYears };
-        });
-    }
     
-    const isFormValid = formData.name && formData.email && formData.courseAbbr && formData.courseName && formData.branch && formData.section && formData.ugYear.length > 0;
+    const isFormValid = formData.name && formData.email && formData.courseAbbr && formData.courseName && formData.branch && formData.section;
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -190,21 +178,6 @@ const FacultyForm = ({ faculty, onSave }: { faculty?: any, onSave: (data: any) =
                         <Label htmlFor="section" className="text-right">Section</Label>
                         <Input id="section" value={formData.section} onChange={handleChange} className="col-span-3" placeholder="e.g. 1, 2, Common" required/>
                     </div>
-                     <div className="grid grid-cols-4 items-start gap-4">
-                        <Label className="text-right pt-2">UG Years</Label>
-                        <div className="col-span-3 grid grid-cols-4 gap-2">
-                           {['1', '2', '3', '4'].map(year => (
-                                <div key={year} className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id={`year-${year}`}
-                                        checked={formData.ugYear.includes(year)}
-                                        onCheckedChange={() => handleUgYearChange(year)}
-                                    />
-                                    <label htmlFor={`year-${year}`} className="text-sm font-medium">{year}</label>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
                 <DialogFooter>
                     <Button onClick={handleSubmit} disabled={!isFormValid}>Save Changes</Button>
@@ -229,24 +202,24 @@ export default function AcademicsDashboard() {
   const approvedQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'medicalRequests'), where('directorApprovalStatus', '==', 'Approved')) : null, [firestore]);
   const rejectedQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'medicalRequests'), where('directorApprovalStatus', '==', 'Rejected')) : null, [firestore]);
   const studentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'students') : null, [firestore]);
-  
+  const facultyQuery = useMemoFirebase(() => firestore ? collection(firestore, 'faculty') : null, [firestore]);
+
   const { data: approvedRequests, isLoading: loadingApproved } = useCollection(approvedQuery);
   const { data: rejectedRequests, isLoading: loadingRejected } = useCollection(rejectedQuery);
   const { data: students, isLoading: loadingStudents } = useCollection(studentsQuery);
-  
-  // Using local data for faculty
-  const [faculty, setFaculty] = useState(dummyFaculty);
-  const loadingFaculty = false;
+  const { data: faculty, isLoading: loadingFaculty } = useCollection(facultyQuery);
 
 
   // --- Student Management Logic ---
   const handleSaveStudent = (studentData: any) => {
     if (!firestore) return;
-    const studentId = studentData.id || doc(collection(firestore, 'students')).id;
-    const studentRef = doc(firestore, 'students', studentId);
-    // Don't save the id within the document itself
+    const studentRef = doc(firestore, 'students', studentData.id || doc(collection(firestore, 'students')).id);
     const { id, ...dataToSave } = studentData;
-    setDocumentNonBlocking(studentRef, { ...dataToSave, id: studentId }, { merge: true });
+    if (studentData.id) {
+        setDocumentNonBlocking(studentRef, dataToSave, { merge: true });
+    } else {
+        addDocumentNonBlocking(collection(firestore, 'students'), dataToSave);
+    }
     toast({ title: "Success", description: `Student ${studentData.id ? 'updated' : 'added'} successfully.` });
   };
   
@@ -271,20 +244,23 @@ export default function AcademicsDashboard() {
 
   // --- Faculty Management Logic ---
   const handleSaveFaculty = (facultyData: any) => {
-    const newFacultyList = [...faculty];
+    if (!firestore) return;
+    const facultyCollection = collection(firestore, 'faculty');
     if (facultyData.id) {
-        const index = newFacultyList.findIndex(f => f.id === facultyData.id);
-        newFacultyList[index] = facultyData;
+        const facultyRef = doc(firestore, 'faculty', facultyData.id);
+        const { id, ...dataToSave } = facultyData;
+        setDocumentNonBlocking(facultyRef, dataToSave, { merge: true });
     } else {
-        newFacultyList.push({ ...facultyData, id: `faculty-${Date.now()}` });
+        addDocumentNonBlocking(facultyCollection, facultyData);
     }
-    setFaculty(newFacultyList);
     toast({ title: "Success", description: `Faculty ${facultyData.id ? 'updated' : 'added'} successfully.` });
   };
-  
+
   const handleDeleteFaculty = (facultyId: string) => {
+    if(!firestore) return;
     if(window.confirm("Are you sure you want to delete this faculty member?")) {
-        setFaculty(faculty.filter(f => f.id !== facultyId));
+        const facultyRef = doc(firestore, 'faculty', facultyId);
+        deleteDocumentNonBlocking(facultyRef);
         toast({ title: "Success", description: "Faculty member deleted successfully." });
     }
   };
@@ -292,14 +268,16 @@ export default function AcademicsDashboard() {
   const facultyByYear = useMemo(() => {
     const groups: { [key: string]: any[] } = {};
     faculty?.forEach(f => {
-        const years = f.ugYear; // This is an array e.g., ['1', '2']
-        years.forEach((year: string) => {
-            const key = `UG${year}`;
-            if (!groups[key]) groups[key] = [];
-            if (!groups[key].find(existing => existing.id === f.id)) {
-                groups[key].push(f);
-            }
-        });
+        const years = f.ugYear; 
+        if (Array.isArray(years)) {
+            years.forEach((year: string) => {
+                const key = `UG${year}`;
+                if (!groups[key]) groups[key] = [];
+                if (!groups[key].find(existing => existing.id === f.id)) {
+                    groups[key].push(f);
+                }
+            });
+        }
     });
     return groups;
   }, [faculty]);
@@ -440,14 +418,14 @@ export default function AcademicsDashboard() {
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {years.map(year => {
-                            const groupKey = `UG${year}`;
+                        {['UG1', 'UG2', 'UG3', 'UG4'].map(year => {
+                            const groupKey = year;
                             const groupFaculty = facultyByYear[groupKey] || [];
                             return (
                                 <Card key={groupKey}>
                                     <CardHeader className="flex flex-row items-center justify-between">
-                                        <CardTitle className="text-lg">UG {year}</CardTitle>
-                                        <FacultyForm onSave={handleSaveFaculty} />
+                                        <CardTitle className="text-lg">{groupKey}</CardTitle>
+                                        <FacultyForm onSave={handleSaveFaculty} ugYear={groupKey} />
                                     </CardHeader>
                                     <CardContent>
                                         {loadingFaculty ? <p>Loading...</p> : (
@@ -462,13 +440,13 @@ export default function AcademicsDashboard() {
                                             </TableHeader>
                                             <TableBody>
                                                 {groupFaculty.length === 0 && <TableRow><TableCell colSpan={4} className="text-center">No faculty found.</TableCell></TableRow>}
-                                                {groupFaculty.map(f => (
+                                                {groupFaculty.map((f:any) => (
                                                     <TableRow key={f.id}>
                                                         <TableCell>{f.name}</TableCell>
                                                         <TableCell>{f.email}</TableCell>
                                                         <TableCell>{f.courseName} ({f.courseAbbr})</TableCell>
                                                         <TableCell className="flex gap-2">
-                                                            <FacultyForm faculty={f} onSave={handleSaveFaculty} />
+                                                            <FacultyForm faculty={f} onSave={handleSaveFaculty} ugYear={groupKey} />
                                                             <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(f.id)}><Trash2 className="h-4 w-4 text-red-500"/></Button>
                                                         </TableCell>
                                                     </TableRow>
@@ -492,7 +470,7 @@ export default function AcademicsDashboard() {
                     <CardDescription>View and manage class timetables.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                   <p className="text-muted-foreground">Timetable editing functionality will be added here. For now, you can manage the underlying faculty and course data in their respective tabs.</p>
+                   <TimetableDisplay timetableData={dummyTimetable} />
                 </CardContent>
              </Card>
         </TabsContent>
@@ -593,6 +571,3 @@ export default function AcademicsDashboard() {
     </Tabs>
   );
 }
-
-
-    
