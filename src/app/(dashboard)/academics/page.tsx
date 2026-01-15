@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -32,7 +33,7 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
         email: student?.email || '',
         studentId: student?.studentId || student?.id || '',
         enrolledCoursesText: student?.enrolledCourses 
-            ? student.enrolledCourses.map((c: any) => c.section ? `${c.courseAbbr}-${c.section}` : c.courseAbbr).join('\n') 
+            ? student.enrolledCourses.map((c: any) => typeof c === 'string' ? c : (c.section ? `${c.courseAbbr}-${c.section}` : c.courseAbbr)).join('\n')
             : ''
     });
     const [isOpen, setIsOpen] = useState(false);
@@ -44,29 +45,10 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
 
     const handleSubmit = () => {
         const courseLines = formData.enrolledCoursesText.split('\n').filter(line => line.trim() !== '');
-        const enrolledCourses: any[] = [];
-        let parseError = false;
-
-        for (const line of courseLines) {
-            const trimmedLine = line.trim();
-            const parts = trimmedLine.split('-');
-            const courseAbbr = parts[0];
-            const section = parts.length > 1 ? parts[1] : null;
-
-            const courseExists = dummyCourses.some(c => c.abbr === courseAbbr);
-            if (!courseExists) {
-                toast({ variant: "destructive", title: "Invalid Course", description: `Course with abbreviation "${courseAbbr}" does not exist.` });
-                parseError = true;
-                break;
-            }
-            
-            enrolledCourses.push({ courseAbbr, section: section || 'Common' });
-        }
-        
-        if (parseError) {
-             toast({ variant: "destructive", title: "Invalid Course", description: "Please check the course abbreviations and sections." });
-            return;
-        }
+        const enrolledCourses = courseLines.map(line => ({
+            courseAbbr: line.trim().toUpperCase(),
+            section: 'Common' // Section is no longer parsed from student input
+        }));
 
         const studentData = {
             id: formData.studentId,
@@ -121,10 +103,10 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
                                 value={formData.enrolledCoursesText} 
                                 onChange={handleChange} 
                                 className="col-span-3"
-                                placeholder="One class per line. Example: PGM or DSA-1"
+                                placeholder="Enter course abbreviations only (one per line). Example: MS, DSY, WBD"
                                 rows={5}
                             />
-                            <p className="text-xs text-muted-foreground mt-1">Format: COURSE_ABBR or COURSE_ABBR-SECTION</p>
+                            <p className="text-xs text-muted-foreground mt-1">Enter course abbreviations only (one per line). Example: MS, DSY, WBD</p>
                          </div>
                     </div>
                 </div>
@@ -655,3 +637,5 @@ export default function AcademicsDashboard() {
     </Tabs>
   );
 }
+
+    
