@@ -11,6 +11,7 @@ import { useMemo } from "react";
 import { dummyFaculty, dummyTimetable } from "@/lib/data";
 
 const normalizeName = (name: string) => {
+    if (!name) return '';
     return name
       .toLowerCase()
       .replace('dr.', '')
@@ -40,29 +41,32 @@ export default function FacultyDashboard() {
     }, [user?.email]);
 
     const facultyDetails = useMemo(() => {
+        if (!facultyNameFromEmail) return [];
         return dummyFaculty.filter(f => normalizeName(f.name) === facultyNameFromEmail);
     }, [facultyNameFromEmail]);
 
     const facultyDisplayName = facultyDetails.length > 0 ? facultyDetails[0].name : "Faculty Member";
 
     // --- Availability Logic ---
-    const facultyAvailabilityRef = useMemoFirebase(() => {
+    const facultyAvailabilityDocRef = useMemoFirebase(() => {
         if (!firestore || !facultyDisplayName) return null;
-        return doc(firestore, 'availability', 'faculty');
+        // Use faculty name as document ID for simplicity and uniqueness
+        const docId = facultyDisplayName.replace(/\s+/g, '-').toLowerCase();
+        return doc(firestore, 'availability/faculty');
     }, [firestore, facultyDisplayName]);
-    
-    const { data: availabilityData, isLoading: loadingAvailability } = useDoc(facultyAvailabilityRef);
+
+    const { data: availabilityData, isLoading: loadingAvailability } = useDoc(facultyAvailabilityDocRef);
     
     const facultyList = availabilityData?.faculty || [];
-    const currentFaculty = facultyList.find((f: any) => normalizeName(f.name) === facultyNameFromEmail);
+    const currentFaculty = facultyList.find((f: any) => normalizeName(f.name) === normalizeName(facultyDisplayName));
     const isAvailable = currentFaculty?.status === 'YES';
 
     const handleAvailabilityChange = (checked: boolean) => {
-        if (!facultyAvailabilityRef) return;
+        if (!facultyAvailabilityDocRef) return;
         const status = checked ? 'YES' : 'NO';
 
         // Filter out the current faculty member to update their status
-        const updatedFacultyList = facultyList.filter((f: any) => normalizeName(f.name) !== facultyNameFromEmail);
+        const updatedFacultyList = facultyList.filter((f: any) => normalizeName(f.name) !== normalizeName(facultyDisplayName));
         
         // Add the updated/new faculty member back to the list
         updatedFacultyList.push({
@@ -71,7 +75,7 @@ export default function FacultyDashboard() {
             role: 'Faculty'
         });
 
-        setDocumentNonBlocking(facultyAvailabilityRef, { 
+        setDocumentNonBlocking(facultyAvailabilityDocRef, { 
             faculty: updatedFacultyList
         }, { merge: true });
 
@@ -154,7 +158,7 @@ export default function FacultyDashboard() {
                             <Switch
                                 checked={isAvailable}
                                 onCheckedChange={handleAvailabilityChange}
-                                disabled={!user} // Disable if user is not loaded
+                                disabled={!user || !facultyDisplayName || facultyDisplayName === 'Faculty Member'}
                             />
                         </div>
                     )}

@@ -1,21 +1,20 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Mic, Image as ImageIcon, Sparkles, PlusCircle, Link as LinkIcon, X, Paperclip } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { Label } from '../ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection } from 'firebase/firestore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { appShortcuts } from '@/lib/data';
 import { campusAssistant } from '@/ai/flows/campus-assistant';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import Image from 'next/image';
+import { cn } from '@/lib/utils';
+
 
 const isValidUrl = (string: string) => {
   try {
@@ -69,47 +68,47 @@ export function SmartSearchBar() {
 
   // --- Voice Search Initialization ---
   useEffect(() => {
+    // This effect runs only once on mount to initialize the SpeechRecognition object
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        const speechResult = event.results[0][0].transcript;
+        setQuery(speechResult);
+        // We trigger the search *after* setting the state, in a separate effect or handler
+      };
+
+      recognition.onerror = (event) => {
+        if (event.error !== 'aborted' && event.error !== 'no-speech') {
+          toast({ variant: 'destructive', title: 'Voice Search Error', description: `Error: ${event.error}. Please ensure microphone access is allowed.` });
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    } else {
       console.warn("Speech Recognition is not supported by this browser.");
-      return;
     }
+  }, []); // Empty dependency array ensures this runs only once.
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    
-    recognition.onerror = (event) => {
-      if (event.error !== 'aborted' && event.error !== 'no-speech') {
-         toast({ variant: 'destructive', title: 'Voice Search Error', description: `Error: ${event.error}. Please ensure microphone access is allowed.` });
-      }
-      setIsListening(false);
-    };
-
-    recognition.onresult = (event) => {
-      const speechResult = event.results[0][0].transcript;
-      setQuery(speechResult);
-      if(isAiMode) {
-        handleAiSearch(speechResult);
-      } else {
-        handleNormalSearch(speechResult);
-      }
-    };
-    
-    recognitionRef.current = recognition;
-
-  }, [isAiMode]); // Re-create if AI mode changes to update the onresult handler
 
   const handleVoiceSearch = () => {
     if (isListening || !recognitionRef.current) return;
+    
+    setIsListening(true);
     try {
       recognitionRef.current.start();
-    } catch(e) {
+    } catch (e) {
       console.error("Error starting speech recognition:", e);
+      setIsListening(false); // Reset state on error
+      toast({ variant: 'destructive', title: 'Voice Search Error', description: 'Could not start voice search.'});
     }
   };
 
@@ -143,8 +142,8 @@ export function SmartSearchBar() {
     window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const handleAiSearch = async (searchQuery = query, searchAttachment = attachment) => {
-    if (!searchQuery.trim() && !searchAttachment) return;
+  const handleAiSearch = async (searchQuery = query) => {
+    if (!searchQuery.trim() && !attachment) return;
 
     setIsAiLoading(true);
     setAiResponse(null);
@@ -179,88 +178,95 @@ export function SmartSearchBar() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAttachment({
-        name: file.name,
-        type: file.type.startsWith('image/') ? 'image' : 'file',
-        dataUri: reader.result as string,
-        fileType: file.type,
-      });
-    };
-    reader.readAsDataURL(file);
-  };
-  
-  const handleImageButtonClick = () => {
     if (isAiMode) {
-      fileInputRef.current?.click(); // Open file picker for AI mode
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setAttachment({
+            name: file.name,
+            type: file.type.startsWith('image/') ? 'image' : 'file',
+            dataUri: reader.result as string,
+            fileType: file.type,
+          });
+        };
+        reader.readAsDataURL(file);
     } else {
-      window.open('https://lens.google.com', '_blank', 'noopener,noreferrer'); // Redirect for normal mode
+        // In normal mode, redirect to Google Lens/Images
+        window.open('https://lens.google.com/', '_blank', 'noopener,noreferrer');
     }
   };
 
 
   // --- UI Toggles and Resets ---
   const toggleAiMode = () => {
-    setIsAiMode(!isAiMode);
-    setAiResponse(null); // Clear AI response when toggling
-    setAttachment(null); // Clear attachment when toggling
-    setQuery(''); // Clear query when toggling
+    const newAiMode = !isAiMode;
+    setIsAiMode(newAiMode);
+    
+    // Clear state when toggling
+    setAiResponse(null);
+    setAttachment(null);
+    setQuery('');
   };
 
   return (
     <TooltipProvider>
     <div className="relative w-full max-w-2xl mx-auto">
-       <form onSubmit={handleSubmit} className="relative flex items-center gap-2">
-            <div className="relative flex-grow">
+       <form onSubmit={handleSubmit} className="w-full">
+            <div className="relative flex items-center">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                   type="search"
                   placeholder={isAiMode ? "Ask Gemini AI about courses, schedules, or upload a file..." : "Search Google or type a URL"}
-                  className="w-full h-12 rounded-full bg-background pl-10 pr-36 text-base"
+                  className="w-full h-12 rounded-full bg-background pl-10 pr-40 text-base"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   disabled={isAiLoading}
               />
-            </div>
-            <div className="absolute inset-y-0 right-3 flex items-center">
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={handleVoiceSearch} disabled={isListening || isAiLoading}>
-                            <Mic className={`h-5 w-5 ${isListening ? 'text-red-500 animate-pulse' : ''}`} />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>Search by voice</p></TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                         <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={handleImageButtonClick} disabled={isAiLoading}>
-                            <ImageIcon className="h-5 w-5" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>{isAiMode ? 'Upload image' : 'Search with Google Lens'}</p></TooltipContent>
-                </Tooltip>
+              <div className="absolute inset-y-0 right-3 flex items-center space-x-1">
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={handleVoiceSearch} disabled={isListening || isAiLoading}>
+                              <Mic className={cn("h-5 w-5", isListening && 'text-red-500 animate-pulse')} />
+                          </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Search by voice</p></TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                           <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => fileInputRef.current?.click()} disabled={isAiLoading}>
+                              <ImageIcon className="h-5 w-5" />
+                          </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>{isAiMode ? 'Upload image' : 'Search with image'}</p></TooltipContent>
+                  </Tooltip>
 
-                {isAiMode && (
+                  <Tooltip>
+                        <TooltipTrigger asChild>
+                             <Button type="button" variant="ghost" size="icon" className={cn("h-9 w-9", isAiMode && 'hidden')}>
+                                <Paperclip className="h-5 w-5 text-muted-foreground/50" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Enable AI mode to upload files</p></TooltipContent>
+                  </Tooltip>
+                  
                    <Tooltip>
                         <TooltipTrigger asChild>
-                             <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => fileInputRef.current?.click()} disabled={isAiLoading}>
+                             <Button type="button" variant="ghost" size="icon" className={cn("h-9 w-9", !isAiMode && 'hidden')} onClick={() => fileInputRef.current?.click()} disabled={isAiLoading}>
                                 <Paperclip className="h-5 w-5" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent><p>Upload a file (PDF, DOC, TXT)</p></TooltipContent>
+                        <TooltipContent><p>Upload a file</p></TooltipContent>
                     </Tooltip>
-                )}
-                
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon" className={`h-9 w-9 ${isAiMode ? 'bg-accent text-accent-foreground' : ''}`} onClick={toggleAiMode} disabled={isAiLoading}>
-                            <Sparkles className="h-5 w-5" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent><p>{isAiMode ? 'Switch to Normal Search' : 'Switch to AI Mode'}</p></TooltipContent>
-                </Tooltip>
+
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Button type="button" variant="ghost" size="icon" className={cn('h-9 w-9', isAiMode && 'bg-accent text-accent-foreground')} onClick={toggleAiMode} disabled={isAiLoading}>
+                              <Sparkles className="h-5 w-5" />
+                          </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>{isAiMode ? 'Switch to Normal Search' : 'Switch to AI Mode'}</p></TooltipContent>
+                  </Tooltip>
+              </div>
             </div>
              <input
               type="file"
