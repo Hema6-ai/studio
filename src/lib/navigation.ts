@@ -51,7 +51,7 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '#schedule-planner', label: 'AI Schedule Planner', icon: CalendarDays },
         { href: '#doubt-clearing', label: 'Gemini AI Chat', icon: BotMessageSquare },
         { href: '#feed', label: 'Campus Feed', icon: Newspaper },
-        { href: '#resources', label: 'Resource Hub', icon: BookCopy },
+        { href: '/student/resources', label: 'Resource Hub', icon: BookCopy },
         { href: '/student/library', label: 'Library', icon: LibraryIcon },
         {
             key: 'document-submission',

@@ -45,6 +45,7 @@ import {
     CheckCircle,
     XCircle,
     Users2,
+    BookCopy,
   } from "lucide-react";
   import { dummyAnnouncements, dummyTimetable } from "@/lib/data";
   import Image from "next/image";
@@ -256,17 +257,13 @@ import {
             <CardTitle>Resource Hub</CardTitle>
             <CardDescription>Your academic browser. Find anything you need.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="relative mb-4">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search syllabus, topics, resources..." className="pl-8"/>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-                <Link href="#" className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><Github className="h-5 w-5" /> GitHub Repos</Link>
-                <Link href="#" className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><BookOpen className="h-5 w-5" /> LMS</Link>
-                <Link href="#" className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><FileUp className="h-5 w-5" /> Academic Docs</Link>
-                <Link href="#" className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><GraduationCap className="h-5 w-5" /> Placements Portal</Link>
-            </div>
+          <CardContent className="text-center">
+             <Link href="/student/resources">
+                <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 cursor-pointer hover:bg-muted/50">
+                <BookCopy className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                <p className="mt-4 text-sm text-muted-foreground">Go to Resource Hub</p>
+                </div>
+            </Link>
           </CardContent>
         </Card>
   
