@@ -38,6 +38,7 @@ export function SmartSearchBar() {
 
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const { user } = useUser();
   const firestore = useFirestore();
@@ -104,33 +105,54 @@ export function SmartSearchBar() {
     }
   }
 
-  const handleVoiceSearch = () => {
+  useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      toast({ variant: 'destructive', title: 'Browser Not Supported', description: 'Your browser does not support voice search.' });
+      // We can toast here once or just disable the mic button if needed
       return;
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
+    recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    recognition.lang = 'en-US';
 
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
     recognition.onerror = (event) => {
-      toast({ variant: 'destructive', title: 'Voice Search Error', description: event.error });
+      if (event.error !== 'aborted') {
+         toast({ variant: 'destructive', title: 'Voice Search Error', description: event.error });
+      }
+      setIsListening(false);
     };
 
     recognition.onresult = (event) => {
       const speechResult = event.results[0][0].transcript;
       setQuery(speechResult);
-      // Voice search should use normal search logic, not AI
-      if (isAiMode) setIsAiMode(false);
       handleNormalSearch(speechResult);
     };
+    
+    recognitionRef.current = recognition;
 
-    recognition.start();
+  }, []); // Empty dependency array ensures this runs only once.
+
+
+  const handleVoiceSearch = () => {
+    if (isListening || !recognitionRef.current) {
+      return;
+    }
+    try {
+      recognitionRef.current.start();
+    } catch(e) {
+      // This can happen if recognition is already started
+      console.error("Error starting speech recognition:", e);
+    }
   };
   
   const handleImageSearchClick = () => {
@@ -171,7 +193,7 @@ export function SmartSearchBar() {
             <div className="absolute inset-y-0 right-0 flex items-center pr-2">
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={handleVoiceSearch}>
+                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={handleVoiceSearch} disabled={isListening}>
                             <Mic className={`h-4 w-4 ${isListening ? 'text-red-500 animate-pulse' : ''}`} />
                         </Button>
                     </TooltipTrigger>
