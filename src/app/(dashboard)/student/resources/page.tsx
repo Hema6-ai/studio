@@ -25,7 +25,10 @@ const iconMap: Record<string, React.ElementType> = {
 // --- Global Resources Section ---
 const GlobalResources = () => {
     const firestore = useFirestore();
-    const globalResourcesQuery = useMemoFirebase(() => collection(firestore, 'resourceHub/globalResources'), [firestore]);
+    const globalResourcesQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'globalResources');
+    }, [firestore]);
     const { data: resources, isLoading } = useCollection(globalResourcesQuery);
 
     const categorizedResources = useMemo(() => {
