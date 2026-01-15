@@ -91,23 +91,25 @@ import {
                         isRescheduled: false,
                      };
                      
-                     // Check if this class was rescheduled
-                     const rescheduled = rescheduleLog?.find(log => log.subject === classInfo.subject && log.originalSlot === `${day} ${classInfo.time}`);
-                     if(rescheduled) {
-                        classInfo.isRescheduled = true;
-                        // For simplicity, we just mark it. A real app might hide it and add the new one.
-                        // Or change its time/venue here.
-                     }
-
                      scheduleByDay[day].push(classInfo);
                 }
             });
         });
 
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-        return scheduleByDay[today] || [];
+        const scheduleForToday = scheduleByDay[today] || [];
+        
+        // Check against reschedule log
+        return scheduleForToday.map(classInfo => {
+            const isRescheduled = rescheduleLog?.some(log => 
+                log.subject === classInfo.subject && 
+                log.originalSlot.startsWith(today) && // e.g., "Thursday 4:30-5:30"
+                log.originalSlot.endsWith(classInfo.time)
+            );
+            return { ...classInfo, isRescheduled };
+        });
 
-    }, [student, rescheduleLog]);
+    }, [student, rescheduleLog, dummyTimetable]);
 
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

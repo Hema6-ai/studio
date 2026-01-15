@@ -50,7 +50,7 @@ export default function FacultyDashboard() {
     // --- Availability Logic ---
     const facultyAvailabilityRef = useMemoFirebase(() => {
         if (!firestore || !facultyDisplayName || facultyDisplayName === 'Faculty Member') return null;
-        return doc(firestore, `availability/faculty`);
+        return doc(firestore, 'availability', 'faculty');
     }, [firestore, facultyDisplayName]);
 
     const { data: availabilityDoc, isLoading: loadingAvailability } = useDoc(facultyAvailabilityRef);
