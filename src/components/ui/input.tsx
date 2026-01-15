@@ -4,6 +4,9 @@ import { cn } from "@/lib/utils"
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, ...props }, ref) => {
+    // Add SpeechRecognition props to the component's accepted props
+    const extendedProps = props as any;
+    
     return (
       <input
         type={type}
@@ -14,11 +17,19 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
         ref={ref}
         autoComplete="off"
         suppressHydrationWarning
-        {...props}
+        {...extendedProps}
       />
     )
   }
 )
 Input.displayName = "Input"
+
+// Add window type extensions for SpeechRecognition
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
 
 export { Input }

@@ -20,7 +20,10 @@ export function NavMenu({ role }: { role: UserRole }) {
 
     // Find if the current path is under a parent link
     const activeParent = links.find(link => 
-        isNavLinkParent(link) && link.subLinks.some(sub => pathname.startsWith(sub.href))
+        isNavLinkParent(link) && (
+            link.subLinks.some(sub => pathname.startsWith(sub.href)) ||
+            (link.href && pathname.startsWith(link.href)) // Also check parent href
+        )
     );
 
     return (
@@ -33,10 +36,11 @@ export function NavMenu({ role }: { role: UserRole }) {
                                 return (
                                     <li key={link.key}>
                                         <AccordionItem value={link.key} className="border-b-0">
-                                            <AccordionTrigger className={cn(
+                                            <AccordionTrigger 
+                                               className={cn(
                                                 "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:no-underline",
-                                                 activeParent?.key === link.key && "bg-muted text-primary"
-                                                )}
+                                                activeParent?.key === link.key && "bg-muted text-primary"
+                                               )}
                                             >
                                                 <div className="flex items-center gap-3">
                                                    <link.icon className="h-4 w-4" />

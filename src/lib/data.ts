@@ -575,3 +575,21 @@ export const googleApps = [
     { name: 'Translate', icon: 'https://ssl.gstatic.com/images/branding/product/1x/translate_48dp.png', url: 'https://translate.google.com' },
     { name: 'Photos', icon: 'https://ssl.gstatic.com/images/branding/product/1x/photos_2020q4_48dp.png', url: 'https://photos.google.com' },
 ];
+
+export const appShortcuts = [
+    { name: 'LeetCode', url: 'https://leetcode.com' },
+    { name: 'GitHub', url: 'https://github.com' },
+    { name: 'Gmail', url: 'https://mail.google.com' },
+    { name: 'YouTube', url: 'https://www.youtube.com' },
+    { name: 'LinkedIn', url: 'https://www.linkedin.com' },
+    { name: 'Google Maps', url: 'https://maps.google.com' },
+    { name: 'Drive', url: 'https://drive.google.com' },
+    { name: 'Calendar', url: 'https://calendar.google.com' },
+    { name: 'Docs', url: 'https://docs.google.com' },
+    { name: 'Sheets', url: 'https://sheets.google.com' },
+    { name: 'Slides', url: 'https://slides.google.com' },
+    { name: 'Forms', url: 'https://forms.google.com' },
+    { name: 'Chat', url: 'https://chat.google.com' },
+    { name: 'Meet', url: 'https://meet.google.com' },
+    { name: 'Gemini', url: 'https://gemini.google.com' },
+];

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import { PanelLeft, Search } from 'lucide-react';
+import { PanelLeft } from 'lucide-react';
 
 import {
   Sheet,
@@ -10,7 +10,6 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { UserNav } from './user-nav';
 import { NavMenu } from './nav-menu';
 import { Logo } from '../icons';
@@ -18,6 +17,7 @@ import type { UserRole } from '@/lib/roles';
 import Link from 'next/link';
 import { AppLauncher } from './app-launcher';
 import { AiChat } from './ai-chat';
+import { SmartSearchBar } from './smart-search-bar';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -62,16 +62,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <NavMenu role={role} />
             </SheetContent>
           </Sheet>
-          <div className="relative ml-auto flex-1 md:grow-0">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
-            />
+          <SmartSearchBar />
+          <div className="ml-auto flex items-center gap-2">
+            <AppLauncher />
+            <UserNav />
           </div>
-          <AppLauncher />
-          <UserNav />
         </header>
         <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
             {children}
