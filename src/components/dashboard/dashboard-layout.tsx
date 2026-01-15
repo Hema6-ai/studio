@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { PanelLeft } from 'lucide-react';
 
@@ -20,11 +20,20 @@ import { AiChat } from './ai-chat';
 import { SmartSearchBar } from './smart-search-bar';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const role = pathname.split('/')[1] as UserRole;
   
   const isSubPage = pathname.split('/').length > 2;
   const mainContentClass = role === 'student' && isSubPage ? '' : 'sm:pl-64';
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
