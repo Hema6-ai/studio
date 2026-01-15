@@ -1,9 +1,8 @@
 'use client';
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Switch } from '@/components/ui/switch';
 import { CheckCircle, XCircle } from 'lucide-react';
@@ -28,8 +27,24 @@ export default function AcademicsDashboard() {
     toast({ title: 'Availability Updated', description: `Academic office is now ${checked ? 'available' : 'unavailable'}.`});
   };
 
-  const loadingStudents = false;
-  const loadingFaculty = false;
+  const studentsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'students');
+  }, [firestore]);
+  const { data: students, isLoading: loadingStudents } = useCollection(studentsQuery);
+
+  const facultyQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'faculty');
+  }, [firestore]);
+  const { data: faculty, isLoading: loadingFaculty } = useCollection(facultyQuery);
+
+  const pendingRequestsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    // Get all requests not yet finalized by director, which the academic office would need to track.
+    return query(collection(firestore, 'medicalRequests'), where('directorApprovalStatus', '==', null));
+  }, [firestore]);
+  const { data: pendingRequests, isLoading: loadingPendingRequests } = useCollection(pendingRequestsQuery);
 
 
   return (
@@ -45,10 +60,10 @@ export default function AcademicsDashboard() {
                         <CardHeader>
                             <CardTitle>Quick Stats</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <p>Total Students: {loadingStudents ? '...' : 'N/A'}</p>
-                            <p>Total Faculty: {loadingFaculty ? '...' : 'N/A'}</p>
-                            <p>Pending Approvals: 0</p>
+                        <CardContent className="space-y-2">
+                            <p>Total Students: {loadingStudents ? '...' : students?.length ?? 0}</p>
+                            <p>Total Faculty: {loadingFaculty ? '...' : faculty?.length ?? 0}</p>
+                            <p>Pending Approvals: {loadingPendingRequests ? '...' : pendingRequests?.length ?? 0}</p>
                         </CardContent>
                     </Card>
                     <Card>
