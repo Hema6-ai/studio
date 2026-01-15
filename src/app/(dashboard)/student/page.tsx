@@ -43,7 +43,7 @@ import {
       const match = entry.match(/^([A-Z\d]+)-?([\w\d]+)?\s*(.*)$/);
       if(!match) return { courseAbbr: entry, section: 'Common', room: ''};
       const [, courseAbbr, section, room] = match;
-      return { courseAbbr: section ? `${courseAbbr}-${section}` : courseAbbr, section: section || 'Common', room: room.trim() };
+      return { courseAbbrWithSection: section ? `${courseAbbr}-${section}` : courseAbbr, courseAbbr: courseAbbr, section: section || 'Common', room: room.trim() };
   }
   
   export default function StudentDashboard() {
@@ -66,7 +66,7 @@ import {
         if(!yearTimetable) return [];
 
         const enrolledCoursesSet = new Set(student.enrolledCourses.map((c: any) => {
-             return c.section ? `${c.courseAbbr}-${c.section}` : c.courseAbbr;
+             return c.section !== 'Common' ? `${c.courseAbbr}-${c.section}` : c.courseAbbr;
         }));
         
         const scheduleByDay: { [key: string]: any[] } = {};
@@ -76,13 +76,15 @@ import {
             const daySchedule = yearTimetable[day];
             daySchedule.forEach((slot: any) => {
                 const todaysClasses = slot.entries.map(parseEntry).filter((entry: any) => {
-                    return enrolledCoursesSet.has(entry.courseAbbr);
+                    // Match course if section matches, or if student's section is 'Common'
+                    const isEnrolled = enrolledCoursesSet.has(entry.courseAbbrWithSection) || enrolledCoursesSet.has(entry.courseAbbr);
+                    return isEnrolled;
                 });
                 
                 if (todaysClasses.length > 0) {
                      scheduleByDay[day].push({
                         time: slot.time,
-                        subject: todaysClasses[0].courseAbbr.split('-')[0],
+                        subject: todaysClasses[0].courseAbbr,
                         venue: todaysClasses[0].room
                     });
                 }
@@ -96,14 +98,6 @@ import {
 
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="lg:col-span-4">
-          <CardHeader>
-            <CardTitle className="font-headline text-3xl">Welcome back, {studentLoading ? '...' : student?.name || 'Student'}!</CardTitle>
-            <CardDescription>
-              Here's what's happening today. Use the sidebar to navigate to other modules.
-            </CardDescription>
-          </CardHeader>
-        </Card>
   
         <Card className="lg:col-span-2" id="schedule">
           <CardHeader>

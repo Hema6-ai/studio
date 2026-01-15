@@ -60,7 +60,8 @@ export function SmartSearchBar() {
   const shortcutsCollection = useMemoFirebase(() => {
     if (!user?.uid || !firestore) return null;
     return collection(firestore, `users/${user.uid}/shortcuts`);
-  }, [user?.uid, firestore]);
+  }, [user, firestore]);
+
   const { data: userShortcuts, isLoading: loadingShortcuts } = useCollection(shortcutsCollection);
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
   const [editingShortcut, setEditingShortcut] = useState<any>(null);
@@ -68,9 +69,8 @@ export function SmartSearchBar() {
 
   // --- Voice Search Initialization ---
   useEffect(() => {
-    // This effect runs only once on mount to initialize the SpeechRecognition object
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
+    if (SpeechRecognition && !recognitionRef.current) {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
@@ -79,13 +79,19 @@ export function SmartSearchBar() {
       recognition.onresult = (event) => {
         const speechResult = event.results[0][0].transcript;
         setQuery(speechResult);
-        // We trigger the search *after* setting the state, in a separate effect or handler
+        // Automatically submit after voice input
+        if(isAiMode) {
+            handleAiSearch(speechResult);
+        } else {
+            handleNormalSearch(speechResult);
+        }
       };
 
       recognition.onerror = (event) => {
         if (event.error !== 'aborted' && event.error !== 'no-speech') {
-          toast({ variant: 'destructive', title: 'Voice Search Error', description: `Error: ${event.error}. Please ensure microphone access is allowed.` });
+          toast({ variant: 'destructive', title: 'Voice Search Error', description: `Could not start voice search. Please ensure microphone access is allowed.` });
         }
+        setIsListening(false);
       };
 
       recognition.onend = () => {
@@ -93,10 +99,8 @@ export function SmartSearchBar() {
       };
 
       recognitionRef.current = recognition;
-    } else {
-      console.warn("Speech Recognition is not supported by this browser.");
     }
-  }, [toast]); // Empty dependency array ensures this runs only once.
+  }, [toast, isAiMode]); // Re-run if isAiMode changes to update submit logic
 
 
   const handleVoiceSearch = () => {
@@ -107,7 +111,7 @@ export function SmartSearchBar() {
       recognitionRef.current.start();
     } catch (e) {
       console.error("Error starting speech recognition:", e);
-      setIsListening(false); // Reset state on error
+      setIsListening(false);
       toast({ variant: 'destructive', title: 'Voice Search Error', description: 'Could not start voice search.'});
     }
   };

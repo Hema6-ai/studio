@@ -12,11 +12,11 @@ import { dummyFaculty, dummyTimetable } from "@/lib/data";
 
 const normalizeName = (name: string) => {
     if (!name) return '';
+    // Normalize by removing titles, converting to lowercase, and removing spaces.
+    // This makes "Dr. Shaik Mohammad Rafi" and "shaikmohammadrafi" match.
     return name
       .toLowerCase()
-      .replace('dr.', '')
-      .replace('dr', '')
-      .replace('.', ' ')
+      .replace(/dr\.?|mrs\.?|mr\.?/g, '')
       .replace(/\s+/g, '')
       .trim();
 };
@@ -37,11 +37,13 @@ export default function FacultyDashboard() {
     // --- Faculty Identity Normalization ---
     const facultyNameFromEmail = useMemo(() => {
         if (!user?.email) return '';
+        // "ShaikMohammadRafi@iiits.in" -> "shaikmohammadrafi"
         return normalizeName(user.email.split('@')[0]);
     }, [user?.email]);
 
     const facultyDetails = useMemo(() => {
         if (!facultyNameFromEmail) return [];
+        // Find faculty from dummy data where normalized names match
         return dummyFaculty.filter(f => normalizeName(f.name) === facultyNameFromEmail);
     }, [facultyNameFromEmail]);
 
@@ -50,9 +52,7 @@ export default function FacultyDashboard() {
     // --- Availability Logic ---
     const facultyAvailabilityDocRef = useMemoFirebase(() => {
         if (!firestore || !facultyDisplayName) return null;
-        // Use faculty name as document ID for simplicity and uniqueness
-        const docId = facultyDisplayName.replace(/\s+/g, '-').toLowerCase();
-        return doc(firestore, 'availability/faculty');
+        return doc(firestore, 'availability', 'faculty');
     }, [firestore, facultyDisplayName]);
 
     const { data: availabilityData, isLoading: loadingAvailability } = useDoc(facultyAvailabilityDocRef);
@@ -62,18 +62,27 @@ export default function FacultyDashboard() {
     const isAvailable = currentFaculty?.status === 'YES';
 
     const handleAvailabilityChange = (checked: boolean) => {
-        if (!facultyAvailabilityDocRef) return;
+        if (!facultyAvailabilityDocRef || !user) return;
         const status = checked ? 'YES' : 'NO';
 
         // Filter out the current faculty member to update their status
-        const updatedFacultyList = facultyList.filter((f: any) => normalizeName(f.name) !== normalizeName(facultyDisplayName));
-        
-        // Add the updated/new faculty member back to the list
-        updatedFacultyList.push({
-            name: facultyDisplayName, // Use the display name from records
-            status: status,
-            role: 'Faculty'
+        let facultyFound = false;
+        const updatedFacultyList = facultyList.map((f: any) => {
+            if (normalizeName(f.name) === normalizeName(facultyDisplayName)) {
+                facultyFound = true;
+                return { ...f, status: status };
+            }
+            return f;
         });
+        
+        // If the faculty member was not in the list, add them
+        if (!facultyFound) {
+            updatedFacultyList.push({
+                name: facultyDisplayName,
+                status: status,
+                role: 'Faculty'
+            });
+        }
 
         setDocumentNonBlocking(facultyAvailabilityDocRef, { 
             faculty: updatedFacultyList
