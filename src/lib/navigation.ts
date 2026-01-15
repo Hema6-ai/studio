@@ -21,6 +21,7 @@ import {
     Briefcase,
     Stethoscope,
     Users2,
+    Library as LibraryIcon,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -51,6 +52,7 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '#doubt-clearing', label: 'Gemini AI Chat', icon: BotMessageSquare },
         { href: '#feed', label: 'Campus Feed', icon: Newspaper },
         { href: '#resources', label: 'Resource Hub', icon: BookCopy },
+        { href: '/student/library', label: 'Library', icon: LibraryIcon },
         {
             key: 'document-submission',
             label: 'Document Submission',
@@ -101,5 +103,10 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '/director', label: 'Final Approvals', icon: Shield },
         { href: '#', label: 'Analytics', icon: BarChart },
         { href: '#', label: 'Campus Overview', icon: Building },
+    ],
+    librarian: [
+        { href: '/librarian', label: 'Library Management', icon: LibraryIcon },
+        { href: '#', label: 'Profile', icon: User },
+        { href: '/login', label: 'Logout', icon: LogOut },
     ],
 };
