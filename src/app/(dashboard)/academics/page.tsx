@@ -93,7 +93,7 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="studentId" className="text-right">Student ID</Label>
-                        <Input id="studentId" value={formData.studentId} onChange={handleChange} className="col-span-3" disabled={!!student} required />
+                        <Input id="studentId" value={formData.studentId} onChange={handleChange} className="col-span-3" required />
                     </div>
                      <div className="grid grid-cols-4 items-start gap-4">
                         <Label htmlFor="enrolledCoursesText" className="text-right pt-2">Enrolled Classes</Label>
