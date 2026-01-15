@@ -58,6 +58,9 @@ import {
     const {data: studentData, isLoading: studentLoading} = useCollection(studentQuery);
     const student = studentData?.[0];
 
+    const rescheduleLogQuery = useMemoFirebase(() => firestore ? collection(firestore, 'rescheduleLog') : null, [firestore]);
+    const { data: rescheduleLog, isLoading: loadingRescheduleLog } = useCollection(rescheduleLogQuery);
+
     const studentSchedule = useMemo(() => {
         if(!student || !dummyTimetable) return [];
         
@@ -76,17 +79,27 @@ import {
             const daySchedule = yearTimetable[day];
             daySchedule.forEach((slot: any) => {
                 const todaysClasses = slot.entries.map(parseEntry).filter((entry: any) => {
-                    // Match course if section matches, or if student's section is 'Common'
                     const isEnrolled = enrolledCoursesSet.has(entry.courseAbbrWithSection) || enrolledCoursesSet.has(entry.courseAbbr);
                     return isEnrolled;
                 });
                 
                 if (todaysClasses.length > 0) {
-                     scheduleByDay[day].push({
+                     const classInfo = {
                         time: slot.time,
                         subject: todaysClasses[0].courseAbbr,
-                        venue: todaysClasses[0].room
-                    });
+                        venue: todaysClasses[0].room,
+                        isRescheduled: false,
+                     };
+                     
+                     // Check if this class was rescheduled
+                     const rescheduled = rescheduleLog?.find(log => log.subject === classInfo.subject && log.originalSlot === `${day} ${classInfo.time}`);
+                     if(rescheduled) {
+                        classInfo.isRescheduled = true;
+                        // For simplicity, we just mark it. A real app might hide it and add the new one.
+                        // Or change its time/venue here.
+                     }
+
+                     scheduleByDay[day].push(classInfo);
                 }
             });
         });
@@ -94,7 +107,7 @@ import {
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
         return scheduleByDay[today] || [];
 
-    }, [student]);
+    }, [student, rescheduleLog]);
 
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -118,7 +131,10 @@ import {
                 {studentSchedule.length > 0 ? studentSchedule.map((item, index) => (
                   <TableRow key={index}>
                     <TableCell>{item.time}</TableCell>
-                    <TableCell>{item.subject}</TableCell>
+                    <TableCell>
+                      {item.subject}
+                      {item.isRescheduled && <Badge variant="destructive" className="ml-2">Rescheduled</Badge>}
+                    </TableCell>
                     <TableCell>{item.venue}</TableCell>
                   </TableRow>
                 )) : (

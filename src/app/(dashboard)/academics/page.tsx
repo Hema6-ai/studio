@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -93,7 +92,7 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="studentId" className="text-right">Student ID</Label>
-                        <Input id="studentId" value={formData.studentId} onChange={handleChange} className="col-span-3" required />
+                        <Input id="studentId" value={formData.studentId} onChange={handleChange} className="col-span-3" required disabled={!!student}/>
                     </div>
                      <div className="grid grid-cols-4 items-start gap-4">
                         <Label htmlFor="enrolledCoursesText" className="text-right pt-2">Enrolled Classes</Label>
@@ -106,7 +105,7 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
                                 placeholder="Enter course abbreviations only (one per line). Example: MS, DSY, WBD"
                                 rows={5}
                             />
-                            <p className="text-xs text-muted-foreground mt-1">Enter course abbreviations only (one per line). Example: MS, DSY, WBD</p>
+                            <p className="text-xs text-muted-foreground mt-1">Enter course abbreviations only, one per line. Example: MS, DSY, WBD</p>
                          </div>
                     </div>
                 </div>
@@ -214,6 +213,9 @@ export default function AcademicsDashboard() {
   }, [firestore]);
 
   const {data: students, isLoading: loadingStudents } = useCollection(studentsQuery);
+  const rescheduleLogQuery = useMemoFirebase(() => firestore ? collection(firestore, 'rescheduleLog') : null, [firestore]);
+  const { data: rescheduleLog, isLoading: loadingRescheduleLog } = useCollection(rescheduleLogQuery);
+
 
   const academicAvailabilityRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -346,6 +348,7 @@ export default function AcademicsDashboard() {
                     <Link href="/academics/curriculum">Curriculum</Link>
                  </TabsTrigger>
                  <TabsTrigger value="medical-records">Medical Records</TabsTrigger>
+                 <TabsTrigger value="reschedule-log">Reschedule Log</TabsTrigger>
             </TabsList>
         </div>
 
@@ -540,6 +543,40 @@ export default function AcademicsDashboard() {
                 </CardContent>
              </Card>
         </TabsContent>
+        <TabsContent value="reschedule-log" id="reschedule-log">
+             <Card>
+                <CardHeader>
+                    <CardTitle>Class Reschedule Log</CardTitle>
+                    <CardDescription>An audit trail of all rescheduled classes.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Faculty</TableHead>
+                                <TableHead>Subject</TableHead>
+                                <TableHead>Original Slot</TableHead>
+                                <TableHead>New Slot</TableHead>
+                                <TableHead>Timestamp</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {loadingRescheduleLog && <TableRow><TableCell colSpan={5} className="text-center">Loading log...</TableCell></TableRow>}
+                            {!loadingRescheduleLog && rescheduleLog?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center">No classes have been rescheduled yet.</TableCell></TableRow>}
+                            {rescheduleLog?.map((log: any) => (
+                                <TableRow key={log.id}>
+                                    <TableCell>{log.facultyName}</TableCell>
+                                    <TableCell>{log.subject}</TableCell>
+                                    <TableCell>{log.originalSlot}</TableCell>
+                                    <TableCell>{log.newSlot}</TableCell>
+                                    <TableCell>{log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+             </Card>
+        </TabsContent>
 
         <TabsContent value="medical-records" id="medical-records">
              <Card>
@@ -637,5 +674,3 @@ export default function AcademicsDashboard() {
     </Tabs>
   );
 }
-
-    

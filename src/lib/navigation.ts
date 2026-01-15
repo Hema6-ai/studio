@@ -22,6 +22,7 @@ import {
     Stethoscope,
     Users2,
     Library as LibraryIcon,
+    History as HistoryIcon,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -77,9 +78,8 @@ export const navLinks: Record<string, NavItem[]> = {
     ],
     faculty: [
         { href: '/faculty', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '#schedule', label: 'Class Schedules', icon: CalendarDays },
-        { href: '#availability', label: 'My Availability', icon: UserCheck },
-        { href: '#reschedule', label: 'Reschedule Class', icon: BotMessageSquare },
+        { href: '/faculty', label: 'Class & Reschedule', icon: CalendarDays },
+        { href: '/faculty', label: 'My Availability', icon: UserCheck },
         { href: '/student/resources', label: 'Resource Hub', icon: BookCopy },
         { href: '/student/library', label: 'Library', icon: LibraryIcon },
     ],
@@ -98,6 +98,7 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '/academics#timetables', label: 'Timetables', icon: CalendarDays },
         { href: '/academics/curriculum', label: 'Curriculum', icon: Book },
         { href: '/academics#medical-records', label: 'Medical Records', icon: Book },
+        { href: '/academics#reschedule-log', label: 'Reschedule Log', icon: HistoryIcon },
         { href: '#', label: 'Profile', icon: User },
         { href: '/login', label: 'Logout', icon: LogOut },
     ],
