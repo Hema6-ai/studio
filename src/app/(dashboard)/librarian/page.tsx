@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
@@ -145,8 +145,7 @@ export default function LibrarianDashboard() {
     };
     
     if (bookData.id) {
-      const docRef = collection(firestore, 'books', bookData.id);
-      // setDocument is not available in non-blocking-updates. This should be a blocking call for librarians.
+      const docRef = doc(firestore, 'books', bookData.id);
       await setDoc(docRef, dataToSave, { merge: true });
       toast({ title: "Success", description: "Book updated successfully." });
     } else {
@@ -155,11 +154,10 @@ export default function LibrarianDashboard() {
     }
   };
 
-  const handleDeleteBook = (bookId: string) => {
+  const handleDeleteBook = async (bookId: string) => {
     if (window.confirm("Are you sure you want to permanently delete this book?")) {
-      const docRef = collection(firestore, 'books', bookId);
-      // deleteDocument is not available in non-blocking-updates. This should be a blocking call for librarians.
-      deleteDoc(docRef);
+      const docRef = doc(firestore, 'books', bookId);
+      await deleteDoc(docRef);
       toast({ title: "Success", description: "Book deleted." });
     }
   };
