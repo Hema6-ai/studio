@@ -66,7 +66,7 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
         }
     };
 
-    const isFormValid = formData.name && formData.email && formData.studentId && formData.enrolledCoursesText;
+    const isFormValid = formData.name && formData.email && formData.studentId;
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -92,7 +92,7 @@ const StudentForm = ({ student, onSave, branch, ugYear }: { student?: any, onSav
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="studentId" className="text-right">Student ID</Label>
-                        <Input id="studentId" value={formData.studentId} onChange={handleChange} className="col-span-3" required disabled={!!student}/>
+                        <Input id="studentId" value={formData.studentId} onChange={handleChange} className="col-span-3" required />
                     </div>
                      <div className="grid grid-cols-4 items-start gap-4">
                         <Label htmlFor="enrolledCoursesText" className="text-right pt-2">Enrolled Classes</Label>
@@ -543,7 +543,8 @@ export default function AcademicsDashboard() {
                 </CardContent>
              </Card>
         </TabsContent>
-        <TabsContent value="reschedule-log" id="reschedule-log">
+        
+        <TabsContent value="reschedule-log">
              <Card>
                 <CardHeader>
                     <CardTitle>Class Reschedule Log</CardTitle>
