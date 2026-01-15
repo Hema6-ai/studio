@@ -6,6 +6,8 @@ import { collection, doc, query, where } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Switch } from '@/components/ui/switch';
 import { CheckCircle, XCircle } from 'lucide-react';
+import { useMemo } from 'react';
+import { dummyFaculty } from "@/lib/data";
 
 
 // --- Main Dashboard Component ---
@@ -37,7 +39,16 @@ export default function AcademicsDashboard() {
     if (!firestore) return null;
     return collection(firestore, 'faculty');
   }, [firestore]);
-  const { data: faculty, isLoading: loadingFaculty } = useCollection(facultyQuery);
+  const { data: facultyFromFirestore, isLoading: loadingFaculty } = useCollection(facultyQuery);
+
+  const faculty = useMemo(() => {
+    const facultyMap = new Map();
+    // Add dummy faculty first, using email as a key to avoid duplicates
+    dummyFaculty.forEach(f => facultyMap.set(f.email.toLowerCase(), f));
+    // Overwrite or add faculty from Firestore
+    facultyFromFirestore?.forEach((f: any) => facultyMap.set(f.email.toLowerCase(), f));
+    return Array.from(facultyMap.values());
+  }, [facultyFromFirestore]);
 
   const pendingRequestsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -62,7 +73,7 @@ export default function AcademicsDashboard() {
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <p>Total Students: {loadingStudents ? '...' : students?.length ?? 0}</p>
-                            <p>Total Faculty: {loadingFaculty ? '...' : faculty?.length ?? 0}</p>
+                            <p>Total Faculty: {loadingFaculty ? '...' : faculty.length}</p>
                             <p>Pending Approvals: {loadingPendingRequests ? '...' : pendingRequests?.length ?? 0}</p>
                         </CardContent>
                     </Card>
