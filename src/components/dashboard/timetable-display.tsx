@@ -8,21 +8,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 
-type ScheduledTask = {
-  taskName: string;
-  day: string;
-  time: string;
-  isClass: boolean;
-};
-
-type TimetableData = {
-  [day: string]: ScheduledTask[];
-};
+// This component now handles two different data structures.
+// 1. For AI Planner: { [day: string]: { taskName: string, isClass: boolean, time: string }[] }
+// 2. For Academic Timetable: { [day: string]: { time: string, entries: string[] }[] }
 
 interface TimetableDisplayProps {
-  timetableData: TimetableData;
+  timetableData: { [day: string]: any[] };
 }
 
 const timeSlots = [
@@ -81,13 +73,29 @@ export function TimetableDisplay({ timetableData }: TimetableDisplayProps) {
                 {days.map(day => {
                   const daySchedule = timetableData[day] || [];
                   const entry = daySchedule.find(e => e.time === slot);
-                  return (
-                    <TableCell key={`${day}-${slot}`} className="border p-1 align-top h-24">
-                        {entry && (
-                             <Badge variant={entry.isClass ? "secondary" : "default"} className={`text-xs whitespace-nowrap ${!entry.isClass && 'bg-blue-600 hover:bg-blue-700'}`}>
+                  
+                  let cellContent: React.ReactNode = null;
+                  if (entry) {
+                      // AI Planner data structure
+                      if (typeof entry.taskName === 'string') {
+                          cellContent = (
+                            <div className={entry.isClass ? 'p-1 text-xs text-muted-foreground' : 'p-1 text-xs text-primary font-semibold'}>
                                 {entry.taskName}
-                            </Badge>
-                        )}
+                            </div>
+                          );
+                      // Academic Timetable data structure
+                      } else if (Array.isArray(entry.entries)) {
+                          // Filter out "BREAK" or "LUNCH" as they are handled by full rows
+                          const filteredEntries = entry.entries.filter((e: string) => e !== 'BREAK' && e !== 'LUNCH');
+                          if (filteredEntries.length > 0) {
+                              cellContent = filteredEntries.join('\n');
+                          }
+                      }
+                  }
+                  
+                  return (
+                    <TableCell key={`${day}-${slot}`} className="border p-2 align-top h-24 whitespace-pre-wrap text-xs">
+                        {cellContent}
                     </TableCell>
                   );
                 })}
