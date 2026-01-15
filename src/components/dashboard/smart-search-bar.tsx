@@ -7,7 +7,7 @@ import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useUser } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
@@ -58,7 +58,10 @@ export function SmartSearchBar() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   // User Shortcuts State
-  const shortcutsCollection = collection(firestore, `users/${user?.uid}/shortcuts`);
+  const shortcutsCollection = useMemoFirebase(() => {
+    if (!user?.uid || !firestore) return null;
+    return collection(firestore, `users/${user.uid}/shortcuts`);
+  }, [user?.uid, firestore]);
   const { data: userShortcuts, isLoading: loadingShortcuts } = useCollection(shortcutsCollection);
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
   const [editingShortcut, setEditingShortcut] = useState<any>(null);
