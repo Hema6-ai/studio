@@ -1,18 +1,17 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { PlusCircle, Folder, File as FileIcon, Trash2, Download, BookOpen, Link as LinkIcon, Search, Youtube, GraduationCap } from 'lucide-react';
+import { PlusCircle, Folder, File as FileIcon, Trash2, Download, BookOpen, Link as LinkIcon, Search, Youtube, GraduationCap, Github } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Github } from 'lucide-react';
 import { appShortcuts } from '@/lib/data';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
@@ -110,7 +109,7 @@ const MyResources = () => {
     
     const myResourcesCollection = useMemoFirebase(() => {
         if (!user) return null;
-        return collection(firestore, `resourceHub/students/${user.uid}/resources`);
+        return collection(firestore, `students/${user.uid}/resources`);
     }, [user, firestore]);
 
     const { data: myFiles, isLoading } = useCollection(myResourcesCollection);
@@ -204,7 +203,7 @@ const MyResources = () => {
     
     const handleDeleteFile = (fileId: string) => {
         if (window.confirm("Are you sure you want to delete this resource? This cannot be undone.") && user) {
-            const docRef = doc(firestore, `resourceHub/students/${user.uid}/resources`, fileId);
+            const docRef = doc(firestore, `students/${user.uid}/resources`, fileId);
             deleteDocumentNonBlocking(docRef);
             toast({ title: "Resource Deleted" });
         }
@@ -327,7 +326,7 @@ export default function ResourceHubPage() {
                     <TabsContent value="global" className="mt-6">
                         <GlobalResources />
                     </TabsContent>
-                    <TabsContent value="personal" className="mt-6">
+                     <TabsContent value="personal" className="mt-6">
                         <MyResources />
                     </TabsContent>
                 </Tabs>
