@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Mic, Image as ImageIcon, Sparkles, PlusCircle, Link as LinkIcon, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Search, Mic, Image as ImageIcon, Sparkles, PlusCircle, Link as LinkIcon, X, Paperclip } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
@@ -15,6 +15,7 @@ import { appShortcuts } from '@/lib/data';
 import { campusAssistant } from '@/ai/flows/campus-assistant';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import Image from 'next/image';
 
 const isValidUrl = (string: string) => {
   try {
@@ -29,31 +30,94 @@ type AiResponseType = {
     answer: string;
 }
 
+type Attachment = {
+  name: string;
+  type: 'image' | 'file';
+  dataUri: string;
+  fileType: string;
+};
+
+
 export function SmartSearchBar() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  
+  // Search and AI State
   const [query, setQuery] = useState('');
-  const [isListening, setIsListening] = useState(false);
   const [isAiMode, setIsAiMode] = useState(false);
   const [aiResponse, setAiResponse] = useState<AiResponseType | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
-
-  const { toast } = useToast();
+  
+  // Attachment State
+  const [attachment, setAttachment] = useState<Attachment | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Voice Search State and Ref
+  const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const { user } = useUser();
-  const firestore = useFirestore();
+  // User Shortcuts State
   const shortcutsCollection = collection(firestore, `users/${user?.uid}/shortcuts`);
   const { data: userShortcuts, isLoading: loadingShortcuts } = useCollection(shortcutsCollection);
-
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
   const [editingShortcut, setEditingShortcut] = useState<any>(null);
 
 
+  // --- Voice Search Initialization ---
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn("Speech Recognition is not supported by this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    
+    recognition.onerror = (event) => {
+      if (event.error !== 'aborted' && event.error !== 'no-speech') {
+         toast({ variant: 'destructive', title: 'Voice Search Error', description: `Error: ${event.error}. Please ensure microphone access is allowed.` });
+      }
+      setIsListening(false);
+    };
+
+    recognition.onresult = (event) => {
+      const speechResult = event.results[0][0].transcript;
+      setQuery(speechResult);
+      if(isAiMode) {
+        handleAiSearch(speechResult);
+      } else {
+        handleNormalSearch(speechResult);
+      }
+    };
+    
+    recognitionRef.current = recognition;
+
+  }, [isAiMode]); // Re-create if AI mode changes to update the onresult handler
+
+  const handleVoiceSearch = () => {
+    if (isListening || !recognitionRef.current) return;
+    try {
+      recognitionRef.current.start();
+    } catch(e) {
+      console.error("Error starting speech recognition:", e);
+    }
+  };
+
+
+  // --- Search Logic ---
   const handleNormalSearch = (searchQuery = query) => {
     if (!searchQuery.trim()) return;
 
     // 1. Keyword redirect
-    const shortcut = [...appShortcuts, ...(userShortcuts || [])].find(sc => sc.name.toLowerCase() === searchQuery.trim().toLowerCase());
+    const allShortcuts = [...appShortcuts, ...(userShortcuts || [])];
+    const shortcut = allShortcuts.find(sc => sc.name.toLowerCase() === searchQuery.trim().toLowerCase());
     if (shortcut) {
       window.open(shortcut.url, '_blank', 'noopener,noreferrer');
       return;
@@ -61,10 +125,9 @@ export function SmartSearchBar() {
     
     // 2. URL check
     let urlToOpen = searchQuery.trim();
-    if (!urlToOpen.startsWith('http://') && !urlToOpen.startsWith('https://')) {
-        if(urlToOpen.includes('.') && !urlToOpen.includes(' ')) {
-             urlToOpen = 'https://' + urlToOpen;
-        }
+    const isDomain = urlToOpen.includes('.') && !urlToOpen.includes(' ');
+    if (isDomain && !urlToOpen.startsWith('http')) {
+        urlToOpen = 'https://' + urlToOpen;
     }
 
     if (isValidUrl(urlToOpen)) {
@@ -77,19 +140,21 @@ export function SmartSearchBar() {
     window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const handleAiSearch = async (searchQuery = query) => {
-    if (!searchQuery.trim()) return;
+  const handleAiSearch = async (searchQuery = query, searchAttachment = attachment) => {
+    if (!searchQuery.trim() && !searchAttachment) return;
+
     setIsAiLoading(true);
     setAiResponse(null);
     try {
-        const result = await campusAssistant({ query: searchQuery });
-        setAiResponse(result);
+      // In a real implementation, the flow would handle the attachment data URI.
+      const result = await campusAssistant({ query: searchQuery });
+      setAiResponse(result);
     } catch(e) {
         console.error(e);
         toast({
             variant: 'destructive',
             title: "AI Assistant Error",
-            description: "Could not get a response from the AI assistant."
+            description: "The AI assistant is temporarily unavailable. Please try again later."
         });
     } finally {
         setIsAiLoading(false);
@@ -99,124 +164,121 @@ export function SmartSearchBar() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isAiMode) {
-        handleAiSearch();
+      handleAiSearch();
     } else {
-        handleNormalSearch();
+      handleNormalSearch();
     }
   }
 
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      // We can toast here once or just disable the mic button if needed
-      return;
-    }
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
+  // --- File/Image Handling ---
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    recognition.onstart = () => {
-      setIsListening(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAttachment({
+        name: file.name,
+        type: file.type.startsWith('image/') ? 'image' : 'file',
+        dataUri: reader.result as string,
+        fileType: file.type,
+      });
     };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.onerror = (event) => {
-      if (event.error !== 'aborted') {
-         toast({ variant: 'destructive', title: 'Voice Search Error', description: event.error });
-      }
-      setIsListening(false);
-    };
-
-    recognition.onresult = (event) => {
-      const speechResult = event.results[0][0].transcript;
-      setQuery(speechResult);
-      handleNormalSearch(speechResult);
-    };
-    
-    recognitionRef.current = recognition;
-
-  }, []); // Empty dependency array ensures this runs only once.
-
-
-  const handleVoiceSearch = () => {
-    if (isListening || !recognitionRef.current) {
-      return;
-    }
-    try {
-      recognitionRef.current.start();
-    } catch(e) {
-      // This can happen if recognition is already started
-      console.error("Error starting speech recognition:", e);
-    }
+    reader.readAsDataURL(file);
   };
   
-  const handleImageSearchClick = () => {
-      window.open('https://lens.google.com', '_blank', 'noopener,noreferrer');
-  };
-  
-  const handleShortcutSave = (shortcutData: any) => {
-      if(!user) return;
-      const docRef = shortcutData.id ? doc(firestore, `users/${user.uid}/shortcuts`, shortcutData.id) : doc(collection(firestore, `users/${user.uid}/shortcuts`));
-      setDocumentNonBlocking(docRef, { name: shortcutData.name, url: shortcutData.url }, { merge: true });
-      toast({ title: 'Shortcut saved!' });
-      setIsShortcutModalOpen(false);
-      setEditingShortcut(null);
+  const handleImageButtonClick = () => {
+    if (isAiMode) {
+      fileInputRef.current?.click(); // Open file picker for AI mode
+    } else {
+      window.open('https://lens.google.com', '_blank', 'noopener,noreferrer'); // Redirect for normal mode
+    }
   };
 
-  const handleShortcutDelete = (shortcutId: string) => {
-      if(!user) return;
-      if (window.confirm('Are you sure you want to delete this shortcut?')) {
-          const docRef = doc(firestore, `users/${user.uid}/shortcuts`, shortcutId);
-          deleteDocumentNonBlocking(docRef);
-          toast({ title: 'Shortcut deleted.' });
-      }
-  };
 
+  // --- UI Toggles and Resets ---
+  const toggleAiMode = () => {
+    setIsAiMode(!isAiMode);
+    setAiResponse(null); // Clear AI response when toggling
+    setAttachment(null); // Clear attachment when toggling
+    setQuery(''); // Clear query when toggling
+  };
 
   return (
     <TooltipProvider>
-    <div className="relative w-full max-w-xl">
-       <form onSubmit={handleSubmit} className="relative flex items-center">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-                type="search"
-                placeholder={isAiMode ? "Ask Gemini AI..." : "Search Google or type a URL"}
-                className="w-full rounded-lg bg-background pl-8 pr-28" // Added more padding to the right for icons
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+    <div className="relative w-full max-w-2xl mx-auto">
+       <form onSubmit={handleSubmit} className="relative flex items-center gap-2">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                  type="search"
+                  placeholder={isAiMode ? "Ask Gemini AI about courses, schedules, or upload a file..." : "Search Google or type a URL"}
+                  className="w-full h-12 rounded-full bg-background pl-10 pr-36 text-base"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  disabled={isAiLoading}
+              />
+            </div>
+            <div className="absolute inset-y-0 right-3 flex items-center">
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={handleVoiceSearch} disabled={isListening}>
-                            <Mic className={`h-4 w-4 ${isListening ? 'text-red-500 animate-pulse' : ''}`} />
+                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={handleVoiceSearch} disabled={isListening || isAiLoading}>
+                            <Mic className={`h-5 w-5 ${isListening ? 'text-red-500 animate-pulse' : ''}`} />
                         </Button>
                     </TooltipTrigger>
-                    <TooltipContent><p>Voice Search</p></TooltipContent>
+                    <TooltipContent><p>Search by voice</p></TooltipContent>
                 </Tooltip>
+                
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={handleImageSearchClick}>
-                        <ImageIcon className="h-4 w-4" />
+                         <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={handleImageButtonClick} disabled={isAiLoading}>
+                            <ImageIcon className="h-5 w-5" />
                         </Button>
                     </TooltipTrigger>
-                    <TooltipContent><p>Search with Image (opens Google Lens)</p></TooltipContent>
+                    <TooltipContent><p>{isAiMode ? 'Upload image' : 'Search with Google Lens'}</p></TooltipContent>
                 </Tooltip>
+
+                {isAiMode && (
+                   <Tooltip>
+                        <TooltipTrigger asChild>
+                             <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => fileInputRef.current?.click()} disabled={isAiLoading}>
+                                <Paperclip className="h-5 w-5" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Upload a file (PDF, DOC, TXT)</p></TooltipContent>
+                    </Tooltip>
+                )}
+                
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon" className={`h-7 w-7 ${isAiMode ? 'bg-accent text-accent-foreground' : ''}`} onClick={() => setIsAiMode(!isAiMode)}>
-                            <Sparkles className="h-4 w-4" />
+                        <Button type="button" variant="ghost" size="icon" className={`h-9 w-9 ${isAiMode ? 'bg-accent text-accent-foreground' : ''}`} onClick={toggleAiMode} disabled={isAiLoading}>
+                            <Sparkles className="h-5 w-5" />
                         </Button>
                     </TooltipTrigger>
-                    <TooltipContent><p>AI Mode</p></TooltipContent>
+                    <TooltipContent><p>{isAiMode ? 'Switch to Normal Search' : 'Switch to AI Mode'}</p></TooltipContent>
                 </Tooltip>
             </div>
+             <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileChange}
+              accept="image/*,application/pdf,.doc,.docx,.txt,.csv,.ppt,.pptx"
+            />
         </form>
+
+        <div className="mt-2 flex flex-wrap items-center gap-2 px-2">
+          {attachment && (
+            <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-sm">
+                {attachment.type === 'image' ? <ImageIcon className="h-4 w-4" /> : <Paperclip className="h-4 w-4" />}
+                <span className="truncate max-w-xs">{attachment.name}</span>
+                 <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => setAttachment(null)}>
+                    <X className="h-4 w-4" />
+                </Button>
+            </div>
+          )}
+        </div>
 
        <div className="mt-2 flex flex-wrap items-center gap-2">
             {!loadingShortcuts && [...appShortcuts, ...(userShortcuts || [])].slice(0, 10).map((shortcut) => (
@@ -232,15 +294,14 @@ export function SmartSearchBar() {
              <Dialog open={isShortcutModalOpen} onOpenChange={setIsShortcutModalOpen}>
                 <DialogTrigger asChild>
                      <Button variant="ghost" size="sm" className="text-xs p-1.5 h-auto" onClick={() => { setEditingShortcut(null); setIsShortcutModalOpen(true);}}>
-                        <PlusCircle className="mr-1 h-3 w-3" /> Add Shortcut
+                        <PlusCircle className="mr-1 h-3 w-3" /> Add/Manage
                     </Button>
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{editingShortcut ? 'Edit Shortcut' : 'Add Shortcut'}</DialogTitle>
-                        <DialogDescription>Create a custom shortcut for quick access.</DialogDescription>
                     </DialogHeader>
-                    {/* ShortcutForm would go here, but we can simplify for now */}
+                    {/* ShortcutForm goes here */}
                 </DialogContent>
             </Dialog>
         </div>
@@ -248,7 +309,7 @@ export function SmartSearchBar() {
         {isAiLoading && (
             <Card className="mt-4">
                 <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground">Generating response...</p>
+                    <p className="text-sm text-muted-foreground text-center animate-pulse">Gemini is thinking...</p>
                 </CardContent>
             </Card>
         )}
@@ -256,13 +317,13 @@ export function SmartSearchBar() {
         {aiResponse && !isAiLoading && (
              <Card className="mt-4">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                        <Avatar className="h-8 w-8"><AvatarFallback>AI</AvatarFallback></Avatar>
+                    <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+                        <Avatar className="h-8 w-8 bg-primary/20 text-primary"><AvatarFallback>AI</AvatarFallback></Avatar>
                         Gemini Response
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="whitespace-pre-wrap">{aiResponse.answer}</p>
+                    <p className="whitespace-pre-wrap text-foreground/90">{aiResponse.answer}</p>
                 </CardContent>
             </Card>
         )}

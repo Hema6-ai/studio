@@ -40,6 +40,7 @@ const prompt = ai.definePrompt({
   prompt: `You are a helpful AI assistant for the CampusOS university platform. Your goal is to answer user questions about their academic life.
   You have access to tools that can query real-time data from the university's Firestore database.
   Use the tools whenever necessary to answer questions about schedules, statuses, faculty, or pending tasks.
+  If you are asked a question for which you don't have a tool or the information, politely state that you cannot answer that.
   Be concise and helpful in your responses.
 
 Question: {{{query}}}`,

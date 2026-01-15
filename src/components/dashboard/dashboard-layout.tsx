@@ -21,16 +21,13 @@ import { SmartSearchBar } from './smart-search-bar';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  // Handle nested routes like /student/medical-leave
   const role = pathname.split('/')[1] as UserRole;
   
   const isSubPage = pathname.split('/').length > 2;
-  // Conditional class to avoid extra padding on student sub-pages which have their own layout
   const mainContentClass = role === 'student' && isSubPage ? '' : 'sm:pl-64';
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-       {/* Main sidebar - hidden on student sub-pages */}
       {!(role === 'student' && isSubPage) && (
          <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-background sm:flex">
             <div className="flex h-16 items-center gap-2 border-b px-6">
@@ -43,27 +40,33 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </aside>
       )}
      
-      <div className={`flex flex-col sm:gap-4 sm:py-4 ${mainContentClass}`}>
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button size="icon" variant="outline" className="sm:hidden">
-                <PanelLeft className="h-5 w-5" />
-                <span className="sr-only">Toggle Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="sm:max-w-xs p-0">
-                <div className="flex h-16 items-center gap-2 border-b px-6">
-                    <Link href="/" className="flex items-center gap-2 font-semibold">
-                        <Logo className="h-6 w-6 text-primary" />
-                        <span className="font-headline">CampusOS</span>
-                    </Link>
-                </div>
-                <NavMenu role={role} />
-            </SheetContent>
-          </Sheet>
+      <div className={`flex flex-col ${mainContentClass}`}>
+        <header className="sticky top-0 z-30 flex h-auto flex-col gap-4 border-b bg-background px-4 py-4 sm:flex-row sm:h-20 sm:items-center sm:px-6">
+          <div className="flex sm:hidden items-center justify-between">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button size="icon" variant="outline" className="sm:hidden">
+                  <PanelLeft className="h-5 w-5" />
+                  <span className="sr-only">Toggle Menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="sm:max-w-xs p-0">
+                  <div className="flex h-16 items-center gap-2 border-b px-6">
+                      <Link href="/" className="flex items-center gap-2 font-semibold">
+                          <Logo className="h-6 w-6 text-primary" />
+                          <span className="font-headline">CampusOS</span>
+                      </Link>
+                  </div>
+                  <NavMenu role={role} />
+              </SheetContent>
+            </Sheet>
+            <div className="flex items-center gap-2">
+                <AppLauncher />
+                <UserNav />
+            </div>
+          </div>
           <SmartSearchBar />
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto hidden items-center gap-2 sm:flex">
             <AppLauncher />
             <UserNav />
           </div>

@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { BotMessageSquare, Paperclip, Send, X } from 'lucide-react';
+import { BotMessageSquare, Paperclip, Send, X, Image as ImageIcon } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { Textarea } from '../ui/textarea';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -18,27 +18,30 @@ import { campusAssistant } from '@/ai/flows/campus-assistant';
 import { ScrollArea } from '../ui/scroll-area';
 import Image from 'next/image';
 
-type MediaAttachment = {
-    type: 'image';
-    dataUri: string;
+type Attachment = {
+  name: string;
+  type: 'image' | 'file';
+  dataUri: string;
+  fileType: string;
 };
 
 type ChatMessage = {
   role: 'user' | 'ai';
   content: string;
-  attachment?: MediaAttachment;
+  attachment?: Attachment;
 };
 
 export function AiChat() {
   const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
-    { role: 'ai', content: "Hello! As your CampusOS assistant, I can access real-time data to help you. Ask me about your schedule, course availability, or attach an image to ask a visual question." },
+    { role: 'ai', content: "Hello! As your CampusOS assistant, I can access real-time data to help you. Ask me about your schedule, course availability, or attach a file/image to ask a visual question." },
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [attachment, setAttachment] = useState<MediaAttachment | null>(null);
+  const [attachment, setAttachment] = useState<Attachment | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const handleChatSubmit = async () => {
     if ((!chatInput.trim() && !attachment) || isAiLoading || !user) return;
@@ -61,10 +64,10 @@ export function AiChat() {
     try {
       // In a real scenario, you'd pass the attachment to the flow
       const result = await campusAssistant({ query: currentInput });
-      setChatHistory([...newHistory, { role: 'ai', content: result.answer }]);
+      setChatHistory(prev => [...prev, { role: 'ai', content: result.answer }]);
     } catch (error) {
       console.error("AI assistant error:", error);
-      setChatHistory([...newHistory, { role: 'ai', content: "Sorry, I'm having trouble connecting or accessing data right now. Please try again later." }]);
+      setChatHistory(prev => [...prev, { role: 'ai', content: "Sorry, I'm having trouble connecting or accessing data right now. Please try again later." }]);
     } finally {
       setIsAiLoading(false);
     }
@@ -72,17 +75,22 @@ export function AiChat() {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+    if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAttachment({ type: 'image', dataUri: reader.result as string });
+        setAttachment({
+          name: file.name,
+          type: file.type.startsWith('image/') ? 'image' : 'file',
+          dataUri: reader.result as string,
+          fileType: file.type,
+        });
       };
       reader.readAsDataURL(file);
     }
   };
   
   if (!user) {
-    return null; // Don't render the chat button if user is not logged in
+    return null; 
   }
 
   return (
@@ -102,18 +110,27 @@ export function AiChat() {
                 <BotMessageSquare /> Gemini AI Assistant
             </DialogTitle>
             <DialogDescription>
-              Your AI-powered assistant for all things CampusOS. You can also attach images.
+              Your AI-powered assistant for all things CampusOS. You can also attach images and files.
             </DialogDescription>
           </DialogHeader>
           
-          <ScrollArea className="h-full pr-4">
+          <ScrollArea className="h-full pr-4" ref={scrollAreaRef}>
             <div className="space-y-4">
                 {chatHistory.map((msg, index) => (
                   <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                     {msg.role === 'ai' && <Avatar className="h-8 w-8"><AvatarFallback>AI</AvatarFallback></Avatar>}
                     <div className={`p-3 rounded-lg max-w-[85%] whitespace-pre-wrap ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                      {msg.attachment?.type === 'image' && (
-                        <Image src={msg.attachment.dataUri} alt="User attachment" width={200} height={200} className="rounded-md mb-2" />
+                      {msg.attachment && (
+                        <div className="mb-2 p-2 bg-black/10 rounded-md">
+                          {msg.attachment.type === 'image' ? (
+                            <Image src={msg.attachment.dataUri} alt="User attachment" width={200} height={200} className="rounded-md" />
+                           ) : (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Paperclip className="h-4 w-4" />
+                              <span className="truncate">{msg.attachment.name}</span>
+                            </div>
+                          )}
+                        </div>
                       )}
                       <p className="text-sm">{msg.content}</p>
                     </div>
@@ -124,7 +141,7 @@ export function AiChat() {
                   <div className="flex items-start gap-3">
                       <Avatar className="h-8 w-8"><AvatarFallback>AI</AvatarFallback></Avatar>
                       <div className="p-3 rounded-lg bg-muted">
-                        <p className="text-sm text-muted-foreground">Thinking...</p>
+                        <p className="text-sm text-muted-foreground animate-pulse">Thinking...</p>
                       </div>
                   </div>
                 )}
@@ -133,20 +150,23 @@ export function AiChat() {
           
           <DialogFooter className="flex-col gap-2">
             {attachment && (
-                <div className="relative w-fit">
-                    <Image src={attachment.dataUri} alt="Attachment preview" width={64} height={64} className="rounded-md" />
+                <div className="relative w-fit bg-muted p-2 rounded-md">
+                    <div className="flex items-center gap-2">
+                        {attachment.type === 'image' ? <ImageIcon className="h-5 w-5" /> : <Paperclip className="h-5 w-5" />}
+                        <span className="text-sm truncate max-w-xs">{attachment.name}</span>
+                    </div>
                     <Button variant="ghost" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground" onClick={() => setAttachment(null)}>
                         <X className="h-4 w-4" />
                     </Button>
                 </div>
             )}
              <div className="flex w-full items-start space-x-2">
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,application/pdf,.doc,.docx,.txt" className="hidden" />
                 <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isAiLoading}>
                     <Paperclip className="h-5 w-5" />
                 </Button>
               <Textarea 
-                placeholder="Ask me about your schedule, medical leave status, or attach an image..." 
+                placeholder="Ask me about your schedule, medical leave status, or attach a file..." 
                 className="min-h-0"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}

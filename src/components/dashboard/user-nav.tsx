@@ -19,7 +19,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { useRouter, usePathname } from "next/navigation"
 import { getRoleFromEmail, UserRole } from "@/lib/roles"
 import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase"
-import { doc } from "firebase/firestore"
+import { doc, collection } from "firebase/firestore"
 import { cn } from "@/lib/utils"
 
 const availabilityColors: Record<string, string> = {
@@ -36,12 +36,13 @@ export function UserNav() {
   const firestore = useFirestore();
   const role = pathname.split('/')[1] as UserRole;
 
-  const availabilityRef = useMemoFirebase(() => {
+  // For doctor availability status
+  const doctorAvailabilityRef = useMemoFirebase(() => {
     if (!firestore || !user || role !== 'doctor') return null;
-    return doc(firestore, `doctorAvailability/${user.uid}`);
+    return doc(firestore, `doctorAvailability`, user.uid);
   }, [firestore, user, role]);
 
-  const { data: availabilityData } = useDoc(availabilityRef);
+  const { data: availabilityData } = useDoc(doctorAvailabilityRef);
   const availability = availabilityData?.availabilityStatus || 'not-available';
 
   const avatarImage = PlaceHolderImages.find(img => img.id === 'avatar-1');
