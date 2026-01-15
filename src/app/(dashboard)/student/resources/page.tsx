@@ -8,11 +8,13 @@ import { collection, doc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { PlusCircle, Folder, File as FileIcon, Trash2, Download, BookOpen, Link as LinkIcon, Search, Youtube, GraduationCap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Github } from 'lucide-react';
+import { appShortcuts } from '@/lib/data';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 const iconMap: Record<string, React.ElementType> = {
     github: Github,
@@ -45,6 +47,24 @@ const GlobalResources = () => {
 
     return (
         <div>
+             <div className="mb-8">
+                <h3 className="text-xl font-semibold mb-4 border-b pb-2 flex items-center gap-2">
+                    <LinkIcon className="h-5 w-5" /> Quick Links
+                </h3>
+                 <div className="flex flex-wrap items-center gap-2">
+                    {appShortcuts.map((shortcut) => (
+                        <Tooltip key={shortcut.id || shortcut.name}>
+                            <TooltipTrigger asChild>
+                                <a href={shortcut.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted text-xs border bg-card">
+                                <LinkIcon className="h-3 w-3 text-muted-foreground"/> {shortcut.name}
+                                </a>
+                            </TooltipTrigger>
+                            <TooltipContent><p>{shortcut.url}</p></TooltipContent>
+                        </Tooltip>
+                    ))}
+                </div>
+            </div>
+
             {isLoading && <p>Loading global resources...</p>}
             {Object.entries(categorizedResources).map(([category, items]) => {
                  const Icon = iconMap[items[0]?.icon] || iconMap.default;
@@ -291,25 +311,27 @@ const MyResources = () => {
 
 export default function ResourceHubPage() {
     return (
-        <div className="space-y-8">
-             <Card>
-                <CardHeader>
-                    <CardTitle>Resource Hub</CardTitle>
-                    <CardDescription>Your central place for all learning materials and platforms.</CardDescription>
-                </CardHeader>
-            </Card>
-             <Tabs defaultValue="global">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="global">Global Resources</TabsTrigger>
-                    <TabsTrigger value="personal">My Resources</TabsTrigger>
-                </TabsList>
-                <TabsContent value="global" className="mt-6">
-                    <GlobalResources />
-                </TabsContent>
-                 <TabsContent value="personal" className="mt-6">
-                    <MyResources />
-                </TabsContent>
-            </Tabs>
-        </div>
+        <TooltipProvider>
+            <div className="space-y-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Resource Hub</CardTitle>
+                        <CardDescription>Your central place for all learning materials and platforms.</CardDescription>
+                    </CardHeader>
+                </Card>
+                <Tabs defaultValue="global">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="global">Global Resources</TabsTrigger>
+                        <TabsTrigger value="personal">My Resources</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="global" className="mt-6">
+                        <GlobalResources />
+                    </TabsContent>
+                    <TabsContent value="personal" className="mt-6">
+                        <MyResources />
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </TooltipProvider>
     );
 }

@@ -7,13 +7,14 @@ import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { appShortcuts } from '@/lib/data';
 import { campusAssistant } from '@/ai/flows/campus-assistant';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { cn } from '@/lib/utils';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 const isValidUrl = (string: string) => {
@@ -104,7 +105,16 @@ export function SmartSearchBar() {
 
 
   const handleVoiceSearch = () => {
-    if (isListening || !recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+    
+    if (!recognitionRef.current) {
+        toast({ variant: 'destructive', title: 'Voice Search Error', description: 'Speech recognition is not supported in this browser.'});
+        return;
+    };
     
     setIsListening(true);
     try {
@@ -211,6 +221,20 @@ export function SmartSearchBar() {
     setQuery('');
   };
 
+  const handleShortcutAdd = (name: string, url: string) => {
+    if (!user || !shortcutsCollection) return;
+    addDocumentNonBlocking(shortcutsCollection, { name, url });
+    toast({ title: 'Shortcut Added' });
+    setIsShortcutModalOpen(false);
+  };
+  
+  const handleShortcutDelete = (id: string) => {
+    if (!user) return;
+    const docRef = doc(firestore, `users/${user.uid}/shortcuts`, id);
+    deleteDocumentNonBlocking(docRef);
+    toast({ title: 'Shortcut Deleted' });
+  };
+
   return (
     <TooltipProvider>
     <div className="relative w-full max-w-2xl mx-auto">
@@ -228,7 +252,7 @@ export function SmartSearchBar() {
               <div className="absolute inset-y-0 right-3 flex items-center space-x-1">
                   <Tooltip>
                       <TooltipTrigger asChild>
-                          <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={handleVoiceSearch} disabled={isListening || isAiLoading}>
+                          <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={handleVoiceSearch} disabled={isAiLoading}>
                               <Mic className={cn("h-5 w-5", isListening && 'text-red-500 animate-pulse')} />
                           </Button>
                       </TooltipTrigger>
@@ -291,32 +315,6 @@ export function SmartSearchBar() {
                 </Button>
             </div>
           )}
-        </div>
-
-       <div className="mt-2 flex flex-wrap items-center gap-2">
-            {!loadingShortcuts && [...appShortcuts, ...(userShortcuts || [])].slice(0, 10).map((shortcut) => (
-                <Tooltip key={shortcut.id || shortcut.name}>
-                    <TooltipTrigger asChild>
-                        <a href={shortcut.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted text-xs">
-                           <LinkIcon className="h-3 w-3 text-muted-foreground"/> {shortcut.name}
-                        </a>
-                    </TooltipTrigger>
-                    <TooltipContent><p>{shortcut.url}</p></TooltipContent>
-                </Tooltip>
-            ))}
-             <Dialog open={isShortcutModalOpen} onOpenChange={setIsShortcutModalOpen}>
-                <DialogTrigger asChild>
-                     <Button variant="ghost" size="sm" className="text-xs p-1.5 h-auto" onClick={() => { setEditingShortcut(null); setIsShortcutModalOpen(true);}}>
-                        <PlusCircle className="mr-1 h-3 w-3" /> Add/Manage
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editingShortcut ? 'Edit Shortcut' : 'Add Shortcut'}</DialogTitle>
-                    </DialogHeader>
-                    {/* ShortcutForm goes here */}
-                </DialogContent>
-            </Dialog>
         </div>
 
         {isAiLoading && (

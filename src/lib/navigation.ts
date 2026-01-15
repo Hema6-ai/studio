@@ -36,6 +36,7 @@ export interface NavLinkParent {
     label: string;
     icon: LucideIcon;
     subLinks: NavLink[];
+    href?: string;
 }
 
 export type NavItem = NavLink | NavLinkParent;
@@ -79,6 +80,8 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '#schedule', label: 'Class Schedules', icon: CalendarDays },
         { href: '#availability', label: 'My Availability', icon: UserCheck },
         { href: '#reschedule', label: 'Reschedule Class', icon: BotMessageSquare },
+        { href: '/student/resources', label: 'Resource Hub', icon: BookCopy },
+        { href: '/student/library', label: 'Library', icon: LibraryIcon },
     ],
     doctor: [
         { href: '/doctor', label: 'Dashboard', icon: LayoutDashboard },
