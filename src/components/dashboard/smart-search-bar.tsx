@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Mic, Image as ImageIcon, Sparkles, PlusCircle, Link as LinkIcon, X, Paperclip } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
@@ -96,7 +96,7 @@ export function SmartSearchBar() {
     } else {
       console.warn("Speech Recognition is not supported by this browser.");
     }
-  }, []); // Empty dependency array ensures this runs only once.
+  }, [toast]); // Empty dependency array ensures this runs only once.
 
 
   const handleVoiceSearch = () => {
