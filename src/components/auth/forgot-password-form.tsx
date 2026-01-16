@@ -58,7 +58,7 @@ export function ForgotPasswordForm() {
   if (isSubmitted) {
     return (
         <div className="text-center text-sm text-muted-foreground">
-            <p>A password reset link has been sent to your email address if it's associated with an account. Please check your inbox.</p>
+            <p>A password reset link has been sent to your email address if it's associated with an account. Please check your inbox (and spam folder).</p>
         </div>
     )
   }
