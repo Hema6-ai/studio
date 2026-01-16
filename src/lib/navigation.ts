@@ -82,7 +82,7 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '/faculty', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/faculty/ai-schedule-planner', label: 'AI Schedule Planner', icon: BotMessageSquare },
         { href: '/faculty/reschedule', label: 'Class & Reschedule', icon: CalendarDays },
-        { href: '/faculty', label: 'My Availability', icon: UserCheck },
+        { href: '/faculty#availability', label: 'My Availability', icon: UserCheck },
         { href: '/student/resources', label: 'Resource Hub', icon: BookCopy },
         { href: '/student/library', label: 'Library', icon: LibraryIcon },
     ],

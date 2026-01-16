@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { CheckCircle, XCircle } from 'lucide-react';
 import React, { useMemo } from "react";
 import { dummyFaculty, dummyTimetable } from "@/lib/data";
+import { Badge } from "@/components/ui/badge";
 
 const normalizeName = (name: string) => {
     if (!name) return '';
@@ -49,7 +50,7 @@ export default function FacultyDashboard() {
         });
     }, [facultyNameFromEmail]);
 
-    const facultyDisplayName = facultyDetails.length > 0 ? facultyDetails[0].name.split('/')[0].trim() : "Faculty Member";
+    const facultyDisplayName = facultyDetails.length > 0 ? facultyDetails[0].name.split('/').map(n=>n.trim()).find(n => normalizeName(n) === facultyNameFromEmail) || facultyDetails[0].name.split('/')[0].trim() : "Faculty Member";
 
     // --- Availability Logic ---
     const facultyAvailabilityRef = useMemoFirebase(() => {
@@ -91,6 +92,9 @@ export default function FacultyDashboard() {
         toast({ title: 'Availability Updated', description: `You are now set to ${status === 'YES' ? 'available' : 'unavailable'}.`});
     };
 
+    const rescheduleLogQuery = useMemoFirebase(() => firestore ? doc(firestore, 'rescheduleLog', 'latest') : null, [firestore]);
+    const { data: rescheduleLog } = useDoc(rescheduleLogQuery);
+
     // --- Today's Schedule Logic ---
     const todaySchedule = useMemo(() => {
         if (facultyDetails.length === 0) return [];
@@ -128,13 +132,27 @@ export default function FacultyDashboard() {
         
         schedule.sort((a, b) => a.time.localeCompare(b.time));
         
-        return schedule.filter((item, index, self) =>
+        const uniqueSchedule = schedule.filter((item, index, self) =>
             index === self.findIndex((t) => (
                 t.time === item.time && t.course === item.course && t.section === item.section
             ))
         );
 
-    }, [facultyDetails]);
+         // Check against reschedule log
+        return uniqueSchedule.map(classInfo => {
+            if (!rescheduleLog) return { ...classInfo, isRescheduled: false };
+
+            const isRescheduled = Object.values(rescheduleLog).some((log: any) => 
+                log.facultyName === facultyDisplayName &&
+                log.subject === classInfo.course && 
+                log.originalSlot.startsWith(today) &&
+                log.originalSlot.includes(classInfo.time)
+            );
+
+            return { ...classInfo, isRescheduled };
+        });
+
+    }, [facultyDetails, rescheduleLog, facultyDisplayName]);
 
     return (
       <div className="grid gap-6">
@@ -146,7 +164,7 @@ export default function FacultyDashboard() {
         </Card>
         
         <div className="grid gap-6 md:grid-cols-2">
-            <Card>
+            <Card id="availability">
                 <CardHeader>
                     <CardTitle>My Availability</CardTitle>
                     <CardDescription>Let students know if you are available for queries.</CardDescription>
@@ -201,7 +219,10 @@ export default function FacultyDashboard() {
                                 todaySchedule.map((item, index) => (
                                     <TableRow key={index}>
                                         <TableCell>{item.time}</TableCell>
-                                        <TableCell>{item.course}</TableCell>
+                                        <TableCell>
+                                            {item.course}
+                                            {item.isRescheduled && <Badge variant="destructive" className="ml-2">Rescheduled</Badge>}
+                                        </TableCell>
                                         <TableCell>{item.section}</TableCell>
                                         <TableCell>{item.ug}</TableCell>
                                         <TableCell>{item.room}</TableCell>
