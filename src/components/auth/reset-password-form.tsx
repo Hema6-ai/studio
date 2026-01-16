@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
-import { confirmPasswordReset, signInWithEmailAndPassword, verifyPasswordResetCode } from "firebase/auth";
+import { confirmPasswordReset } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getRoleFromEmail } from "@/lib/roles";
 
 export function ResetPasswordForm() {
   const auth = useAuth();
@@ -54,29 +53,15 @@ export function ResetPasswordForm() {
     setIsLoading(true);
 
     try {
-      // Verify the code to get the user's email, which is needed for auto-login
-      const email = await verifyPasswordResetCode(auth, oobCode);
-
-      // Now, confirm the password reset
       await confirmPasswordReset(auth, oobCode, newPassword);
       
       toast({
-        title: "Success",
-        description: "Password reset. Signing you in...",
+        title: "Password Updated Successfully",
+        description: "You can now log in with your new password.",
       });
       setIsSuccess(true);
       
-      // Auto-login the user with the new password
-      const userCredential = await signInWithEmailAndPassword(auth, email, newPassword);
-      const user = userCredential.user;
-      const role = getRoleFromEmail(user.email || "");
-
-      if (role) {
-        router.push(`/${role}`);
-      } else {
-        // Fallback to login page if role can't be determined
-        router.push('/login');
-      }
+      router.push('/login');
 
     } catch (error: any) {
       switch (error.code) {
@@ -109,7 +94,7 @@ export function ResetPasswordForm() {
   if (isSuccess && !error) {
     return (
         <div className="text-center text-sm text-muted-foreground">
-            <p>Your password has been updated. Redirecting you to your dashboard...</p>
+            <p>Your password has been updated. Redirecting you to the login page...</p>
         </div>
     )
   }
