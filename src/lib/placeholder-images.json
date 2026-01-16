@@ -29,6 +29,12 @@
       "description": "Profile picture for a student named Hema.",
       "imageUrl": "https://images.unsplash.com/photo-1557053908-4793c484d06f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2ODI0NTg4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "woman portrait"
+    },
+    {
+      "id": "event-poster-placeholder",
+      "description": "A generic placeholder for an event poster.",
+      "imageUrl": "https://images.unsplash.com/photo-1767519865116-03378fec84b8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxldmVudCUyMHBvc3RlcnxlbnwwfHx8fDE3Njg0NzY2MzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "event poster"
     }
   ]
 }

@@ -1,5 +1,6 @@
+'use client';
 
-export type UserRole = 'student' | 'faculty' | 'doctor' | 'academics' | 'director' | 'librarian' | null;
+export type UserRole = 'student' | 'faculty' | 'doctor' | 'academics' | 'director' | 'librarian' | 'slc' | 'sdc' | null;
 
 export const ROLES = {
   STUDENT: 'student',
@@ -8,6 +9,8 @@ export const ROLES = {
   ACADEMICS: 'academics',
   DIRECTOR: 'director',
   LIBRARIAN: 'librarian',
+  SLC: 'slc',
+  SDC: 'sdc',
 } as const;
 
 
@@ -26,6 +29,16 @@ export function getRoleFromEmail(email: string): UserRole {
   // Rule for Librarian
   if (lowerCaseEmail === 'library@iiits.in') {
     return ROLES.LIBRARIAN;
+  }
+
+  // Rule for SLC
+  if (lowerCaseEmail.includes('slc')) {
+      return ROLES.SLC;
+  }
+
+  // Rule for SDC
+  if (lowerCaseEmail.includes('sdc')) {
+      return ROLES.SDC;
   }
 
   // Rule 2: Academic Office

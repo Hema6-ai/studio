@@ -23,6 +23,8 @@ import {
     Users2,
     Library as LibraryIcon,
     History as HistoryIcon,
+    ShieldCheck,
+    CalendarPlus,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -111,6 +113,16 @@ export const navLinks: Record<string, NavItem[]> = {
     ],
     librarian: [
         { href: '/librarian', label: 'Library Management', icon: LibraryIcon },
+        { href: '#', label: 'Profile', icon: User },
+        { href: '/login', label: 'Logout', icon: LogOut },
+    ],
+    slc: [
+        { href: '/slc', label: 'Complaints Dashboard', icon: ShieldCheck },
+        { href: '#', label: 'Profile', icon: User },
+        { href: '/login', label: 'Logout', icon: LogOut },
+    ],
+    sdc: [
+        { href: '/sdc', label: 'Events Dashboard', icon: CalendarPlus },
         { href: '#', label: 'Profile', icon: User },
         { href: '/login', label: 'Logout', icon: LogOut },
     ],
