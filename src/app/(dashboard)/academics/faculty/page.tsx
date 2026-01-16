@@ -9,9 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from '@/components/ui/label';
 import { dummyFaculty } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, serverTimestamp, setDoc, deleteDoc } from 'firebase/firestore';
 
 // --- Reusable Faculty Form ---
-const FacultyForm = ({ faculty, onSave, ugYear }: { faculty?: any, onSave: (data: any) => void, ugYear: string }) => {
+const FacultyForm = ({ faculty, onSave, ugYear }: { faculty?: any, onSave: (data: any) => Promise<void>, ugYear: string }) => {
     const [formData, setFormData] = useState({
         id: faculty?.id || undefined,
         name: faculty?.name || '',
@@ -22,17 +24,23 @@ const FacultyForm = ({ faculty, onSave, ugYear }: { faculty?: any, onSave: (data
         section: faculty?.section || ''
     });
     const [isOpen, setIsOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
     };
 
-    const handleSubmit = () => {
-        onSave({ ...formData, ugYear: [ugYear.replace('UG','')] });
-        setIsOpen(false);
-        if (!faculty) {
-             setFormData({ id: undefined, name: '', email: '', courseAbbr: '', courseName: '', branch: '', section: '' });
+    const handleSubmit = async () => {
+        setIsSaving(true);
+        try {
+            await onSave({ ...formData, ugYear: [ugYear.replace('UG','')] });
+            setIsOpen(false);
+            if (!faculty) {
+                 setFormData({ id: undefined, name: '', email: '', courseAbbr: '', courseName: '', branch: '', section: '' });
+            }
+        } finally {
+            setIsSaving(false);
         }
     };
     
@@ -78,7 +86,9 @@ const FacultyForm = ({ faculty, onSave, ugYear }: { faculty?: any, onSave: (data
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleSubmit} disabled={!isFormValid}>Save Changes</Button>
+                    <Button onClick={handleSubmit} disabled={!isFormValid || isSaving}>
+                        {isSaving ? 'Saving...' : 'Save Changes'}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -87,23 +97,67 @@ const FacultyForm = ({ faculty, onSave, ugYear }: { faculty?: any, onSave: (data
 
 export default function FacultyManagementPage() {
     const { toast } = useToast();
-    const [faculty, setFaculty] = useState(dummyFaculty);
-    const loadingFaculty = false;
+    const firestore = useFirestore();
 
-    const handleSaveFaculty = (facultyData: any) => {
-        const newFaculty = { ...facultyData, id: facultyData.id || `faculty-${Date.now()}` };
-        if (facultyData.id) {
-            setFaculty(faculty.map(f => f.id === facultyData.id ? newFaculty : f));
-        } else {
-            setFaculty([...faculty, newFaculty]);
+    const facultyQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'faculty');
+    }, [firestore]);
+    const { data: facultyFromFirestore, isLoading: loadingFaculty } = useCollection(facultyQuery);
+
+    const faculty = useMemo(() => {
+        const facultyMap = new Map();
+        dummyFaculty.forEach(f => facultyMap.set(f.id, f));
+        facultyFromFirestore?.forEach((f: any) => facultyMap.set(f.id, f));
+        return Array.from(facultyMap.values());
+    }, [facultyFromFirestore]);
+
+
+    const handleSaveFaculty = async (facultyData: any) => {
+        if (!firestore) {
+            toast({ variant: "destructive", title: "Error", description: "Database not available." });
+            return;
         }
-        toast({ title: "Success", description: `Faculty ${facultyData.id ? 'updated' : 'added'} successfully.` });
+
+        if (facultyData.name.includes('/')) {
+            toast({
+                variant: "destructive",
+                title: "Invalid Name",
+                description: "Cannot save multiple faculty names in one entry. Please split them into separate records.",
+            });
+            return;
+        }
+        
+        const facultyId = facultyData.id || `faculty-${Date.now()}`;
+        const facultyRef = doc(firestore, 'faculty', facultyId);
+        
+        const dataToSave = {
+            ...facultyData,
+            id: facultyId,
+            lastUpdatedAt: serverTimestamp(),
+        };
+
+        try {
+            await setDoc(facultyRef, dataToSave, { merge: true });
+            toast({ title: "Success", description: `Faculty ${facultyData.id ? 'updated' : 'added'} successfully.` });
+        } catch (error: any) {
+             toast({ variant: "destructive", title: "Save Failed", description: error.message || "Could not save faculty data." });
+        }
     };
 
-    const handleDeleteFaculty = (facultyId: string) => {
+    const handleDeleteFaculty = async (facultyId: string) => {
+        if (!firestore) {
+             toast({ variant: "destructive", title: "Error", description: "Database not available." });
+            return;
+        }
         if (window.confirm("Are you sure you want to delete this faculty member?")) {
-            setFaculty(faculty.filter(f => f.id !== facultyId));
-            toast({ title: "Success", description: "Faculty member deleted successfully." });
+            const facultyRef = doc(firestore, 'faculty', facultyId);
+            try {
+                await deleteDoc(facultyRef);
+                toast({ title: "Success", description: "Faculty member deleted successfully." });
+            } catch (error: any) {
+                toast({ variant: "destructive", title: "Delete Failed", description: error.message || "Could not delete faculty member." });
+            }
         }
     };
 
