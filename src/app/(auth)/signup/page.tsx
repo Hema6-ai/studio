@@ -6,14 +6,14 @@ import { SignupForm } from "@/components/auth/signup-form";
 import { Logo } from "@/components/icons";
 
 export default function SignupPage() {
-    const bgImageUrl = "https://www.iiits.ac.in/wp-content/uploads/2023/07/IMG_2278-scaled.jpg";
+    const bgImageUrl = "https://images.shiksha.com/mediadata/images/1587541819phpZp6y2Y.jpeg";
 
     return (
         <div className="relative w-full min-h-screen">
             {/* Background Image */}
             <Image
                 src={bgImageUrl}
-                alt="IIIT Sri City campus background"
+                alt="IIIT campus background"
                 fill
                 className="object-cover"
                 priority
