@@ -2,41 +2,47 @@
 
 import { Suspense } from 'react';
 import Image from "next/image";
-import Link from "next/link";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { Logo } from "@/components/icons";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 
 function ResetPasswordPageContent() {
-    const loginImage = PlaceHolderImages.find((img) => img.id === "login-hero");
+    const bgImage = PlaceHolderImages.find((img) => img.id === "login-hero");
 
     return (
-        <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
-            <div className="flex items-center justify-center py-12">
-                <div className="mx-auto grid w-[350px] gap-6">
-                    <div className="grid gap-2 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                            <Logo className="h-8 w-8 text-primary" />
-                            <h1 className="text-3xl font-bold font-headline">CampusOS</h1>
+        <div className="relative w-full min-h-screen">
+            {/* Background Image */}
+            {bgImage && (
+                <Image
+                src={bgImage.imageUrl}
+                alt={bgImage.description}
+                fill
+                className="object-cover"
+                data-ai-hint={bgImage.imageHint}
+                priority
+                />
+            )}
+            {/* Glassmorphism Overlay */}
+            <div className="absolute inset-0 bg-white/30 backdrop-blur-sm" />
+
+            {/* Centered Form */}
+            <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
+                <Card className="w-full max-w-sm">
+                    <CardHeader className="text-center">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                        <Logo className="h-8 w-8 text-primary" />
+                        <CardTitle className="text-3xl font-bold font-headline">CampusOS</CardTitle>
                         </div>
-                        <p className="text-balance text-muted-foreground">
+                        <CardDescription>
                             Create a new password for your account.
-                        </p>
-                    </div>
-                    <ResetPasswordForm />
-                </div>
-            </div>
-            <div className="hidden bg-muted lg:block">
-                {loginImage && (
-                    <Image
-                        src={loginImage.imageUrl}
-                        alt={loginImage.description}
-                        width="800"
-                        height="1200"
-                        className="h-full w-full object-cover dark:brightness-[0.4]"
-                        data-ai-hint={loginImage.imageHint}
-                    />
-                )}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ResetPasswordForm />
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
