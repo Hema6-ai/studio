@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
-import { confirmPasswordReset } from "firebase/auth";
+import { confirmPasswordReset, signInWithEmailAndPassword, verifyPasswordResetCode } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getRoleFromEmail } from "@/lib/roles";
 
 export function ResetPasswordForm() {
   const auth = useAuth();
@@ -53,13 +54,30 @@ export function ResetPasswordForm() {
     setIsLoading(true);
 
     try {
+      // Verify the code to get the user's email, which is needed for auto-login
+      const email = await verifyPasswordResetCode(auth, oobCode);
+
+      // Now, confirm the password reset
       await confirmPasswordReset(auth, oobCode, newPassword);
+      
       toast({
         title: "Success",
-        description: "Your password has been reset successfully. Please sign in.",
+        description: "Password reset. Signing you in...",
       });
       setIsSuccess(true);
-      setTimeout(() => router.push('/login'), 2000);
+      
+      // Auto-login the user with the new password
+      const userCredential = await signInWithEmailAndPassword(auth, email, newPassword);
+      const user = userCredential.user;
+      const role = getRoleFromEmail(user.email || "");
+
+      if (role) {
+        router.push(`/${role}`);
+      } else {
+        // Fallback to login page if role can't be determined
+        router.push('/login');
+      }
+
     } catch (error: any) {
       switch (error.code) {
         case 'auth/expired-action-code':
@@ -88,10 +106,10 @@ export function ResetPasswordForm() {
       )
   }
   
-  if (isSuccess) {
+  if (isSuccess && !error) {
     return (
         <div className="text-center text-sm text-muted-foreground">
-            <p>Your password has been updated. Redirecting you to the sign-in page...</p>
+            <p>Your password has been updated. Redirecting you to your dashboard...</p>
         </div>
     )
   }
