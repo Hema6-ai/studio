@@ -30,7 +30,11 @@ export function ForgotPasswordForm() {
     }
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      const actionCodeSettings = {
+        url: `${window.location.origin}/reset-password`,
+        handleCodeInApp: true,
+      };
+      await sendPasswordResetEmail(auth, email, actionCodeSettings);
       // Don't reveal if user exists. Show success message regardless.
       toast({
         title: "Check your email",
