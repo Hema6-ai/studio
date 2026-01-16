@@ -19,10 +19,11 @@ import { Badge } from "@/components/ui/badge";
 
 const normalizeName = (name: string) => {
     if (!name) return '';
+    // This normalizes by removing titles, spaces, and dots for a clean comparison.
     return name
       .toLowerCase()
       .replace(/dr\.?|mrs\.?|mr\.?/g, '')
-      .replace(/\s+/g, '')
+      .replace(/[\s.]/g, '')
       .trim();
 };
   
@@ -216,10 +217,15 @@ export default function ReschedulePage() {
 
     const facultyDetails = useMemo(() => {
         if (!facultyNameFromEmail) return [];
-        return dummyFaculty.filter(f => normalizeName(f.name) === facultyNameFromEmail);
+        // Filters all course assignments from dummy data that match the logged-in faculty's name.
+        // It correctly handles entries with single or multiple (slash-separated) faculty names.
+        return dummyFaculty.filter(f => {
+            const normalizedDummyNames = f.name.split('/').map(namePart => normalizeName(namePart.trim()));
+            return normalizedDummyNames.includes(facultyNameFromEmail);
+        });
     }, [facultyNameFromEmail]);
 
-    const facultyDisplayName = facultyDetails.length > 0 ? facultyDetails[0].name : "Faculty Member";
+    const facultyDisplayName = facultyDetails.length > 0 ? facultyDetails[0].name.split('/')[0].trim() : "Faculty Member";
 
     if (!user) return <p>Loading...</p>
 

@@ -12,10 +12,11 @@ import { dummyFaculty, dummyTimetable } from "@/lib/data";
 
 const normalizeName = (name: string) => {
     if (!name) return '';
+    // This normalizes by removing titles, spaces, and dots for a clean comparison.
     return name
       .toLowerCase()
       .replace(/dr\.?|mrs\.?|mr\.?/g, '')
-      .replace(/\s+/g, '')
+      .replace(/[\s.]/g, '')
       .trim();
 };
   
@@ -35,17 +36,20 @@ export default function FacultyDashboard() {
     const facultyNameFromEmail = useMemo(() => {
         if (!user?.email) return '';
         const namePart = user.email.split('@')[0];
-        // Special case for names like "Shaik Mohammad Rafi" where email is ShaikMohammadRafi@
-        // This is a simple heuristic, a better approach would be a dedicated field in the user profile.
         return normalizeName(namePart);
     }, [user?.email]);
 
     const facultyDetails = useMemo(() => {
         if (!facultyNameFromEmail) return [];
-        return dummyFaculty.filter(f => normalizeName(f.name) === facultyNameFromEmail);
+        // Filters all course assignments from dummy data that match the logged-in faculty's name.
+        // It correctly handles entries with single or multiple (slash-separated) faculty names.
+        return dummyFaculty.filter(f => {
+            const normalizedDummyNames = f.name.split('/').map(namePart => normalizeName(namePart.trim()));
+            return normalizedDummyNames.includes(facultyNameFromEmail);
+        });
     }, [facultyNameFromEmail]);
 
-    const facultyDisplayName = facultyDetails.length > 0 ? facultyDetails[0].name : "Faculty Member";
+    const facultyDisplayName = facultyDetails.length > 0 ? facultyDetails[0].name.split('/')[0].trim() : "Faculty Member";
 
     // --- Availability Logic ---
     const facultyAvailabilityRef = useMemoFirebase(() => {
@@ -56,7 +60,7 @@ export default function FacultyDashboard() {
     const { data: availabilityDoc, isLoading: loadingAvailability } = useDoc(facultyAvailabilityRef);
     
     const facultyList = availabilityDoc?.faculty || [];
-    const currentFaculty = facultyList.find((f: any) => normalizeName(f.name) === normalizeName(facultyDisplayName));
+    const currentFaculty = facultyList.find((f: any) => normalizeName(f.name).includes(normalizeName(facultyDisplayName)));
     const isAvailable = currentFaculty?.status === 'YES';
 
     const handleAvailabilityChange = (checked: boolean) => {
@@ -65,7 +69,7 @@ export default function FacultyDashboard() {
 
         let facultyFound = false;
         const updatedFacultyList = facultyList.map((f: any) => {
-            if (normalizeName(f.name) === normalizeName(facultyDisplayName)) {
+            if (normalizeName(f.name).includes(normalizeName(facultyDisplayName))) {
                 facultyFound = true;
                 return { ...f, status: status };
             }
