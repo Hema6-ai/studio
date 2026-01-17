@@ -371,6 +371,18 @@
           "status": { "type": "string", "enum": ["UNSCHEDULED", "SCHEDULED", "CONFLICT"], "default": "UNSCHEDULED" }
         },
         "required": ["ug", "courseCode", "section", "facultyId", "studentIds", "durationSlots", "roomTypeRequired", "status"]
+    },
+    "TimetableLock": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TimetableLock",
+      "type": "object",
+      "description": "Represents a lock on the timetable for a specific semester.",
+      "properties": {
+        "isLocked": { "type": "boolean", "description": "Indicates if the timetable is locked." },
+        "lockedBy": { "type": "string", "description": "The email of the user who locked the timetable." },
+        "lockedAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the timetable was locked." }
+      },
+      "required": ["isLocked", "lockedBy", "lockedAt"]
     }
   },
   "auth": {
@@ -403,7 +415,8 @@
       { "path": "/rooms/{roomId}", "definition": { "entityName": "Room", "schema": { "$ref": "#/backend/entities/Room" }, "description": "Stores master data for all campus rooms." } },
       { "path": "/faculty/{facultyId}", "definition": { "entityName": "Faculty", "schema": { "$ref": "#/backend/entities/Faculty" }, "description": "Stores master data for all faculty members." } },
       { "path": "/teachingAssignments/{assignmentId}", "definition": { "entityName": "TeachingAssignment", "schema": { "$ref": "#/backend/entities/TeachingAssignment" }, "description": "Stores the final teaching assignments of faculty to course sections." } },
-      { "path": "/sessions/{sessionId}", "definition": { "entityName": "Session", "schema": { "$ref": "#/backend/entities/Session" }, "description": "Stores all generated, unscheduled class sessions that need to be placed on the timetable." } }
+      { "path": "/sessions/{sessionId}", "definition": { "entityName": "Session", "schema": { "$ref": "#/backend/entities/Session" }, "description": "Stores all generated, unscheduled class sessions that need to be placed on the timetable." } },
+      { "path": "/timetableLocks/{semesterId}", "definition": { "entityName": "TimetableLock", "schema": { "$ref": "#/backend/entities/TimetableLock" }, "description": "Stores the lock state for a semester's timetable to prevent further edits.", "params": [{ "name": "semesterId", "description": "The semester identifier, e.g., 'currentSemester'." }] } }
     ],
     "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability for the CampusOS application, especially focusing on the Digital Medical & Document Approval System (Module 5). Key design considerations include denormalization for authorization, segregation of data based on access needs, and consistent access modeling.\n\n**Authorization Independence and QAPs:**\n\n*   **/users/{userId}/medicalRequests/{medicalRequestId}**: Medical requests are stored as subcollections under each user's document. This ensures that a student can only access their own requests, achieving path-based ownership and simplifies security rules.\n\n*   **/doctors/{doctorId}/availability**: Doctor availability is stored in a separate collection, enabling easy querying and updates to doctor availability.  This ensures that students can see doctor availability in real-time.\n\n*   **/users/{userId}/shortcuts/{shortcutId}**: User-defined shortcuts are stored in a subcollection under each user, ensuring that shortcuts are private and only visible to the user who created them.\n\n*   **/resourceHub/students/{studentId}/resources/{resourceId}**: Student-specific resources are stored in a subcollection under a separate root collection, ensuring data privacy and ownership while keeping student documents clean.\n\n**Structural Segregation:**\n\n*   The data is separated based on access requirements:\n    *   Student medical requests are stored under `/users/{userId}/medicalRequests/{medicalRequestId}`.\n    *   Doctor availability statuses are stored in `/doctors/{doctorId}/availability`.\n    *   Curriculum data is stored centrally in `/curriculums` to be queried by branch and year.\n    *   Institute library books are stored in `/books`.\n    *   Student personal library files are stored under `/students/{studentId}/library/{fileId}` to enforce privacy.\n    *   Global resources are in a central, read-only collection `/globalResources`.\n\n**Access Modeling:**\n\n*   **Private Data (Student Medical Requests, User Shortcuts, Student Library, Student Resources):** Uses path-based ownership to ensure students can only access their own data.\n\n*   **Role-Based Access Control:** The application logic determines roles based on email prefixes and domains (e.g., `doctor.name@iiits.in` for doctors). This allows for role-based access in the UI and application code.\n\nThis structure supports QAPs by:\n\n*   Enabling secure `list` operations. For example, a student can securely list only their own medical requests because of the path-based ownership.\n*   Providing clear segregation for different roles (student, doctor, director, academic office, librarian), which simplifies the implementation of Firestore security rules."
   }

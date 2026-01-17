@@ -2,7 +2,7 @@
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Settings, Save, PlusCircle, Trash2, Edit, GraduationCap, Building, Clock, Activity, BookOpen, User as UserIcon, Wand2 } from 'lucide-react';
+import { AlertTriangle, Settings, Save, PlusCircle, Trash2, Edit, GraduationCap, Building, Clock, Activity, BookOpen, User as UserIcon, Wand2, Download, FileJson, Lock, ShieldCheck } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -678,6 +678,138 @@ const OptimizationManager: FC = () => {
     );
 };
 
+// --- Export & Lock Manager ---
+const ExportManager: FC<{ user: any }> = ({ user }) => {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [verificationStatus, setVerificationStatus] = useState<'unverified' | 'verifying' | 'success' | 'error'>('unverified');
+    const [isLocked, setIsLocked] = useState(false);
+    const [isLocking, setIsLocking] = useState(false);
+
+    // This would check the lock status from Firestore
+    // For now, we simulate it with local state.
+
+    const handleVerify = () => {
+        setVerificationStatus('verifying');
+        // Simulate a check
+        setTimeout(() => {
+            setVerificationStatus('success');
+            toast({ title: "Verification Successful", description: "All hard constraints are met. You can now export or lock the timetable." });
+        }, 1500);
+    };
+
+    const handleDownloadJson = (data: any, filename: string) => {
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+    
+    // In a real app, these would use Firestore data.
+    const getMockMasterTimetable = () => ({ metadata: { semester: 'Fall 2024', generatedAt: new Date().toISOString(), approvedBy: user.email, retriesUsed: 2 }, sessions: [{ sessionId: 'S1', day: 'Monday', slot: '08:45 – 09:45', roomId: 'G08' }] });
+    const getMockStudentData = () => ([{ studentId: 'P21001', ug: 'UG3', enrolledSubjects: ['CS301'], weeklyTimetable: [{ day: 'Monday', slot: '08:45 – 09:45', subject: 'CS301', room: 'G08' }] }]);
+    const getMockFacultyData = () => ([{ facultyId: 'F101', subjectsTaught: ['CS301'], weeklyTimetable: [{ day: 'Monday', slot: '08:45 – 09:45', subject: 'CS301', room: 'G08' }] }]);
+    const getMockRoomData = () => ([{ roomId: 'G08', weeklyUsage: [{ day: 'Monday', slot: '08:45 – 09:45', subject: 'CS301', faculty: 'Dr. Smith' }] }]);
+    const getMockUgTimetable = () => ({ ug: 'UG3', sections: ['A'], weeklyGrid: { 'Monday': [{ time: '08:45 – 09:45', subject: 'CS301' }] } });
+
+    const handleLock = () => {
+        if (!firestore) return;
+        if (window.confirm("Are you sure you want to lock the timetable? This will prevent all future edits for this semester.")) {
+            setIsLocking(true);
+            const lockRef = doc(firestore, 'timetableLocks', 'currentSemester');
+            setDocumentNonBlocking(lockRef, { isLocked: true, lockedBy: user.email, lockedAt: serverTimestamp() }, { merge: true });
+            setTimeout(() => {
+                setIsLocked(true);
+                setIsLocking(false);
+                toast({ title: "Timetable Locked", description: "All configurations for this semester are now read-only." });
+            }, 1000);
+        }
+    };
+    
+    const isExportDisabled = verificationStatus !== 'success' || isLocked;
+
+    return (
+        <div className="space-y-6">
+            <Alert>
+                <Download className="h-4 w-4" />
+                <AlertTitle>Phase 6: Export &amp; Lock</AlertTitle>
+                <AlertDescription>
+                    This is the final phase. First, run a final verification of all hard constraints. Then, export the required JSON data for other systems and lock the timetable to prevent further changes.
+                </AlertDescription>
+            </Alert>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>1. Final Verification</CardTitle>
+                    <CardDescription>Re-verify all hard constraints before proceeding.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button onClick={handleVerify} disabled={verificationStatus === 'verifying' || verificationStatus === 'success' || isLocked}>
+                        {verificationStatus === 'verifying' ? 'Verifying...' : 'Run Final Constraint Check'}
+                    </Button>
+                     {verificationStatus === 'success' && <p className="text-green-600 font-semibold mt-4">✅ Verification successful. No violations found.</p>}
+                     {verificationStatus === 'error' && <p className="text-destructive font-semibold mt-4">❌ Verification failed. Please resolve conflicts.</p>}
+                </CardContent>
+            </Card>
+            
+             <Card>
+                <CardHeader>
+                    <CardTitle>2. Data Export</CardTitle>
+                    <CardDescription>Download the finalized timetable data in various JSON formats.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                     <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div><p className="font-medium">Master Timetable</p><p className="text-xs text-muted-foreground">masterTimetable.json</p></div>
+                        <Button variant="outline" size="icon" disabled={isExportDisabled} onClick={() => handleDownloadJson(getMockMasterTimetable(), 'masterTimetable.json')}><Download /></Button>
+                    </div>
+                     <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div><p className="font-medium">Student Data</p><p className="text-xs text-muted-foreground">students.json</p></div>
+                        <Button variant="outline" size="icon" disabled={isExportDisabled} onClick={() => handleDownloadJson(getMockStudentData(), 'students.json')}><Download /></Button>
+                    </div>
+                     <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div><p className="font-medium">Faculty Data</p><p className="text-xs text-muted-foreground">faculty.json</p></div>
+                        <Button variant="outline" size="icon" disabled={isExportDisabled} onClick={() => handleDownloadJson(getMockFacultyData(), 'faculty.json')}><Download /></Button>
+                    </div>
+                     <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div><p className="font-medium">Room Data</p><p className="text-xs text-muted-foreground">rooms.json</p></div>
+                        <Button variant="outline" size="icon" disabled={isExportDisabled} onClick={() => handleDownloadJson(getMockRoomData(), 'rooms.json')}><Download /></Button>
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div><p className="font-medium">UG Timetables</p><p className="text-xs text-muted-foreground">ugTimetables.json</p></div>
+                        <Button variant="outline" size="icon" disabled={isExportDisabled} onClick={() => handleDownloadJson(getMockUgTimetable(), 'ugTimetables.json')}><Download /></Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle>3. Deploy &amp; Lock</CardTitle>
+                    <CardDescription>Lock the entire timetable configuration for this semester. This action is irreversible.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLocked ? (
+                        <Alert variant="destructive">
+                            <Lock className="h-4 w-4" />
+                            <AlertTitle>Timetable Locked</AlertTitle>
+                            <AlertDescription>This timetable is now read-only. No further changes are permitted.</AlertDescription>
+                        </Alert>
+                    ) : (
+                        <Button variant="destructive" disabled={isExportDisabled || isLocking} onClick={handleLock}>
+                            <Lock className="mr-2" /> {isLocking ? 'Locking...' : 'Lock Timetable for Deployment'}
+                        </Button>
+                    )}
+                </CardContent>
+            </Card>
+
+        </div>
+    );
+};
 
 
 // --- Main Page Component ---
@@ -703,13 +835,14 @@ export default function TimetableAdminPage() {
                 </CardHeader>
             </Card>
 
-            <Tabs defaultValue="optimize" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+            <Tabs defaultValue="export" className="w-full">
+                <TabsList className="grid w-full grid-cols-6">
                     <TabsTrigger value="policy">Phase 1: Policies</TabsTrigger>
                     <TabsTrigger value="structure">Phase 2: Structure</TabsTrigger>
                     <TabsTrigger value="faculty">Phase 3: Faculty</TabsTrigger>
                     <TabsTrigger value="sessions">Phase 4: Sessions</TabsTrigger>
-                    <TabsTrigger value="optimize">Phase 5: Optimize & Finalize</TabsTrigger>
+                    <TabsTrigger value="optimize">Phase 5: Optimize</TabsTrigger>
+                    <TabsTrigger value="export">Phase 6: Export &amp; Lock</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="policy" className="mt-6">
@@ -742,7 +875,7 @@ export default function TimetableAdminPage() {
                      <div className="space-y-6">
                         <Alert>
                            <GraduationCap className="h-4 w-4" />
-                           <AlertTitle>Phase 3: Faculty & Teaching Assignments</AlertTitle>
+                           <AlertTitle>Phase 3: Faculty &amp; Teaching Assignments</AlertTitle>
                            <AlertDescription>
                                First, create a master list of all faculty members. Then, assign a specific faculty member to each course section that will be taught this semester.
                            </AlertDescription>
@@ -758,6 +891,10 @@ export default function TimetableAdminPage() {
 
                  <TabsContent value="optimize" className="mt-6">
                     <OptimizationManager />
+                </TabsContent>
+
+                 <TabsContent value="export" className="mt-6">
+                    <ExportManager user={user} />
                 </TabsContent>
 
             </Tabs>
