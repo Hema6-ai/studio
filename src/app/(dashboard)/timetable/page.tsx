@@ -2,7 +2,7 @@
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Settings, Save, PlusCircle, Trash2, Edit, GraduationCap } from 'lucide-react';
+import { AlertTriangle, Settings, Save, PlusCircle, Trash2, Edit, GraduationCap, Building, Clock } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { TimetableDisplay } from '@/components/dashboard/timetable-display';
 
 interface SemesterPolicy {
     id: string;
@@ -29,6 +30,166 @@ interface SemesterPolicy {
 }
 
 const SEMESTERS = ['UG1', 'UG2', 'UG3', 'UG4'];
+
+// --- Room Manager ---
+const RoomManager: FC<{ user: any }> = ({ user }) => {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const roomsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'rooms') : null, [firestore]);
+    const { data: roomList, isLoading } = useCollection(roomsCollection);
+
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingRoom, setEditingRoom] = useState<any>(null);
+
+    const openDialog = (room = null) => {
+        setEditingRoom(room);
+        setIsDialogOpen(true);
+    };
+
+    const handleDelete = (id: string) => {
+        if (window.confirm("Are you sure you want to delete this room? This cannot be undone.") && firestore) {
+            deleteDocumentNonBlocking(doc(firestore, 'rooms', id));
+            toast({ title: "Room Deleted" });
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader className="flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Room Master List</CardTitle>
+                    <CardDescription>Define all physical rooms available for classes.</CardDescription>
+                </div>
+                <Button onClick={() => openDialog()}><PlusCircle className="mr-2" />Add Room</Button>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader><TableRow><TableHead>Room ID</TableHead><TableHead>Type</TableHead><TableHead>Capacity</TableHead><TableHead>Allowed UGs</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                        {isLoading && <TableRow><TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell></TableRow>}
+                        {!isLoading && roomList?.map(r => (
+                            <TableRow key={r.id}>
+                                <TableCell>{r.roomId}</TableCell>
+                                <TableCell>{r.roomType}</TableCell>
+                                <TableCell>{r.capacity}</TableCell>
+                                <TableCell>{r.allowedUGs.join(', ')}</TableCell>
+                                <TableCell className="flex gap-1">
+                                    <Button variant="ghost" size="icon" onClick={() => openDialog(r)}><Edit className="h-4 w-4" /></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+            <RoomForm open={isDialogOpen} setOpen={setIsDialogOpen} room={editingRoom} user={user} />
+        </Card>
+    );
+};
+
+// --- Room Form Dialog ---
+const RoomForm: FC<{ open: boolean, setOpen: (open: boolean) => void, room: any, user: any }> = ({ open, setOpen, room, user }) => {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [formData, setFormData] = useState({ roomId: '', roomType: 'THEORY', capacity: 0, allowedUGs: [] as string[] });
+
+    useEffect(() => {
+        if (room) {
+            setFormData({
+                roomId: room.roomId || '',
+                roomType: room.roomType || 'THEORY',
+                capacity: room.capacity || 0,
+                allowedUGs: room.allowedUGs || [],
+            });
+        } else {
+            setFormData({ roomId: '', roomType: 'THEORY', capacity: 0, allowedUGs: [] });
+        }
+    }, [room]);
+
+    const handleSave = () => {
+        if (!formData.roomId || !formData.roomType || !firestore) {
+            toast({ variant: 'destructive', title: "Validation Error", description: "Room ID and Type are required." });
+            return;
+        }
+
+        const dataToSave = {
+            ...formData,
+            capacity: Number(formData.capacity),
+            createdBy: user.email,
+            createdAt: room?.createdAt || serverTimestamp(),
+            lastUpdatedAt: serverTimestamp()
+        };
+
+        const docRef = room ? doc(firestore, 'rooms', room.id) : doc(collection(firestore, 'rooms'));
+        setDocumentNonBlocking(docRef, dataToSave, { merge: true });
+        toast({ title: `Room ${room ? 'Updated' : 'Added'}` });
+        setOpen(false);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogContent>
+                <DialogHeader><DialogTitle>{room ? 'Edit' : 'Add'} Room</DialogTitle></DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label>Room ID (e.g., G08, Lab103)</Label>
+                        <Input value={formData.roomId} onChange={e => setFormData(p => ({ ...p, roomId: e.target.value }))} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Room Type</Label>
+                            <Select value={formData.roomType} onValueChange={val => setFormData(p => ({ ...p, roomType: val }))}>
+                                <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="THEORY">THEORY</SelectItem>
+                                    <SelectItem value="LAB">LAB</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Capacity</Label>
+                            <Input type="number" value={formData.capacity} onChange={e => setFormData(p => ({ ...p, capacity: Number(e.target.value) }))} />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Allowed UGs</Label>
+                        <div className="flex gap-4">
+                            {SEMESTERS.map(ug => (
+                                <div key={ug} className="flex items-center gap-2">
+                                    <Checkbox
+                                        id={`ug-room-${ug}`}
+                                        checked={formData.allowedUGs.includes(ug)}
+                                        onCheckedChange={checked => {
+                                            const newUgs = checked ? [...formData.allowedUGs, ug] : formData.allowedUGs.filter(u => u !== ug);
+                                            setFormData(p => ({ ...p, allowedUGs: newUgs.sort() }));
+                                        }}
+                                    />
+                                    <Label htmlFor={`ug-room-${ug}`}>{ug}</Label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter><Button onClick={handleSave}>Save Room</Button></DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+// --- Time Grid Preview ---
+const TimeGridPreview: FC = () => {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Academic Time Grid</CardTitle>
+                <CardDescription>This is the fixed grid of days and time slots for all classes.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <TimetableDisplay timetableData={{}} />
+            </CardContent>
+        </Card>
+    )
+}
 
 // --- Faculty Manager ---
 const FacultyManager: FC<{ user: any }> = ({ user }) => {
@@ -328,14 +489,18 @@ export default function TimetableAdminPage() {
                 </TabsContent>
                 
                 <TabsContent value="structure" className="mt-6">
-                     <Alert variant="default">
-                        <Settings className="h-4 w-4" />
-                        <AlertTitle>Phase 2: Academic Structure Definition</AlertTitle>
-                        <AlertDescription>
-                            Define the courses, sections, elective bins, and rooms for each undergraduate year. This data is the foundation for timetable generation.
-                        </AlertDescription>
-                    </Alert>
-                     {/* Structure content from previous step would go here */}
+                    <div className="space-y-6">
+                        <Alert variant="default">
+                            <Settings className="h-4 w-4" />
+                            <AlertTitle>Phase 2: Academic Structure Definition</AlertTitle>
+                            <AlertDescription>
+                                Define the courses, sections, elective bins, rooms, and time grid. This data is the foundation for timetable generation.
+                            </AlertDescription>
+                        </Alert>
+                        <TimeGridPreview />
+                        <RoomManager user={user} />
+                        {/* Existing Structure components (courses, sections, etc) would go here */}
+                    </div>
                 </TabsContent>
                 
                  <TabsContent value="faculty" className="mt-6">

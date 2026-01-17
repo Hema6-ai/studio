@@ -334,21 +334,25 @@
       },
       "required": ["id", "ug", "binId", "courses", "createdBy", "createdAt"]
     },
-    "UGRoom": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "UGRoom",
-      "type": "object",
-      "description": "Represents a room available for a specific UG's classes.",
-      "properties": {
+    "Room": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Room",
+        "type": "object",
+        "description": "Represents a master list of all physical rooms available for classes.",
+        "properties": {
           "id": { "type": "string" },
-          "ug": { "type": "string", "enum": ["UG1", "UG2", "UG3", "UG4"] },
           "roomId": { "type": "string", "description": "The room identifier (e.g., C-201)." },
-          "roomType": { "type": "string", "enum": ["CLASSROOM", "LAB"] },
+          "roomType": { "type": "string", "enum": ["THEORY", "LAB"] },
           "capacity": { "type": "number" },
+          "allowedUGs": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["UG1", "UG2", "UG3", "UG4"] },
+            "description": "List of undergraduate years this room can be used for."
+          },
           "createdBy": { "type": "string", "description": "Identifier for who created the record." },
           "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the record was created." }
-      },
-      "required": ["id", "ug", "roomId", "roomType", "capacity", "createdBy", "createdAt"]
+        },
+        "required": ["roomId", "roomType", "capacity", "allowedUGs", "createdBy", "createdAt"]
     }
   },
   "auth": {
@@ -378,7 +382,7 @@
       { "path": "/ugCourses/{courseId}", "definition": { "entityName": "UGCourse", "schema": { "$ref": "#/backend/entities/UGCourse" }, "description": "Stores course definitions for all UGs." } },
       { "path": "/ugSections/{sectionId}", "definition": { "entityName": "UGSection", "schema": { "$ref": "#/backend/entities/UGSection" }, "description": "Stores section rules for courses." } },
       { "path": "/ugElectiveBins/{binId}", "definition": { "entityName": "UGElectiveBin", "schema": { "$ref": "#/backend/entities/UGElectiveBin" }, "description": "Stores elective bin configurations." } },
-      { "path": "/ugRooms/{roomId}", "definition": { "entityName": "UGRoom", "schema": { "$ref": "#/backend/entities/UGRoom" }, "description": "Stores room pools for each UG." } },
+      { "path": "/rooms/{roomId}", "definition": { "entityName": "Room", "schema": { "$ref": "#/backend/entities/Room" }, "description": "Stores master data for all campus rooms." } },
       { "path": "/faculty/{facultyId}", "definition": { "entityName": "Faculty", "schema": { "$ref": "#/backend/entities/Faculty" }, "description": "Stores master data for all faculty members." } },
       { "path": "/teachingAssignments/{assignmentId}", "definition": { "entityName": "TeachingAssignment", "schema": { "$ref": "#/backend/entities/TeachingAssignment" }, "description": "Stores the final teaching assignments of faculty to course sections." } }
     ],
