@@ -2,16 +2,20 @@
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Settings, Save } from 'lucide-react';
+import { AlertTriangle, Settings, Save, PlusCircle, Trash2, Edit } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, doc, serverTimestamp, query, where } from 'firebase/firestore';
+import { setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, FC } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SemesterPolicy {
     id: string;
@@ -32,109 +36,167 @@ const defaultPolicies: Record<string, Omit<SemesterPolicy, 'id'>> = {
     UG4: { semesterId: 'UG4', hasElectives: true, usesStudentPreferences: true, usesCGPA: true, numberOfElectiveBins: 5, maxTimetableRetries: 3 },
 };
 
-const SemesterPolicyCard = ({ user, policyData, semesterId }: { user: any; policyData: Omit<SemesterPolicy, 'id'>; semesterId: string; }) => {
+// --- Course Manager Component ---
+const CourseManager: FC<{ ug: string; user: any; isReadOnly: boolean }> = ({ ug, user, isReadOnly }) => {
     const firestore = useFirestore();
     const { toast } = useToast();
-    const [policy, setPolicy] = useState(policyData);
-    const [isSaving, setIsSaving] = useState(false);
-    
-    const isLocked = semesterId === 'UG1' || semesterId === 'UG2';
 
-    useEffect(() => {
-        setPolicy(policyData);
-    }, [policyData]);
+    const coursesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'ugCourses'), where('ug', '==', ug)) : null, [firestore, ug]);
+    const sectionsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'ugSections'), where('ug', '==', ug)) : null, [firestore, ug]);
 
-    const handleFieldChange = (field: keyof SemesterPolicy, value: any) => {
-        setPolicy(prev => {
-            const newState = { ...prev, [field]: value };
-            if (field === 'hasElectives' && !value) {
-                newState.usesStudentPreferences = false;
-                newState.numberOfElectiveBins = 0;
-            }
-            return newState;
-        });
-    };
+    const { data: courses, isLoading: loadingCourses } = useCollection(coursesQuery);
+    const { data: sections, isLoading: loadingSections } = useCollection(sectionsQuery);
 
-    const handleSave = async () => {
-        if (!user || !firestore) return;
-        setIsSaving(true);
-        
-        // Validation
-        if (policy.hasElectives && policy.numberOfElectiveBins <= 0) {
-            toast({ variant: 'destructive', title: 'Validation Error', description: 'Number of elective bins must be greater than 0 if electives are enabled.' });
-            setIsSaving(false);
-            return;
-        }
-
-        const retries = Math.max(1, Math.min(10, policy.maxTimetableRetries));
-        if (retries !== policy.maxTimetableRetries) {
-             handleFieldChange('maxTimetableRetries', retries);
-        }
-
-        const docRef = doc(firestore, 'semesterPolicies', semesterId);
-        try {
-            await setDocumentNonBlocking(docRef, {
-                ...policy,
-                maxTimetableRetries: retries,
-                lastUpdatedBy: user.email,
-                lastUpdatedAt: serverTimestamp()
-            }, { merge: true });
-
-            toast({ title: 'Policy Saved', description: `${semesterId} academic policy has been updated.` });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Save Error', description: error.message });
-        } finally {
-            setIsSaving(false);
-        }
-    }
+    const isLoading = loadingCourses || loadingSections;
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5" /> {semesterId} Policy</CardTitle>
-                <CardDescription>Define the core academic rules for this semester.</CardDescription>
+                <CardTitle>Course Definitions</CardTitle>
+                <CardDescription>Define all courses and their section rules for {ug}.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-                 <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                        <Label htmlFor={`hasElectives-${semesterId}`}>Has Electives</Label>
-                        <p className="text-xs text-muted-foreground">Enables elective course selection.</p>
-                    </div>
-                    <Switch id={`hasElectives-${semesterId}`} checked={policy.hasElectives} onCheckedChange={(val) => handleFieldChange('hasElectives', val)} disabled={isLocked || isSaving} />
-                </div>
-                 <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                        <Label htmlFor={`usesPrefs-${semesterId}`}>Uses Student Preferences</Label>
-                         <p className="text-xs text-muted-foreground">Allows students to rank choices.</p>
-                    </div>
-                    <Switch id={`usesPrefs-${semesterId}`} checked={policy.usesStudentPreferences} onCheckedChange={(val) => handleFieldChange('usesStudentPreferences', val)} disabled={isLocked || !policy.hasElectives || isSaving}/>
-                </div>
-                <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                        <Label htmlFor={`usesCGPA-${semesterId}`}>Uses CGPA for Bidding</Label>
-                         <p className="text-xs text-muted-foreground">Prioritizes based on CGPA.</p>
-                    </div>
-                    <Switch id={`usesCGPA-${semesterId}`} checked={policy.usesCGPA} onCheckedChange={(val) => handleFieldChange('usesCGPA', val)} disabled={isLocked || isSaving}/>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor={`electiveBins-${semesterId}`}>Number of Elective Bins</Label>
-                    <Input id={`electiveBins-${semesterId}`} type="number" value={policy.numberOfElectiveBins} onChange={(e) => handleFieldChange('numberOfElectiveBins', parseInt(e.target.value, 10))} disabled={isLocked || !policy.hasElectives || isSaving} />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor={`retries-${semesterId}`}>Max Timetable Retries</Label>
-                    <Input id={`retries-${semesterId}`} type="number" min="1" max="10" value={policy.maxTimetableRetries} onChange={(e) => handleFieldChange('maxTimetableRetries', parseInt(e.target.value, 10))} disabled={isSaving} />
-                     <p className="text-xs text-muted-foreground">Number of attempts for the scheduler (1-10).</p>
-                </div>
+            <CardContent>
+                {/* Add Course Dialog would go here */}
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Code</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Session</TableHead>
+                            <TableHead>Sections</TableHead>
+                            <TableHead>Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading && <TableRow><TableCell colSpan={5} className="text-center"><Skeleton className="h-8 w-full" /></TableCell></TableRow>}
+                         {!isLoading && courses?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No courses defined for {ug}.</TableCell></TableRow>}
+                        {courses?.map(course => (
+                            <TableRow key={course.id}>
+                                <TableCell>{course.courseCode}</TableCell>
+                                <TableCell>{course.courseName}</TableCell>
+                                <TableCell>{course.sessionType}</TableCell>
+                                <TableCell>{sections?.find(s => s.courseCode === course.courseCode)?.sectionsRequired || 1}</TableCell>
+                                <TableCell>
+                                    <div className="flex gap-1">
+                                        <Button variant="ghost" size="icon" disabled><Edit className="h-4 w-4" /></Button>
+                                        <Button variant="ghost" size="icon" disabled><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </CardContent>
             <CardFooter>
-                <Button onClick={handleSave} className="w-full" disabled={isSaving}>
-                    <Save className="mr-2"/>
-                    {isSaving ? 'Saving...' : `Save ${semesterId} Policy`}
-                </Button>
+                 <Button disabled><PlusCircle className="mr-2" />Add Course</Button>
             </CardFooter>
         </Card>
     );
 };
+
+// --- Elective Bin Manager ---
+const ElectiveBinManager: FC<{ ug: string; user: any; policy: SemesterPolicy; courses: any[] | null }> = ({ ug, user, policy, courses }) => {
+    if (!policy.hasElectives || policy.numberOfElectiveBins === 0) return null;
+    
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Elective Bin Mapping</CardTitle>
+                <CardDescription>Assign elective courses to one of the {policy.numberOfElectiveBins} available bins for {ug}.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {Array.from({ length: policy.numberOfElectiveBins }, (_, i) => (
+                    <div key={i}>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Bin {i + 1}</h4>
+                        <p className="text-sm text-muted-foreground">No courses assigned yet.</p>
+                    </div>
+                ))}
+            </CardContent>
+             <CardFooter>
+                 <Button disabled><Save className="mr-2" />Save Bin Configuration</Button>
+            </CardFooter>
+        </Card>
+    );
+}
+
+// --- Room Manager ---
+const RoomManager: FC<{ ug: string; user: any }> = ({ ug, user }) => {
+    const firestore = useFirestore();
+    const roomsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'ugRooms'), where('ug', '==', ug)) : null, [firestore, ug]);
+    const { data: rooms, isLoading } = useCollection(roomsQuery);
+    
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Room Pool</CardTitle>
+                <CardDescription>Manage the list of rooms available for {ug} classes.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Room ID</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Capacity</TableHead>
+                            <TableHead>Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Skeleton className="h-8 w-full" /></TableCell></TableRow>}
+                         {!isLoading && rooms?.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No rooms defined for {ug}.</TableCell></TableRow>}
+                        {rooms?.map(room => (
+                            <TableRow key={room.id}>
+                                <TableCell>{room.roomId}</TableCell>
+                                <TableCell>{room.roomType}</TableCell>
+                                <TableCell>{room.capacity}</TableCell>
+                                <TableCell>
+                                    <div className="flex gap-1">
+                                        <Button variant="ghost" size="icon" disabled><Edit className="h-4 w-4" /></Button>
+                                        <Button variant="ghost" size="icon" disabled><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+             <CardFooter>
+                 <Button disabled><PlusCircle className="mr-2" />Add Room</Button>
+            </CardFooter>
+        </Card>
+    );
+}
+
+
+// --- Main Tab Content ---
+const UGConfigTab: FC<{ ug: string; policy: SemesterPolicy; user: any }> = ({ ug, policy, user }) => {
+    const firestore = useFirestore();
+    const coursesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'ugCourses'), where('ug', '==', ug)) : null, [firestore, ug]);
+    const { data: courses, isLoading: loadingCourses } = useCollection(coursesQuery);
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+                 <CourseManager ug={ug} user={user} isReadOnly={false} />
+                 <ElectiveBinManager ug={ug} user={user} policy={policy} courses={courses} />
+            </div>
+            <div className="lg:col-span-1 space-y-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Policy Overview</CardTitle>
+                        <CardDescription>Read-only summary of the rules for {ug}.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <p><strong>Has Electives:</strong> {policy.hasElectives ? 'Yes' : 'No'}</p>
+                        <p><strong>Elective Bins:</strong> {policy.numberOfElectiveBins}</p>
+                    </CardContent>
+                </Card>
+                 <RoomManager ug={ug} user={user} />
+            </div>
+        </div>
+    );
+};
+
 
 export default function TimetableAdminPage() {
     const { user, isUserLoading } = useUser();
@@ -147,6 +209,11 @@ export default function TimetableAdminPage() {
         const map = new Map<string, SemesterPolicy>();
         fetchedPolicies?.forEach(policy => {
             map.set(policy.id, policy as SemesterPolicy);
+        });
+        SEMESTERS.forEach(sem => {
+            if (!map.has(sem)) {
+                map.set(sem, { id: sem, ...defaultPolicies[sem] });
+            }
         });
         return map;
     }, [fetchedPolicies]);
@@ -183,39 +250,45 @@ export default function TimetableAdminPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Academic Office – Timetable Control Panel</CardTitle>
-                    <CardDescription>IIIT Sri City</CardDescription>
+                    <CardDescription>Phase 3: Academic Structure Definition</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Warning</AlertTitle>
+                    <Alert variant="default">
+                        <Settings className="h-4 w-4" />
+                        <AlertTitle>Current Phase</AlertTitle>
                         <AlertDescription>
-                            Any change here impacts student enrollment and timetable generation. Proceed with caution.
+                            Define the courses, sections, elective bins, and rooms for each undergraduate year. This data is the foundation for timetable generation.
                         </AlertDescription>
                     </Alert>
                 </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-               {SEMESTERS.map(semesterId => (
-                   <SemesterPolicyCard
-                        key={semesterId}
-                        user={user}
-                        semesterId={semesterId}
-                        policyData={policiesMap.get(semesterId) || defaultPolicies[semesterId]}
-                   />
-               ))}
-            </div>
+            <Tabs defaultValue="UG1" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                    {SEMESTERS.map(ug => (
+                        <TabsTrigger key={ug} value={ug}>{ug}</TabsTrigger>
+                    ))}
+                </TabsList>
+                {SEMESTERS.map(ug => {
+                    const policy = policiesMap.get(ug);
+                    if (!policy) return null;
+                    return (
+                        <TabsContent key={ug} value={ug} className="mt-6">
+                            <UGConfigTab ug={ug} policy={policy} user={user} />
+                        </TabsContent>
+                    )
+                })}
+            </Tabs>
 
              <Card className="mt-6">
                 <CardHeader>
                     <CardTitle>Next Phases</CardTitle>
-                     <CardDescription>These sections will be enabled once semester policies are finalized.</CardDescription>
+                     <CardDescription>These sections will be enabled once the academic structure is finalized.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card className="bg-muted/50">
-                        <CardHeader><CardTitle className="text-base text-muted-foreground">Data Configuration</CardTitle></CardHeader>
-                        <CardContent><Button variant="secondary" disabled>Configure Courses/Faculty/Rooms</Button></CardContent>
+                        <CardHeader><CardTitle className="text-base text-muted-foreground">Faculty Configuration</CardTitle></CardHeader>
+                        <CardContent><Button variant="secondary" disabled>Assign Faculty to Courses</Button></CardContent>
                     </Card>
                      <Card className="bg-muted/50">
                         <CardHeader><CardTitle className="text-base text-muted-foreground">Student Enrollment</CardTitle></CardHeader>
