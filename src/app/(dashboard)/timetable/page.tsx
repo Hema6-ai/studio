@@ -2,12 +2,12 @@
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Settings, Save, PlusCircle, Trash2, Edit } from 'lucide-react';
+import { AlertTriangle, Settings, Save, PlusCircle, Trash2, Edit, GraduationCap } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { collection, doc, serverTimestamp, query, where } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, query, where, writeBatch } from 'firebase/firestore';
 import { setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect, useMemo, FC } from 'react';
@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface SemesterPolicy {
     id: string;
@@ -29,219 +30,271 @@ interface SemesterPolicy {
 
 const SEMESTERS = ['UG1', 'UG2', 'UG3', 'UG4'];
 
-const defaultPolicies: Record<string, Omit<SemesterPolicy, 'id'>> = {
-    UG1: { semesterId: 'UG1', hasElectives: false, usesStudentPreferences: false, usesCGPA: false, numberOfElectiveBins: 0, maxTimetableRetries: 3 },
-    UG2: { semesterId: 'UG2', hasElectives: false, usesStudentPreferences: false, usesCGPA: false, numberOfElectiveBins: 0, maxTimetableRetries: 3 },
-    UG3: { semesterId: 'UG3', hasElectives: true, usesStudentPreferences: true, usesCGPA: true, numberOfElectiveBins: 5, maxTimetableRetries: 3 },
-    UG4: { semesterId: 'UG4', hasElectives: true, usesStudentPreferences: true, usesCGPA: true, numberOfElectiveBins: 5, maxTimetableRetries: 3 },
+// --- Faculty Manager ---
+const FacultyManager: FC<{ user: any }> = ({ user }) => {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const facultyCollection = useMemoFirebase(() => firestore ? collection(firestore, 'faculty') : null, [firestore]);
+    const { data: facultyList, isLoading } = useCollection(facultyCollection);
+
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingFaculty, setEditingFaculty] = useState<any>(null);
+
+    const openDialog = (faculty = null) => {
+        setEditingFaculty(faculty);
+        setIsDialogOpen(true);
+    };
+
+    const handleDelete = (id: string) => {
+        if (window.confirm("Are you sure you want to delete this faculty member? This cannot be undone.") && firestore) {
+            deleteDocumentNonBlocking(doc(firestore, 'faculty', id));
+            toast({ title: "Faculty Deleted" });
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader className="flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Faculty Master List</CardTitle>
+                    <CardDescription>Manage all faculty members in the university.</CardDescription>
+                </div>
+                <Button onClick={() => openDialog()}><PlusCircle className="mr-2" />Add Faculty</Button>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Department</TableHead><TableHead>Max Hours/Week</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                        {isLoading && <TableRow><TableCell colSpan={4}><Skeleton className="h-8 w-full" /></TableCell></TableRow>}
+                        {!isLoading && facultyList?.map(f => (
+                            <TableRow key={f.id}>
+                                <TableCell>{f.facultyName}</TableCell>
+                                <TableCell>{f.department}</TableCell>
+                                <TableCell>{f.maxWeeklyHours}</TableCell>
+                                <TableCell className="flex gap-1">
+                                    <Button variant="ghost" size="icon" onClick={() => openDialog(f)}><Edit className="h-4 w-4" /></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(f.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+            <FacultyForm open={isDialogOpen} setOpen={setIsDialogOpen} faculty={editingFaculty} user={user} />
+        </Card>
+    );
 };
 
-// --- Course Manager Component ---
-const CourseManager: FC<{ ug: string; user: any; isReadOnly: boolean }> = ({ ug, user, isReadOnly }) => {
+// --- Faculty Form Dialog ---
+const FacultyForm: FC<{ open: boolean, setOpen: (open: boolean) => void, faculty: any, user: any }> = ({ open, setOpen, faculty, user }) => {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [formData, setFormData] = useState({ facultyName: '', department: '', maxWeeklyHours: 10, allowedUGs: [] as string[] });
+
+    useEffect(() => {
+        if (faculty) {
+            setFormData({
+                facultyName: faculty.facultyName || '',
+                department: faculty.department || '',
+                maxWeeklyHours: faculty.maxWeeklyHours || 10,
+                allowedUGs: faculty.allowedUGs || [],
+            });
+        } else {
+            setFormData({ facultyName: '', department: '', maxWeeklyHours: 10, allowedUGs: [] });
+        }
+    }, [faculty]);
+
+    const handleSave = () => {
+        if (!formData.facultyName || !formData.department || !firestore) {
+            toast({ variant: 'destructive', title: "Validation Error", description: "Name and department are required." });
+            return;
+        }
+
+        const dataToSave = {
+            ...formData,
+            maxWeeklyHours: Number(formData.maxWeeklyHours),
+            createdBy: user.email,
+            createdAt: faculty?.createdAt || serverTimestamp(),
+            lastUpdatedAt: serverTimestamp()
+        };
+
+        const docRef = faculty ? doc(firestore, 'faculty', faculty.id) : doc(collection(firestore, 'faculty'));
+        setDocumentNonBlocking(docRef, dataToSave, { merge: true });
+        toast({ title: `Faculty ${faculty ? 'Updated' : 'Added'}` });
+        setOpen(false);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogContent>
+                <DialogHeader><DialogTitle>{faculty ? 'Edit' : 'Add'} Faculty</DialogTitle></DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label>Faculty Name</Label>
+                        <Input value={formData.facultyName} onChange={e => setFormData(p => ({ ...p, facultyName: e.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Department</Label>
+                        <Select value={formData.department} onValueChange={val => setFormData(p => ({ ...p, department: val }))}>
+                            <SelectTrigger><SelectValue placeholder="Select department..." /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="CSE">CSE</SelectItem>
+                                <SelectItem value="ECE">ECE</SelectItem>
+                                <SelectItem value="AIDS">AIDS</SelectItem>
+                                <SelectItem value="HSS">HSS</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Max Weekly Hours</Label>
+                        <Input type="number" value={formData.maxWeeklyHours} onChange={e => setFormData(p => ({ ...p, maxWeeklyHours: Number(e.target.value) }))} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Allowed to Teach</Label>
+                        <div className="flex gap-4">
+                            {SEMESTERS.map(ug => (
+                                <div key={ug} className="flex items-center gap-2">
+                                    <Checkbox
+                                        id={`ug-${ug}`}
+                                        checked={formData.allowedUGs.includes(ug)}
+                                        onCheckedChange={checked => {
+                                            const newUgs = checked ? [...formData.allowedUGs, ug] : formData.allowedUGs.filter(u => u !== ug);
+                                            setFormData(p => ({ ...p, allowedUGs: newUgs }));
+                                        }}
+                                    />
+                                    <Label htmlFor={`ug-${ug}`}>{ug}</Label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter><Button onClick={handleSave}>Save Faculty</Button></DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+
+// --- Assignment Manager ---
+const AssignmentManager: FC<{ user: any }> = ({ user }) => {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const coursesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'ugCourses'), where('ug', '==', ug)) : null, [firestore, ug]);
-    const sectionsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'ugSections'), where('ug', '==', ug)) : null, [firestore, ug]);
+    // Data Fetches
+    const { data: courses } = useCollection(useMemoFirebase(() => firestore ? collection(firestore, 'ugCourses') : null, [firestore]));
+    const { data: sections } = useCollection(useMemoFirebase(() => firestore ? collection(firestore, 'ugSections') : null, [firestore]));
+    const { data: facultyList } = useCollection(useMemoFirebase(() => firestore ? collection(firestore, 'faculty') : null, [firestore]));
+    const { data: assignments } = useCollection(useMemoFirebase(() => firestore ? collection(firestore, 'teachingAssignments') : null, [firestore]));
 
-    const { data: courses, isLoading: loadingCourses } = useCollection(coursesQuery);
-    const { data: sections, isLoading: loadingSections } = useCollection(sectionsQuery);
-
-    const isLoading = loadingCourses || loadingSections;
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Course Definitions</CardTitle>
-                <CardDescription>Define all courses and their section rules for {ug}.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {/* Add Course Dialog would go here */}
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Code</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Session</TableHead>
-                            <TableHead>Sections</TableHead>
-                            <TableHead>Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading && <TableRow><TableCell colSpan={5} className="text-center"><Skeleton className="h-8 w-full" /></TableCell></TableRow>}
-                         {!isLoading && courses?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No courses defined for {ug}.</TableCell></TableRow>}
-                        {courses?.map(course => (
-                            <TableRow key={course.id}>
-                                <TableCell>{course.courseCode}</TableCell>
-                                <TableCell>{course.courseName}</TableCell>
-                                <TableCell>{course.sessionType}</TableCell>
-                                <TableCell>{sections?.find(s => s.courseCode === course.courseCode)?.sectionsRequired || 1}</TableCell>
-                                <TableCell>
-                                    <div className="flex gap-1">
-                                        <Button variant="ghost" size="icon" disabled><Edit className="h-4 w-4" /></Button>
-                                        <Button variant="ghost" size="icon" disabled><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-            <CardFooter>
-                 <Button disabled><PlusCircle className="mr-2" />Add Course</Button>
-            </CardFooter>
-        </Card>
-    );
-};
-
-// --- Elective Bin Manager ---
-const ElectiveBinManager: FC<{ ug: string; user: any; policy: SemesterPolicy; courses: any[] | null }> = ({ ug, user, policy, courses }) => {
-    if (!policy.hasElectives || policy.numberOfElectiveBins === 0) return null;
+    // Derived assignments map for quick lookups
+    const assignmentsMap = useMemo(() => {
+        const map = new Map<string, any>();
+        assignments?.forEach(a => map.set(`${a.ug}-${a.courseCode}-${a.section}`, a));
+        return map;
+    }, [assignments]);
     
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Elective Bin Mapping</CardTitle>
-                <CardDescription>Assign elective courses to one of the {policy.numberOfElectiveBins} available bins for {ug}.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {Array.from({ length: policy.numberOfElectiveBins }, (_, i) => (
-                    <div key={i}>
-                        <h4 className="font-semibold mb-2 border-b pb-1">Bin {i + 1}</h4>
-                        <p className="text-sm text-muted-foreground">No courses assigned yet.</p>
-                    </div>
-                ))}
-            </CardContent>
-             <CardFooter>
-                 <Button disabled><Save className="mr-2" />Save Bin Configuration</Button>
-            </CardFooter>
-        </Card>
-    );
-}
-
-// --- Room Manager ---
-const RoomManager: FC<{ ug: string; user: any }> = ({ ug, user }) => {
-    const firestore = useFirestore();
-    const roomsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'ugRooms'), where('ug', '==', ug)) : null, [firestore, ug]);
-    const { data: rooms, isLoading } = useCollection(roomsQuery);
-    
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Room Pool</CardTitle>
-                <CardDescription>Manage the list of rooms available for {ug} classes.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Room ID</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Capacity</TableHead>
-                            <TableHead>Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Skeleton className="h-8 w-full" /></TableCell></TableRow>}
-                         {!isLoading && rooms?.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No rooms defined for {ug}.</TableCell></TableRow>}
-                        {rooms?.map(room => (
-                            <TableRow key={room.id}>
-                                <TableCell>{room.roomId}</TableCell>
-                                <TableCell>{room.roomType}</TableCell>
-                                <TableCell>{room.capacity}</TableCell>
-                                <TableCell>
-                                    <div className="flex gap-1">
-                                        <Button variant="ghost" size="icon" disabled><Edit className="h-4 w-4" /></Button>
-                                        <Button variant="ghost" size="icon" disabled><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-             <CardFooter>
-                 <Button disabled><PlusCircle className="mr-2" />Add Room</Button>
-            </CardFooter>
-        </Card>
-    );
-}
-
-
-// --- Main Tab Content ---
-const UGConfigTab: FC<{ ug: string; policy: SemesterPolicy; user: any }> = ({ ug, policy, user }) => {
-    const firestore = useFirestore();
-    const coursesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'ugCourses'), where('ug', '==', ug)) : null, [firestore, ug]);
-    const { data: courses, isLoading: loadingCourses } = useCollection(coursesQuery);
-
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-                 <CourseManager ug={ug} user={user} isReadOnly={false} />
-                 <ElectiveBinManager ug={ug} user={user} policy={policy} courses={courses} />
-            </div>
-            <div className="lg:col-span-1 space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Policy Overview</CardTitle>
-                        <CardDescription>Read-only summary of the rules for {ug}.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm">
-                        <p><strong>Has Electives:</strong> {policy.hasElectives ? 'Yes' : 'No'}</p>
-                        <p><strong>Elective Bins:</strong> {policy.numberOfElectiveBins}</p>
-                    </CardContent>
-                </Card>
-                 <RoomManager ug={ug} user={user} />
-            </div>
-        </div>
-    );
-};
-
-
-export default function TimetableAdminPage() {
-    const { user, isUserLoading } = useUser();
-    const firestore = useFirestore();
-
-    const policiesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'semesterPolicies') : null, [firestore]);
-    const { data: fetchedPolicies, isLoading: loadingPolicies } = useCollection(policiesQuery);
-
-    const policiesMap = useMemo(() => {
-        const map = new Map<string, SemesterPolicy>();
-        fetchedPolicies?.forEach(policy => {
-            map.set(policy.id, policy as SemesterPolicy);
-        });
-        SEMESTERS.forEach(sem => {
-            if (!map.has(sem)) {
-                map.set(sem, { id: sem, ...defaultPolicies[sem] });
+    // Create a structured list of every section that needs an assignment
+    const allSections = useMemo(() => {
+        if (!courses || !sections) return [];
+        const sectionList: any[] = [];
+        courses.forEach(course => {
+            const sectionInfo = sections.find(s => s.courseCode === course.courseCode && s.ug === course.ug);
+            const numSections = sectionInfo?.sectionsRequired || 1;
+            for (let i = 1; i <= numSections; i++) {
+                sectionList.push({
+                    key: `${course.ug}-${course.courseCode}-${i}`,
+                    ug: course.ug,
+                    courseCode: course.courseCode,
+                    courseName: course.courseName,
+                    section: i.toString()
+                });
             }
         });
-        return map;
-    }, [fetchedPolicies]);
+        return sectionList.sort((a,b) => a.key.localeCompare(b.key));
+    }, [courses, sections]);
+    
+    const handleAssignmentChange = (sectionData: any, facultyId: string) => {
+        if (!facultyId || !firestore) return;
+        
+        const faculty = facultyList?.find(f => f.id === facultyId);
+        if (!faculty) return;
 
-    if (isUserLoading || loadingPolicies) {
-        return (
-            <div className="space-y-6">
-                <Skeleton className="h-40 w-full" />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Skeleton className="h-96 w-full" />
-                    <Skeleton className="h-96 w-full" />
-                    <Skeleton className="h-96 w-full" />
-                    <Skeleton className="h-96 w-full" />
-                </div>
-            </div>
-        );
+        const assignmentKey = `${sectionData.ug}-${sectionData.courseCode}-${sectionData.section}`;
+        const existingAssignment = assignmentsMap.get(assignmentKey);
+        
+        const docRef = existingAssignment 
+            ? doc(firestore, 'teachingAssignments', existingAssignment.id)
+            : doc(collection(firestore, 'teachingAssignments'));
+
+        const dataToSave = {
+            ug: sectionData.ug,
+            courseCode: sectionData.courseCode,
+            section: sectionData.section,
+            facultyId: faculty.id,
+            facultyName: faculty.facultyName,
+            createdBy: user.email,
+            createdAt: existingAssignment?.createdAt || serverTimestamp()
+        };
+        
+        setDocumentNonBlocking(docRef, dataToSave, { merge: true });
+        toast({ title: "Assignment Saved", description: `${faculty.facultyName} assigned to ${sectionData.courseCode} Section ${sectionData.section}`});
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Teaching Assignments</CardTitle>
+                <CardDescription>Assign a faculty member to each course section.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader><TableRow><TableHead>UG</TableHead><TableHead>Course</TableHead><TableHead>Section</TableHead><TableHead>Assigned Faculty</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                        {allSections.map(s => {
+                            const assignment = assignmentsMap.get(s.key);
+                            const eligibleFaculty = facultyList?.filter(f => f.allowedUGs.includes(s.ug)) || [];
+                            return (
+                                <TableRow key={s.key}>
+                                    <TableCell>{s.ug}</TableCell>
+                                    <TableCell>{s.courseCode} - {s.courseName}</TableCell>
+                                    <TableCell>{s.section}</TableCell>
+                                    <TableCell>
+                                        <Select
+                                            value={assignment?.facultyId || ''}
+                                            onValueChange={(facultyId) => handleAssignmentChange(s, facultyId)}
+                                        >
+                                            <SelectTrigger className="w-[250px]">
+                                                <SelectValue placeholder="Select Faculty..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {eligibleFaculty.map(f => (
+                                                    <SelectItem key={f.id} value={f.id}>{f.facultyName}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+};
+
+
+// --- Main Page Component ---
+export default function TimetableAdminPage() {
+    const { user, isUserLoading } = useUser();
+    
+    if (isUserLoading) {
+        return <Skeleton className="h-screen w-full" />;
     }
 
     if (!user || user.email !== 'tt@iiits.in') {
         return (
-            <Card className="max-w-2xl mx-auto">
-                <CardHeader>
-                    <CardTitle className="text-destructive">Access Denied</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p>This dashboard is restricted to the Academic Office Timetable Administrator (tt@iiits.in) only.</p>
-                </CardContent>
-            </Card>
+            <Card className="max-w-2xl mx-auto"><CardHeader><CardTitle className="text-destructive">Access Denied</CardTitle></CardHeader><CardContent><p>This dashboard is restricted to the Academic Office Timetable Administrator (tt@iiits.in) only.</p></CardContent></Card>
         );
     }
 
@@ -250,56 +303,56 @@ export default function TimetableAdminPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Academic Office – Timetable Control Panel</CardTitle>
-                    <CardDescription>Phase 3: Academic Structure Definition</CardDescription>
+                    <CardDescription>Define, configure, and generate the university timetable.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <Alert variant="default">
+            </Card>
+
+            <Tabs defaultValue="structure" className="w-full">
+                <TabsList className="grid w-full grid-cols-5">
+                    <TabsTrigger value="policy">Phase 1: Policies</TabsTrigger>
+                    <TabsTrigger value="structure">Phase 2: Structure</TabsTrigger>
+                    <TabsTrigger value="faculty">Phase 3: Faculty</TabsTrigger>
+                    <TabsTrigger value="enrollment" disabled>Phase 4: Enrollment</TabsTrigger>
+                    <TabsTrigger value="generate" disabled>Phase 5: Generate</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="policy" className="mt-6">
+                    {/* Policy content from previous step would go here */}
+                     <Alert variant="default">
                         <Settings className="h-4 w-4" />
-                        <AlertTitle>Current Phase</AlertTitle>
+                        <AlertTitle>Phase 1: Policy Definition</AlertTitle>
+                        <AlertDescription>
+                            Define the high-level rules for each semester. This is a prerequisite for all other steps.
+                        </AlertDescription>
+                    </Alert>
+                </TabsContent>
+                
+                <TabsContent value="structure" className="mt-6">
+                     <Alert variant="default">
+                        <Settings className="h-4 w-4" />
+                        <AlertTitle>Phase 2: Academic Structure Definition</AlertTitle>
                         <AlertDescription>
                             Define the courses, sections, elective bins, and rooms for each undergraduate year. This data is the foundation for timetable generation.
                         </AlertDescription>
                     </Alert>
-                </CardContent>
-            </Card>
+                     {/* Structure content from previous step would go here */}
+                </TabsContent>
+                
+                 <TabsContent value="faculty" className="mt-6">
+                     <div className="space-y-6">
+                        <Alert>
+                           <GraduationCap className="h-4 w-4" />
+                           <AlertTitle>Phase 3: Faculty & Teaching Assignments</AlertTitle>
+                           <AlertDescription>
+                               First, create a master list of all faculty members. Then, assign a specific faculty member to each course section that will be taught this semester.
+                           </AlertDescription>
+                       </Alert>
+                       <FacultyManager user={user} />
+                       <AssignmentManager user={user} />
+                     </div>
+                </TabsContent>
 
-            <Tabs defaultValue="UG1" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                    {SEMESTERS.map(ug => (
-                        <TabsTrigger key={ug} value={ug}>{ug}</TabsTrigger>
-                    ))}
-                </TabsList>
-                {SEMESTERS.map(ug => {
-                    const policy = policiesMap.get(ug);
-                    if (!policy) return null;
-                    return (
-                        <TabsContent key={ug} value={ug} className="mt-6">
-                            <UGConfigTab ug={ug} policy={policy} user={user} />
-                        </TabsContent>
-                    )
-                })}
             </Tabs>
-
-             <Card className="mt-6">
-                <CardHeader>
-                    <CardTitle>Next Phases</CardTitle>
-                     <CardDescription>These sections will be enabled once the academic structure is finalized.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="bg-muted/50">
-                        <CardHeader><CardTitle className="text-base text-muted-foreground">Faculty Configuration</CardTitle></CardHeader>
-                        <CardContent><Button variant="secondary" disabled>Assign Faculty to Courses</Button></CardContent>
-                    </Card>
-                     <Card className="bg-muted/50">
-                        <CardHeader><CardTitle className="text-base text-muted-foreground">Student Enrollment</CardTitle></CardHeader>
-                        <CardContent><Button variant="secondary" disabled>Run Enrollment Process</Button></CardContent>
-                    </Card>
-                     <Card className="bg-muted/50">
-                        <CardHeader><CardTitle className="text-base text-muted-foreground">Scheduling</CardTitle></CardHeader>
-                        <CardContent><Button variant="secondary" disabled>Generate Master Timetable</Button></CardContent>
-                    </Card>
-                </CardContent>
-            </Card>
         </div>
     );
 }

@@ -106,6 +106,39 @@
       },
       "required": ["id", "subjectsHandled", "schedule", "availability", "userId"]
     },
+    "Faculty": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Faculty",
+      "type": "object",
+      "description": "Represents a faculty member in the university.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the faculty, used as document ID." },
+        "facultyName": { "type": "string", "description": "The full name of the faculty member." },
+        "department": { "type": "string", "enum": ["CSE", "ECE", "AIDS", "HSS"], "description": "The department the faculty belongs to." },
+        "maxWeeklyHours": { "type": "number", "description": "The maximum number of teaching hours per week for this faculty member." },
+        "allowedUGs": { "type": "array", "items": { "type": "string", "enum": ["UG1", "UG2", "UG3", "UG4"] }, "description": "List of undergraduate years the faculty is allowed to teach." },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["facultyName", "department", "maxWeeklyHours", "allowedUGs"]
+    },
+    "TeachingAssignment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TeachingAssignment",
+      "type": "object",
+      "description": "Represents the final assignment of a faculty member to a specific course section.",
+      "properties": {
+        "id": { "type": "string" },
+        "facultyId": { "type": "string" },
+        "facultyName": { "type": "string" },
+        "courseCode": { "type": "string" },
+        "ug": { "type": "string", "enum": ["UG1", "UG2", "UG3", "UG4"] },
+        "section": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["facultyId", "facultyName", "courseCode", "ug", "section"]
+    },
     "Curriculum": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Curriculum",
@@ -345,7 +378,9 @@
       { "path": "/ugCourses/{courseId}", "definition": { "entityName": "UGCourse", "schema": { "$ref": "#/backend/entities/UGCourse" }, "description": "Stores course definitions for all UGs." } },
       { "path": "/ugSections/{sectionId}", "definition": { "entityName": "UGSection", "schema": { "$ref": "#/backend/entities/UGSection" }, "description": "Stores section rules for courses." } },
       { "path": "/ugElectiveBins/{binId}", "definition": { "entityName": "UGElectiveBin", "schema": { "$ref": "#/backend/entities/UGElectiveBin" }, "description": "Stores elective bin configurations." } },
-      { "path": "/ugRooms/{roomId}", "definition": { "entityName": "UGRoom", "schema": { "$ref": "#/backend/entities/UGRoom" }, "description": "Stores room pools for each UG." } }
+      { "path": "/ugRooms/{roomId}", "definition": { "entityName": "UGRoom", "schema": { "$ref": "#/backend/entities/UGRoom" }, "description": "Stores room pools for each UG." } },
+      { "path": "/faculty/{facultyId}", "definition": { "entityName": "Faculty", "schema": { "$ref": "#/backend/entities/Faculty" }, "description": "Stores master data for all faculty members." } },
+      { "path": "/teachingAssignments/{assignmentId}", "definition": { "entityName": "TeachingAssignment", "schema": { "$ref": "#/backend/entities/TeachingAssignment" }, "description": "Stores the final teaching assignments of faculty to course sections." } }
     ],
     "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability for the CampusOS application, especially focusing on the Digital Medical & Document Approval System (Module 5). Key design considerations include denormalization for authorization, segregation of data based on access needs, and consistent access modeling.\n\n**Authorization Independence and QAPs:**\n\n*   **/users/{userId}/medicalRequests/{medicalRequestId}**: Medical requests are stored as subcollections under each user's document. This ensures that a student can only access their own requests, achieving path-based ownership and simplifies security rules.\n\n*   **/doctors/{doctorId}/availability**: Doctor availability is stored in a separate collection, enabling easy querying and updates to doctor availability.  This ensures that students can see doctor availability in real-time.\n\n*   **/users/{userId}/shortcuts/{shortcutId}**: User-defined shortcuts are stored in a subcollection under each user, ensuring that shortcuts are private and only visible to the user who created them.\n\n*   **/resourceHub/students/{studentId}/resources/{resourceId}**: Student-specific resources are stored in a subcollection under a separate root collection, ensuring data privacy and ownership while keeping student documents clean.\n\n**Structural Segregation:**\n\n*   The data is separated based on access requirements:\n    *   Student medical requests are stored under `/users/{userId}/medicalRequests/{medicalRequestId}`.\n    *   Doctor availability statuses are stored in `/doctors/{doctorId}/availability`.\n    *   Curriculum data is stored centrally in `/curriculums` to be queried by branch and year.\n    *   Institute library books are stored in `/books`.\n    *   Student personal library files are stored under `/students/{studentId}/library/{fileId}` to enforce privacy.\n    *   Global resources are in a central, read-only collection `/globalResources`.\n\n**Access Modeling:**\n\n*   **Private Data (Student Medical Requests, User Shortcuts, Student Library, Student Resources):** Uses path-based ownership to ensure students can only access their own data.\n\n*   **Role-Based Access Control:** The application logic determines roles based on email prefixes and domains (e.g., `doctor.name@iiits.in` for doctors). This allows for role-based access in the UI and application code.\n\nThis structure supports QAPs by:\n\n*   Enabling secure `list` operations. For example, a student can securely list only their own medical requests because of the path-based ownership.\n*   Providing clear segregation for different roles (student, doctor, director, academic office, librarian), which simplifies the implementation of Firestore security rules."
   }

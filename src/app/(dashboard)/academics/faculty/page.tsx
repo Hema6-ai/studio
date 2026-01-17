@@ -1,222 +1,114 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { dummyFaculty } from '@/lib/data';
-import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc, deleteDoc } from 'firebase/firestore';
-
-// --- Reusable Faculty Form ---
-const FacultyForm = ({ faculty, onSave, ugYear }: { faculty?: any, onSave: (data: any) => Promise<void>, ugYear: string }) => {
-    const [formData, setFormData] = useState({
-        id: faculty?.id || undefined,
-        name: faculty?.name || '',
-        email: faculty?.email || '',
-        courseAbbr: faculty?.courseAbbr || '',
-        courseName: faculty?.courseName || '',
-        branch: faculty?.branch || '',
-        section: faculty?.section || ''
-    });
-    const [isOpen, setIsOpen] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { id, value } = e.target;
-        setFormData(prev => ({ ...prev, [id]: value }));
-    };
-
-    const handleSubmit = async () => {
-        setIsSaving(true);
-        try {
-            await onSave({ ...formData, ugYear: [ugYear.replace('UG','')] });
-            setIsOpen(false);
-            if (!faculty) {
-                 setFormData({ id: undefined, name: '', email: '', courseAbbr: '', courseName: '', branch: '', section: '' });
-            }
-        } finally {
-            setIsSaving(false);
-        }
-    };
-    
-    const isFormValid = formData.name && formData.email && formData.courseAbbr && formData.courseName && formData.branch && formData.section;
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                {faculty ? (
-                    <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
-                ) : (
-                    <Button size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Add Faculty</Button>
-                )}
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{faculty ? 'Edit Faculty' : 'Add New Faculty'}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">Name</Label>
-                        <Input id="name" value={formData.name} onChange={handleChange} className="col-span-3" required/>
-                    </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="email" className="text-right">Email</Label>
-                        <Input id="email" type="email" value={formData.email} onChange={handleChange} className="col-span-3" required/>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="courseAbbr" className="text-right">Course Abbr</Label>
-                        <Input id="courseAbbr" value={formData.courseAbbr} onChange={handleChange} className="col-span-3" placeholder="e.g. DSA, CA" required />
-                    </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="courseName" className="text-right">Course Name</Label>
-                        <Input id="courseName" value={formData.courseName} onChange={handleChange} className="col-span-3" placeholder="e.g. Data Structures" required />
-                    </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="branch" className="text-right">Branch</Label>
-                        <Input id="branch" value={formData.branch} onChange={handleChange} className="col-span-3" placeholder="e.g. CSE,ECE,AIDS" required/>
-                    </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="section" className="text-right">Section</Label>
-                        <Input id="section" value={formData.section} onChange={handleChange} className="col-span-3" placeholder="e.g. 1, 2, Common" required/>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button onClick={handleSubmit} disabled={!isFormValid || isSaving}>
-                        {isSaving ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-};
+import { collection, query, where } from 'firebase/firestore';
 
 export default function FacultyManagementPage() {
-    const { toast } = useToast();
     const firestore = useFirestore();
 
-    const facultyQuery = useMemoFirebase(() => {
+    const assignmentsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return collection(firestore, 'faculty');
+        return collection(firestore, 'teachingAssignments');
     }, [firestore]);
-    const { data: facultyFromFirestore, isLoading: loadingFaculty } = useCollection(facultyQuery);
 
-    const faculty = useMemo(() => {
-        const facultyMap = new Map();
-        dummyFaculty.forEach(f => facultyMap.set(f.id, f));
-        facultyFromFirestore?.forEach((f: any) => facultyMap.set(f.id, f));
-        return Array.from(facultyMap.values());
-    }, [facultyFromFirestore]);
+    const { data: assignments, isLoading: loadingAssignments } = useCollection(assignmentsQuery);
 
-
-    const handleSaveFaculty = async (facultyData: any) => {
-        if (!firestore) {
-            toast({ variant: "destructive", title: "Error", description: "Database not available." });
-            return;
-        }
-
-        if (facultyData.name.includes('/')) {
-            toast({
-                variant: "destructive",
-                title: "Invalid Name",
-                description: "Cannot save multiple faculty names in one entry. Please split them into separate records.",
-            });
-            return;
-        }
-        
-        const facultyId = facultyData.id || `faculty-${Date.now()}`;
-        const facultyRef = doc(firestore, 'faculty', facultyId);
-        
-        const dataToSave = {
-            ...facultyData,
-            id: facultyId,
-            lastUpdatedAt: serverTimestamp(),
-        };
-
-        try {
-            await setDoc(facultyRef, dataToSave, { merge: true });
-            toast({ title: "Success", description: `Faculty ${facultyData.id ? 'updated' : 'added'} successfully.` });
-        } catch (error: any) {
-             toast({ variant: "destructive", title: "Save Failed", description: error.message || "Could not save faculty data." });
-        }
-    };
-
-    const handleDeleteFaculty = async (facultyId: string) => {
-        if (!firestore) {
-             toast({ variant: "destructive", title: "Error", description: "Database not available." });
-            return;
-        }
-        if (window.confirm("Are you sure you want to delete this faculty member?")) {
-            const facultyRef = doc(firestore, 'faculty', facultyId);
-            try {
-                await deleteDoc(facultyRef);
-                toast({ title: "Success", description: "Faculty member deleted successfully." });
-            } catch (error: any) {
-                toast({ variant: "destructive", title: "Delete Failed", description: error.message || "Could not delete faculty member." });
-            }
-        }
-    };
-
-    const facultyByYear = useMemo(() => {
+    const assignmentsByYear = useMemo(() => {
         const groups: { [key: string]: any[] } = {};
-        faculty?.forEach(f => {
-            const years = f.ugYear; 
-            if (Array.isArray(years)) {
-                years.forEach((year: string) => {
-                    const key = `UG${year}`;
-                    if (!groups[key]) groups[key] = [];
-                    if (!groups[key].find(existing => existing.id === f.id)) {
-                        groups[key].push(f);
-                    }
-                });
-            }
+        if (!assignments) return groups;
+        
+        assignments.forEach((assignment: any) => {
+            const key = `UG${assignment.ug}`;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(assignment);
         });
+        
+        // Sort each group by course code then section
+        for (const key in groups) {
+            groups[key].sort((a, b) => {
+                if (a.courseCode < b.courseCode) return -1;
+                if (a.courseCode > b.courseCode) return 1;
+                return a.section.localeCompare(b.section);
+            });
+        }
         return groups;
-    }, [faculty]);
+    }, [assignments]);
+    
+    const facultyLoad = useMemo(() => {
+        const load: { [key: string]: number } = {};
+        if (!assignments) return load;
+        assignments.forEach((a: any) => {
+            if (!load[a.facultyName]) load[a.facultyName] = 0;
+            load[a.facultyName]++;
+        });
+        return load;
+    }, [assignments]);
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Faculty Management</CardTitle>
-                <CardDescription>View and manage faculty assignments by year.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Faculty Assignments Overview</CardTitle>
+                    <CardDescription>Read-only view of all current teaching assignments. Configuration is managed by the Timetable Administrator.</CardDescription>
+                </CardHeader>
+            </Card>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 <Card className="lg:col-span-1">
+                    <CardHeader>
+                        <CardTitle>Faculty Load Summary</CardTitle>
+                        <CardDescription>Number of sections assigned per faculty.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Faculty Name</TableHead>
+                                    <TableHead className="text-right">Assigned Sections</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loadingAssignments && <TableRow><TableCell colSpan={2} className="text-center">Loading...</TableCell></TableRow>}
+                                {Object.keys(facultyLoad).length === 0 && !loadingAssignments && <TableRow><TableCell colSpan={2} className="text-center">No assignments found.</TableCell></TableRow>}
+                                {Object.entries(facultyLoad).map(([name, count]) => (
+                                    <TableRow key={name}>
+                                        <TableCell>{name}</TableCell>
+                                        <TableCell className="text-right">{count}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+
+                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {['UG1', 'UG2', 'UG3', 'UG4'].map(year => {
                         const groupKey = year;
-                        const groupFaculty = facultyByYear[groupKey] || [];
+                        const groupAssignments = assignmentsByYear[groupKey] || [];
                         return (
                             <Card key={groupKey}>
-                                <CardHeader className="flex flex-row items-center justify-between">
+                                <CardHeader>
                                     <CardTitle className="text-lg">{groupKey}</CardTitle>
-                                    <FacultyForm onSave={handleSaveFaculty} ugYear={groupKey} />
                                 </CardHeader>
                                 <CardContent>
-                                    {loadingFaculty ? <p>Loading...</p> : (
+                                    {loadingAssignments ? <p>Loading...</p> : (
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>Name</TableHead>
-                                                <TableHead>Email</TableHead>
                                                 <TableHead>Course</TableHead>
-                                                <TableHead>Actions</TableHead>
+                                                <TableHead>Section</TableHead>
+                                                <TableHead>Faculty</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {groupFaculty.length === 0 && <TableRow><TableCell colSpan={4} className="text-center">No faculty found.</TableCell></TableRow>}
-                                            {groupFaculty.map((f:any) => (
-                                                <TableRow key={f.id}>
-                                                    <TableCell>{f.name}</TableCell>
-                                                    <TableCell>{f.email}</TableCell>
-                                                    <TableCell>{f.courseName} ({f.courseAbbr})</TableCell>
-                                                    <TableCell className="flex gap-2">
-                                                        <FacultyForm faculty={f} onSave={handleSaveFaculty} ugYear={groupKey} />
-                                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(f.id)}><Trash2 className="h-4 w-4 text-red-500"/></Button>
-                                                    </TableCell>
+                                            {groupAssignments.length === 0 && <TableRow><TableCell colSpan={3} className="text-center">No assignments.</TableCell></TableRow>}
+                                            {groupAssignments.map((a: any) => (
+                                                <TableRow key={a.id}>
+                                                    <TableCell>{a.courseCode}</TableCell>
+                                                    <TableCell>{a.section}</TableCell>
+                                                    <TableCell>{a.facultyName}</TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
@@ -227,7 +119,7 @@ export default function FacultyManagementPage() {
                         );
                     })}
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     )
 }
