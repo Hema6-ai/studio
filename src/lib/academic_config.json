@@ -1,33 +1,24 @@
 {
-  "academicOffice": {
-    "adminEmail": "tt@iiits.in",
-    "currentSemester": "S2026",
-    "maxRetriesForTimetable": 5
-  },
-  "ugs": {
-    "UG1": {
-      "students": 800,
-      "hasElectives": false
-    },
-    "UG2": {
-      "students": 700,
-      "hasElectives": false
-    },
-    "UG3": {
-      "students": 400,
-      "hasElectives": true
-    },
-    "UG4": {
-      "students": 200,
-      "hasElectives": true
-    }
-  },
-  "electivePolicy": {
-    "UG3": {
-      "numberOfBins": 5
-    },
-    "UG4": {
-      "numberOfBins": 5
-    }
+  "workingDays": ["MON", "TUE", "WED", "THU", "FRI", "SAT"],
+
+  "timeSlots": [
+    { "slotId": "S1", "start": "08:45", "end": "09:45" },
+    { "slotId": "S2", "start": "09:45", "end": "10:45" },
+
+    { "slotId": "S3", "start": "11:00", "end": "12:00" },
+    { "slotId": "S4", "start": "12:00", "end": "13:00" },
+
+    { "slotId": "S5", "start": "14:15", "end": "15:15" },
+    { "slotId": "S6", "start": "15:15", "end": "16:15" },
+
+    { "slotId": "S7", "start": "16:30", "end": "17:30" },
+    { "slotId": "S8", "start": "17:30", "end": "18:30" }
+  ],
+
+  "labRules": {
+    "labDurationSlots": 2,
+    "mustBeConsecutive": true,
+    "sameRoom": true,
+    "sameDay": true
   }
 }
