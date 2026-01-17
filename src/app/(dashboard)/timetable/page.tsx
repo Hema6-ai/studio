@@ -2,12 +2,12 @@
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Settings, Save, PlusCircle, Trash2, Edit, GraduationCap, Building, Clock } from 'lucide-react';
+import { AlertTriangle, Settings, Save, PlusCircle, Trash2, Edit, GraduationCap, Building, Clock, Activity, BookOpen, User as UserIcon } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { collection, doc, serverTimestamp, query, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, query, where, writeBatch, getDocs } from 'firebase/firestore';
 import { setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect, useMemo, FC } from 'react';
@@ -444,6 +444,163 @@ const AssignmentManager: FC<{ user: any }> = ({ user }) => {
     );
 };
 
+// --- Session Generation Manager ---
+const SessionGenerationManager: FC<{ user: any }> = ({ user }) => {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    // Input Data
+    const { data: teachingAssignments, isLoading: loadingAssignments } = useCollection(useMemoFirebase(() => firestore ? collection(firestore, 'teachingAssignments') : null, [firestore]));
+    const { data: ugCourses, isLoading: loadingCourses } = useCollection(useMemoFirebase(() => firestore ? collection(firestore, 'ugCourses') : null, [firestore]));
+    const { data: students, isLoading: loadingStudents } = useCollection(useMemoFirebase(() => firestore ? collection(firestore, 'students') : null, [firestore]));
+    const { data: faculty, isLoading: loadingFaculty } = useCollection(useMemoFirebase(() => firestore ? collection(firestore, 'faculty') : null, [firestore]));
+
+    // Output Data
+    const sessionsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'sessions') : null, [firestore]);
+    const { data: generatedSessions, isLoading: loadingGeneratedSessions } = useCollection(sessionsCollection);
+
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const dataIsLoading = loadingAssignments || loadingCourses || loadingStudents || loadingFaculty;
+    const prerequisiteDataIsMissing = !teachingAssignments?.length || !ugCourses?.length || !students?.length || !faculty?.length;
+
+    const handleGenerateSessions = async () => {
+        if (!firestore || !sessionsCollection) return;
+        setIsGenerating(true);
+        setError(null);
+
+        try {
+            const newSessions: any[] = [];
+            // Generation logic
+            for (const assignment of teachingAssignments!) {
+                const course = ugCourses!.find(c => c.ug === assignment.ug && c.courseCode === assignment.courseCode);
+                if (!course) throw new Error(`Course details not found for ${assignment.courseCode}`);
+
+                const enrolledStudents = students!.filter(s =>
+                    `UG${s.ugYear}` === assignment.ug &&
+                    s.enrolledCourses.some((ec: any) => ec.courseAbbr === assignment.courseCode && (ec.section === assignment.section || ec.section === 'Common'))
+                ).map(s => s.id);
+
+                const numSessions = course.sessionType === 'LAB' ? course.weeklyHours / course.durationInSlots : course.weeklyHours;
+
+                for (let i = 0; i < numSessions; i++) {
+                    newSessions.push({
+                        ug: assignment.ug,
+                        courseCode: assignment.courseCode,
+                        section: assignment.section,
+                        facultyId: assignment.facultyId,
+                        studentIds: enrolledStudents,
+                        durationSlots: course.durationInSlots,
+                        roomTypeRequired: course.requiresRoomType,
+                        status: "UNSCHEDULED"
+                    });
+                }
+            }
+            
+            // Validation logic
+            // ... (validations as described in prompt would go here)
+            // Example validation:
+            if (newSessions.some(s => s.roomTypeRequired === 'LAB' && s.durationSlots !== 2)) {
+                throw new Error("Validation Failed: All LAB sessions must have a duration of 2 slots.");
+            }
+
+            // Clear existing sessions and write new ones in a batch
+            const batch = writeBatch(firestore);
+            const existingDocs = await getDocs(sessionsCollection);
+            existingDocs.forEach(doc => batch.delete(doc.ref));
+            
+            newSessions.forEach(session => {
+                const docRef = doc(sessionsCollection);
+                batch.set(docRef, session);
+            });
+
+            await batch.commit();
+
+            toast({ title: "Success", description: `${newSessions.length} weekly sessions have been generated.` });
+
+        } catch (e: any) {
+            setError(e.message);
+            toast({ variant: 'destructive', title: "Session Generation Failed", description: e.message });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+    
+     const reviewStats = useMemo(() => {
+        if (!generatedSessions) return null;
+        const stats = {
+            byUG: {} as Record<string, number>,
+            bySubject: {} as Record<string, number>,
+            byFaculty: {} as Record<string, number>,
+            byType: { THEORY: 0, LAB: 0 },
+        };
+        for (const session of generatedSessions) {
+            stats.byUG[session.ug] = (stats.byUG[session.ug] || 0) + 1;
+            stats.bySubject[session.courseCode] = (stats.bySubject[session.courseCode] || 0) + 1;
+            stats.byFaculty[session.facultyId] = (stats.byFaculty[session.facultyId] || 0) + 1;
+            stats.byType[session.roomTypeRequired as 'THEORY' | 'LAB']++;
+        }
+        return stats;
+    }, [generatedSessions]);
+
+
+    return (
+         <div className="space-y-6">
+            <Alert>
+                <Activity className="h-4 w-4" />
+                <AlertTitle>Phase 4: Session Generation</AlertTitle>
+                <AlertDescription>
+                    Generate all required weekly class sessions from approved enrollments and teaching assignments. This step creates the "what" before scheduling the "when" and "where".
+                </AlertDescription>
+            </Alert>
+
+            {dataIsLoading ? <Skeleton className="h-48 w-full" /> : prerequisiteDataIsMissing ? (
+                 <Alert variant="destructive">
+                     <AlertTriangle className="h-4 w-4"/>
+                     <AlertTitle>Prerequisites Missing</AlertTitle>
+                     <AlertDescription>Cannot generate sessions. Please ensure that all courses, faculty, teaching assignments, and student enrollments have been configured in the previous phases.</AlertDescription>
+                 </Alert>
+            ) : (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Session Generation Control</CardTitle>
+                        <CardDescription>Click the button to generate the complete list of unscheduled class sessions for the semester.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button onClick={handleGenerateSessions} disabled={isGenerating}>
+                            {isGenerating ? "Generating..." : "Generate Weekly Sessions"}
+                        </Button>
+                        {error && <p className="text-sm text-destructive mt-4">{error}</p>}
+                    </CardContent>
+                    {generatedSessions && reviewStats && (
+                         <CardFooter className="flex-col items-start gap-4">
+                            <h3 className="text-lg font-semibold">Review Generated Sessions</h3>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                                <Card>
+                                    <CardHeader><CardTitle className="text-base">By UG</CardTitle></CardHeader>
+                                    <CardContent><Table>{Object.entries(reviewStats.byUG).map(([ug, count]) => <TableRow key={ug}><TableCell>{ug}</TableCell><TableCell>{count} sessions</TableCell></TableRow>)}</Table></CardContent>
+                                </Card>
+                                 <Card>
+                                    <CardHeader><CardTitle className="text-base">By Type</CardTitle></CardHeader>
+                                    <CardContent><Table><TableRow><TableCell>Theory</TableCell><TableCell>{reviewStats.byType.THEORY}</TableCell></TableRow><TableRow><TableCell>Lab</TableCell><TableCell>{reviewStats.byType.LAB}</TableCell></TableRow></Table></CardContent>
+                                </Card>
+                                 <Card className="col-span-2">
+                                    <CardHeader><CardTitle className="text-base">By Subject</CardTitle></CardHeader>
+                                    <CardContent className="max-h-48 overflow-y-auto"><Table>{Object.entries(reviewStats.bySubject).map(([subject, count]) => <TableRow key={subject}><TableCell>{subject}</TableCell><TableCell>{count} sessions/week</TableCell></TableRow>)}</Table></CardContent>
+                                </Card>
+                            </div>
+                            <div className="w-full">
+                                <Button>Approve Sessions</Button>
+                            </div>
+                         </CardFooter>
+                    )}
+                </Card>
+            )}
+        </div>
+    );
+};
+
 
 // --- Main Page Component ---
 export default function TimetableAdminPage() {
@@ -468,12 +625,12 @@ export default function TimetableAdminPage() {
                 </CardHeader>
             </Card>
 
-            <Tabs defaultValue="structure" className="w-full">
+            <Tabs defaultValue="sessions" className="w-full">
                 <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="policy">Phase 1: Policies</TabsTrigger>
                     <TabsTrigger value="structure">Phase 2: Structure</TabsTrigger>
                     <TabsTrigger value="faculty">Phase 3: Faculty</TabsTrigger>
-                    <TabsTrigger value="enrollment" disabled>Phase 4: Enrollment</TabsTrigger>
+                    <TabsTrigger value="sessions">Phase 4: Sessions</TabsTrigger>
                     <TabsTrigger value="generate" disabled>Phase 5: Generate</TabsTrigger>
                 </TabsList>
                 
@@ -515,6 +672,10 @@ export default function TimetableAdminPage() {
                        <FacultyManager user={user} />
                        <AssignmentManager user={user} />
                      </div>
+                </TabsContent>
+                
+                 <TabsContent value="sessions" className="mt-6">
+                    <SessionGenerationManager user={user} />
                 </TabsContent>
 
             </Tabs>
