@@ -233,6 +233,23 @@
           "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the event was created." }
         },
         "required": ["id", "title", "organizer", "description", "eventDate", "venue", "eventType", "status", "createdAt"]
+      },
+      "SemesterPolicy": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "SemesterPolicy",
+        "type": "object",
+        "description": "Defines the academic rules and constraints for timetable generation for a specific semester.",
+        "properties": {
+          "semesterId": { "type": "string", "description": "The ID of the semester (e.g., 'UG1', 'UG2')." },
+          "hasElectives": { "type": "boolean", "description": "Whether this semester offers elective courses." },
+          "usesStudentPreferences": { "type": "boolean", "description": "Whether student preferences are considered for elective allocation." },
+          "usesCGPA": { "type": "boolean", "description": "Whether CGPA is used as a factor in course allocation." },
+          "numberOfElectiveBins": { "type": "number", "description": "The number of elective bins available." },
+          "maxTimetableRetries": { "type": "number", "description": "The maximum number of attempts the scheduler should make." },
+          "lastUpdatedBy": { "type": "string", "description": "The email of the admin who last updated the policy." },
+          "lastUpdatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last update." }
+        },
+        "required": ["semesterId", "hasElectives", "usesStudentPreferences", "usesCGPA", "numberOfElectiveBins", "maxTimetableRetries", "lastUpdatedBy", "lastUpdatedAt"]
       }
   },
   "auth": {
@@ -257,7 +274,8 @@
       { "path": "/globalResources/{resourceId}", "definition": { "entityName": "GlobalResource", "schema": { "$ref": "#/backend/entities/GlobalResource" }, "description": "Stores global, read-only resources visible to all students.", "params": [{ "name": "resourceId", "description": "The unique identifier for a global resource." }] } },
       { "path": "/resourceHub/students/{studentId}/resources/{resourceId}", "definition": { "entityName": "StudentResource", "schema": { "$ref": "#/backend/entities/StudentResource" }, "description": "Stores personal resources added by a specific student. Path-based ownership ensures privacy.", "params": [{ "name": "studentId", "description": "The unique identifier of the student." }, { "name": "resourceId", "description": "The unique identifier of the personal resource." }] } },
       { "path": "/hostelComplaints/{complaintId}", "definition": { "entityName": "HostelComplaint", "schema": { "$ref": "#/backend/entities/HostelComplaint" }, "description": "Stores confidential hostel complaints submitted by students.", "params": [{ "name": "complaintId", "description": "The unique identifier of the complaint." }] } },
-      { "path": "/events/{eventId}", "definition": { "entityName": "Event", "schema": { "$ref": "#/backend/entities/Event" }, "description": "Stores campus events managed by the SDC.", "params": [{ "name": "eventId", "description": "The unique identifier of the event." }] } }
+      { "path": "/events/{eventId}", "definition": { "entityName": "Event", "schema": { "$ref": "#/backend/entities/Event" }, "description": "Stores campus events managed by the SDC.", "params": [{ "name": "eventId", "description": "The unique identifier of the event." }] } },
+      { "path": "/semesterPolicies/{semesterId}", "definition": { "entityName": "SemesterPolicy", "schema": { "$ref": "#/backend/entities/SemesterPolicy" }, "description": "Stores the academic policies for each semester, governing enrollment and timetable generation.", "params": [{ "name": "semesterId", "description": "The unique identifier for the semester (e.g., UG1, UG2)." }] } }
     ],
     "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability for the CampusOS application, especially focusing on the Digital Medical & Document Approval System (Module 5). Key design considerations include denormalization for authorization, segregation of data based on access needs, and consistent access modeling.\n\n**Authorization Independence and QAPs:**\n\n*   **/users/{userId}/medicalRequests/{medicalRequestId}**: Medical requests are stored as subcollections under each user's document. This ensures that a student can only access their own requests, achieving path-based ownership and simplifies security rules.\n\n*   **/doctors/{doctorId}/availability**: Doctor availability is stored in a separate collection, enabling easy querying and updates to doctor availability.  This ensures that students can see doctor availability in real-time.\n\n*   **/users/{userId}/shortcuts/{shortcutId}**: User-defined shortcuts are stored in a subcollection under each user, ensuring that shortcuts are private and only visible to the user who created them.\n\n*   **/resourceHub/students/{studentId}/resources/{resourceId}**: Student-specific resources are stored in a subcollection under a separate root collection, ensuring data privacy and ownership while keeping student documents clean.\n\n**Structural Segregation:**\n\n*   The data is separated based on access requirements:\n    *   Student medical requests are stored under `/users/{userId}/medicalRequests/{medicalRequestId}`.\n    *   Doctor availability statuses are stored in `/doctors/{doctorId}/availability`.\n    *   Curriculum data is stored centrally in `/curriculums` to be queried by branch and year.\n    *   Institute library books are stored in `/books`.\n    *   Student personal library files are stored under `/students/{studentId}/library/{fileId}` to enforce privacy.\n    *   Global resources are in a central, read-only collection `/globalResources`.\n\n**Access Modeling:**\n\n*   **Private Data (Student Medical Requests, User Shortcuts, Student Library, Student Resources):** Uses path-based ownership to ensure students can only access their own data.\n\n*   **Role-Based Access Control:** The application logic determines roles based on email prefixes and domains (e.g., `doctor.name@iiits.in` for doctors). This allows for role-based access in the UI and application code.\n\nThis structure supports QAPs by:\n\n*   Enabling secure `list` operations. For example, a student can securely list only their own medical requests because of the path-based ownership.\n*   Providing clear segregation for different roles (student, doctor, director, academic office, librarian), which simplifies the implementation of Firestore security rules."
   }
