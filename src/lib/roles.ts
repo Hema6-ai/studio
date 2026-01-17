@@ -1,6 +1,6 @@
 'use client';
 
-export type UserRole = 'student' | 'faculty' | 'doctor' | 'academics' | 'director' | 'librarian' | 'slc' | 'sdc' | null;
+export type UserRole = 'student' | 'faculty' | 'doctor' | 'academics' | 'director' | 'librarian' | 'slc' | 'sdc' | 'timetable' | null;
 
 export const ROLES = {
   STUDENT: 'student',
@@ -11,6 +11,7 @@ export const ROLES = {
   LIBRARIAN: 'librarian',
   SLC: 'slc',
   SDC: 'sdc',
+  TIMETABLE: 'timetable',
 } as const;
 
 
@@ -20,6 +21,11 @@ export function getRoleFromEmail(email: string): UserRole {
   }
 
   const lowerCaseEmail = email.toLowerCase();
+  
+  // Rule for Timetable Admin
+  if (lowerCaseEmail === 'tt@iiits.in') {
+    return ROLES.TIMETABLE;
+  }
 
   // Rule 1: Director
   if (lowerCaseEmail === 'director@iiits.in') {

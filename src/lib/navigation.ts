@@ -25,6 +25,7 @@ import {
     History as HistoryIcon,
     ShieldCheck,
     CalendarPlus,
+    SlidersHorizontal,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -126,4 +127,9 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '#', label: 'Profile', icon: User },
         { href: '/login', label: 'Logout', icon: LogOut },
     ],
+    timetable: [
+        { href: '/timetable', label: 'Timetable Control', icon: SlidersHorizontal },
+        { href: '#', label: 'Profile', icon: User },
+        { href: '/login', label: 'Logout', icon: LogOut },
+    ]
 };
