@@ -1,0 +1,33 @@
+{
+  "academicOffice": {
+    "adminEmail": "tt@iiits.in",
+    "currentSemester": "S2026",
+    "maxRetriesForTimetable": 5
+  },
+  "ugs": {
+    "UG1": {
+      "students": 800,
+      "hasElectives": false
+    },
+    "UG2": {
+      "students": 700,
+      "hasElectives": false
+    },
+    "UG3": {
+      "students": 400,
+      "hasElectives": true
+    },
+    "UG4": {
+      "students": 200,
+      "hasElectives": true
+    }
+  },
+  "electivePolicy": {
+    "UG3": {
+      "numberOfBins": 5
+    },
+    "UG4": {
+      "numberOfBins": 5
+    }
+  }
+}
