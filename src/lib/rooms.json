@@ -1,0 +1,35 @@
+{
+  "rooms": [
+    { "roomId": "G08", "capacity": 180, "type": "THEORY" },
+    { "roomId": "G09", "capacity": 180, "type": "THEORY" },
+
+    { "roomId": "G04", "capacity": 120, "type": "THEORY" },
+    { "roomId": "G05", "capacity": 120, "type": "THEORY" },
+    { "roomId": "G06", "capacity": 120, "type": "THEORY" },
+    { "roomId": "G07", "capacity": 120, "type": "THEORY" },
+
+    { "roomId": "B03", "capacity": 90, "type": "THEORY" },
+    { "roomId": "B04", "capacity": 90, "type": "THEORY" },
+
+    { "roomId": "108", "capacity": 60, "type": "THEORY" },
+    { "roomId": "109", "capacity": 60, "type": "THEORY" },
+    { "roomId": "110", "capacity": 60, "type": "THEORY" },
+    { "roomId": "111", "capacity": 60, "type": "THEORY" },
+    { "roomId": "112", "capacity": 60, "type": "THEORY" },
+
+    { "roomId": "Lab102", "capacity": 60, "type": "LAB" },
+    { "roomId": "Lab103", "capacity": 60, "type": "LAB" },
+    { "roomId": "Lab104", "capacity": 60, "type": "LAB" },
+    { "roomId": "Lab105", "capacity": 60, "type": "LAB" },
+    { "roomId": "Lab106", "capacity": 60, "type": "LAB" },
+    { "roomId": "Lab112", "capacity": 60, "type": "LAB" },
+    { "roomId": "Lab114/102", "capacity": 120, "type": "LAB" }
+  ],
+
+  "ugRoomPools": {
+    "UG1": ["G08", "G09", "B03", "B04", "Lab103", "Lab114/102"],
+    "UG2": ["G05", "G06", "G07", "B03", "Lab102", "Lab104", "Lab106", "Lab112"],
+    "UG3": ["G04", "G05", "G07", "108", "109", "110", "111", "112", "Lab103", "Lab104", "Lab105"],
+    "UG4": ["B03", "B04", "104", "105", "111", "112"]
+  }
+}
