@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import academicConfig from '@/lib/academic_config.json';
 
 const PersonalTaskSchema = z.object({
   name: z.string().describe('The name of the personal task or study goal.'),
@@ -43,45 +44,117 @@ export async function generateSchedulePlan(input: SchedulePlanInput): Promise<Sc
   return generateSchedulePlanFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'schedulePlanPrompt',
-  input: {schema: SchedulePlanInputSchema},
-  output: {schema: SchedulePlanOutputSchema},
-  prompt: `You are an expert AI schedule planning assistant for university students. Your goal is to generate a personalized and conflict-free weekly schedule by intelligently placing personal tasks into the free slots of a student's fixed institute timetable.
 
-**CRITICAL RULES:**
-1.  **Institute Timetable is UNCHANGEABLE:** You MUST treat the provided institute timetable as a set of fixed, non-negotiable appointments. You CANNOT move, delete, or schedule anything over these existing classes.
-2.  **Find Free Slots:** Your primary job is to identify all the empty time slots in the student's week.
-3.  **Schedule Personal Tasks:** Place the user's personal tasks into these free slots based on their duration and priority. High-priority tasks must be scheduled first.
-4.  **Distribute Workload:** Avoid cramming all tasks into one or two days. Distribute them reasonably throughout the week if possible.
-5.  **Handle Conflicts:** If a task cannot be scheduled because there are no available slots that fit its duration, you MUST clearly state this in the 'reasoning' output. Explain which tasks could not be scheduled and why. Do not invent time slots or ignore the constraints.
-
-**INPUT DATA:**
-
-*   **Student ID:** {{{studentId}}}
-*   **Fixed Institute Timetable (JSON):**
-    \`\`\`json
-    {{{instituteTimetable}}}
-    \`\`\`
-*   **Personal Tasks to Schedule (JSON):**
-    \`\`\`json
-    {{{jsonStringify personalTasks}}}
-    \`\`\`
-
-**YOUR TASK:**
-
-Generate a complete weekly schedule as a JSON object where keys are the days of the week. For each day, provide an array of events, including both the original institute classes and the newly scheduled personal tasks. Also, provide a clear 'reasoning' text that explains your decisions.
-`,
-});
-
+// This is the new implementation, replacing the prompt-based one.
 const generateSchedulePlanFlow = ai.defineFlow(
   {
     name: 'generateSchedulePlanFlow',
     inputSchema: SchedulePlanInputSchema,
     outputSchema: SchedulePlanOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    try {
+        const instituteTimetable = JSON.parse(input.instituteTimetable);
+        const personalTasks = input.personalTasks;
+
+        // 1. Initialize schedule grid
+        const dayMap: { [key: string]: string } = {
+            MON: "Monday", TUE: "Tuesday", WED: "Wednesday",
+            THU: "Thursday", FRI: "Friday", SAT: "Saturday"
+        };
+        const weekDays = academicConfig.workingDays.map(d => dayMap[d]).filter(Boolean);
+        const timeSlots = academicConfig.timeSlots.map(slot => `${slot.start}-${slot.end}`);
+        
+        // Create a deep copy to work with
+        const schedule: SchedulePlanOutput['schedule'] = JSON.parse(JSON.stringify(instituteTimetable));
+        weekDays.forEach(day => {
+            if (!schedule[day]) {
+                schedule[day] = [];
+            }
+        });
+
+        const isSlotOccupied = (day: string, time: string): boolean => {
+            return schedule[day]?.some(task => task.time === time) ?? false;
+        };
+
+        // 2. Sort personal tasks by priority
+        const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
+        const sortedTasks = [...personalTasks].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+        const unscheduledTasks: string[] = [];
+        const scheduledTasks: string[] = [];
+        
+        // 3. Schedule tasks greedily
+        for (const task of sortedTasks) {
+            let isTaskScheduled = false;
+            const taskDuration = Math.ceil(task.duration);
+
+            for (const day of weekDays) {
+                if (isTaskScheduled) break;
+                for (let i = 0; i <= timeSlots.length - taskDuration; i++) {
+                    const potentialSlots = timeSlots.slice(i, i + taskDuration);
+                    const isBlockFree = potentialSlots.every(slot => !isSlotOccupied(day, slot));
+                    
+                    let isContinuous = true;
+                    for (let j = 0; j < potentialSlots.length - 1; j++) {
+                        const currentSlotEnd = potentialSlots[j].split('-')[1];
+                        const nextSlotStart = potentialSlots[j+1].split('-')[0];
+                        if (currentSlotEnd !== nextSlotStart) {
+                            isContinuous = false;
+                            break;
+                        }
+                    }
+                    
+                    if (isBlockFree && isContinuous) {
+                        for (const slot of potentialSlots) {
+                            schedule[day].push({
+                                taskName: task.name,
+                                time: slot,
+                                isClass: false,
+                                day: day,
+                            });
+                        }
+                        scheduledTasks.push(`'${task.name}' (${task.duration}h, ${task.priority} priority)`);
+                        isTaskScheduled = true;
+                        break; 
+                    }
+                }
+            }
+            if (!isTaskScheduled) {
+                unscheduledTasks.push(`'${task.name}' (${task.duration}h)`);
+            }
+        }
+
+        // 4. Sort final schedule by time for display
+        for (const day in schedule) {
+            schedule[day].sort((a, b) => a.time.localeCompare(b.time));
+        }
+
+        // 5. Generate reasoning
+        let reasoning = "The AI schedule was generated based on the following logic:\n\n";
+        reasoning += "1. Your institute classes were treated as fixed, unchangeable appointments.\n";
+        reasoning += "2. Your personal tasks were sorted by priority (High > Medium > Low).\n";
+        reasoning += "3. The scheduler then found the first available free time blocks to fit each task, starting with the highest priority ones.\n\n";
+
+        if (scheduledTasks.length > 0) {
+            reasoning += `Successfully scheduled the following tasks: ${scheduledTasks.join(', ')}.\n`;
+        } else if (personalTasks.length > 0) {
+            reasoning += "No personal tasks were able to be scheduled.\n";
+        }
+
+        if (unscheduledTasks.length > 0) {
+            reasoning += `\nThe following tasks could not be scheduled due to a lack of contiguous free time: ${unscheduledTasks.join(', ')}. You may need to break them into smaller tasks or free up more time.`;
+        } else if (personalTasks.length > 0) {
+            reasoning += "\nAll tasks were successfully scheduled!";
+        } else {
+             reasoning += "No personal tasks were provided to schedule.";
+        }
+
+        return { schedule, reasoning };
+    } catch (e: any) {
+        console.error("Error in generateSchedulePlanFlow:", e);
+        const reasoning = `An unexpected error occurred while generating the schedule: ${e.message}. Please check your inputs and try again.`;
+        return { schedule: JSON.parse(input.instituteTimetable), reasoning };
+    }
   }
 );
