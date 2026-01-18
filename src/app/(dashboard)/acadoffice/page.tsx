@@ -842,7 +842,7 @@ export default function TimetableAdminPage() {
                 </CardHeader>
             </Card>
 
-            <Tabs defaultValue="structure" className="w-full">
+            <Tabs defaultValue="policy" className="w-full">
                 <TabsList className="grid w-full grid-cols-6">
                     <TabsTrigger value="policy">Phase 1: Policies</TabsTrigger>
                     <TabsTrigger value="structure">Phase 2: Structure</TabsTrigger>
@@ -853,16 +853,69 @@ export default function TimetableAdminPage() {
                 </TabsList>
                 
                 <TabsContent value="policy" className="mt-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Phase 1: Policy Definition (UG-3 Student Data Generation)</CardTitle>
-                            <CardDescription>
-                                This prompt defines the rules for generating the base student dataset for UG-3. This data is critical for sectioning and preference allocation.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                           <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
-                                <pre className="whitespace-pre-wrap">
+                    <Tabs defaultValue="ug1">
+                        <TabsList>
+                            <TabsTrigger value="ug1">UG-1</TabsTrigger>
+                            <TabsTrigger value="ug2">UG-2</TabsTrigger>
+                            <TabsTrigger value="ug3">UG-3</TabsTrigger>
+                            <TabsTrigger value="ug4">UG-4</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="ug1" className="mt-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Policy: UG-1 Student Data Generation</CardTitle>
+                                    <CardDescription>Prompt defining the rules for generating the base student dataset for the 2024 batch.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
+                                        <pre className="whitespace-pre-wrap">
+{`You are provided with 2024-batch student datasets for CSE, ECE, and AIDS branches.
+
+Your objective is to produce a consolidated JSON object that is system-ready and self-complete.
+
+MANDATORY REQUIREMENTS:
+1. Each branch MUST contain at least 20 students.
+2. If the provided data for any branch is insufficient, auto-generate the missing students.
+3. Auto-generated data must strictly follow:
+   - StudentID patterns:
+     • CSE  → S2024001XXXX
+     • ECE  → S2024002XXXX
+     • AIDS → S2024003XXXX
+   - Email format: firstname.lastname24@iiits.in
+   - CGPA range: 6.00 to 10.00 (two decimals only)
+   - Indian naming conventions
+   - Full uniqueness across IDs, emails, and names
+4. Original dataset entries must remain unchanged.
+5. Generated students must seamlessly blend with real data.
+
+FINAL OUTPUT SCHEMA:
+{
+  "cse": [ { StudentID, Name, Email, CGPA }, ... ],
+  "ece": [ { StudentID, Name, Email, CGPA }, ... ],
+  "aids": [ { StudentID, Name, Email, CGPA }, ... ]
+}
+
+STRICT OUTPUT RULES:
+- JSON only. No prose.
+- No comments.
+- No truncation.
+- Ready for direct ingestion into academic automation systems.
+
+This output will be used as a base dataset for preference handling, sectioning, and timetable optimization.`}
+                                        </pre>
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="ug2" className="mt-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Policy: UG-2 Student Data Generation</CardTitle>
+                                    <CardDescription>Prompt defining the rules for generating the base student dataset for the 2023 batch.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
+                                        <pre className="whitespace-pre-wrap">
 {`You are provided with 2023-batch student datasets for three branches: CSE, ECE, and AIDS.
 
 Your task is to generate a single consolidated JSON object that is complete, valid, and ready for automated academic systems.
@@ -896,10 +949,106 @@ OUTPUT CONSTRAINTS:
 - Deterministic, schema-clean output.
 
 This JSON will be directly consumed by downstream systems including section allocation, preference resolution, and timetable optimization engines.`}
-                                </pre>
-                           </ScrollArea>
-                        </CardContent>
-                    </Card>
+                                        </pre>
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="ug3" className="mt-4">
+                           <Card>
+                                <CardHeader>
+                                    <CardTitle>Policy: UG-3 Student Data Generation</CardTitle>
+                                    <CardDescription>Prompt defining the rules for generating the base student dataset for the 2022 batch.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
+                                        <pre className="whitespace-pre-wrap">
+{`You are given 2022-batch student datasets for three branches: CSE, ECE, and AIDS.
+
+Your objective is to construct a single consolidated JSON object that is complete, valid, and directly usable by academic automation systems.
+
+MANDATORY DATA RULES:
+1. Each branch MUST contain a minimum of 20 students.
+2. If any branch has fewer than 20 students in the provided dataset, you MUST auto-generate additional students until the count reaches exactly 20.
+3. Auto-generated students MUST strictly follow these rules:
+   - StudentID formats:
+     • CSE  → S2022001XXXX
+     • ECE  → S2022002XXXX
+     • AIDS → S2022003XXXX
+   - Email format: firstname.lastname22@iiits.in
+   - CGPA range: 6.00 to 10.00, with exactly two decimal places.
+   - Names must be realistic Indian names.
+   - Ensure absolute uniqueness across StudentID, Email, and Name.
+4. All original student records MUST be preserved exactly as provided.
+5. Auto-generated students must be appended only when required and should integrate seamlessly with the real data.
+
+FINAL OUTPUT FORMAT (STRICT):
+{
+  "cse": [ { StudentID, Name, Email, CGPA }, ... ],
+  "ece": [ { StudentID, Name, Email, CGPA }, ... ],
+  "aids": [ { StudentID, Name, Email, CGPA }, ... ]
+}
+
+OUTPUT CONSTRAINTS:
+- Output ONLY valid JSON.
+- No explanations, no comments, no markdown.
+- No placeholders or truncation.
+- Deterministic and schema-safe.
+
+This JSON will be used directly for section assignment, preference resolution, and timetable optimization pipelines.`}
+                                        </pre>
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                         <TabsContent value="ug4" className="mt-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Policy: UG-4 Student Data Generation</CardTitle>
+                                    <CardDescription>Prompt defining the rules for generating the base student dataset for the 2021 batch.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
+                                        <pre className="whitespace-pre-wrap">
+{`You are provided with 2021-batch student datasets for three branches: CSE, ECE, and AIDS.
+
+Your objective is to construct a single consolidated JSON object that is complete, valid, and ready for direct use in academic automation systems.
+
+MANDATORY DATA RULES:
+1. Each branch MUST contain a minimum of 20 students.
+2. If the dataset for any branch has fewer than 20 students, you MUST auto-generate additional students to reach a total of exactly 20.
+3. Auto-generated students MUST adhere to these strict rules:
+   - StudentID formats:
+     • CSE  → S2021001XXXX
+     • ECE  → S2021002XXXX
+     • AIDS → S2021003XXXX
+   - Email format: firstname.lastname21@iiits.in
+   - CGPA must be between 6.00 and 10.00, with exactly two decimal places.
+   - Names must be realistic Indian names.
+   - All generated and existing data must be unique (StudentID, Email, Name).
+4. All original student records from the provided dataset MUST be preserved without modification.
+5. Append auto-generated students only when necessary to meet the minimum count, ensuring they blend seamlessly with the real data.
+
+FINAL OUTPUT FORMAT (STRICT):
+{
+  "cse": [ { StudentID, Name, Email, CGPA }, ... ],
+  "ece": [ { StudentID, Name, Email, CGPA }, ... ],
+  "aids": [ { StudentID, Name, Email, CGPA }, ... ]
+}
+
+OUTPUT CONSTRAINTS:
+- The output MUST be valid JSON only.
+- Do NOT include any explanations, comments, or markdown.
+- Do NOT use placeholders or truncate the output.
+- The output must be deterministic and schema-safe for machine parsing.
+
+This JSON is critical for final-year course allocation, project assignments, and other graduation-related automation.`}
+                                        </pre>
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
                 </TabsContent>
                 
                 <TabsContent value="structure" className="mt-6">
