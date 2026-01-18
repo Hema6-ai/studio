@@ -9,11 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { PlusCircle, Edit, Trash2, CalendarIcon } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, CalendarIcon, Github, Youtube, Link as LinkIcon, GraduationCap } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -33,6 +33,23 @@ const eventSchema = z.object({
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
+
+const resourceSchema = z.object({
+  name: z.string().min(2, "Name is required."),
+  url: z.string().url("Please enter a valid URL."),
+  description: z.string().optional(),
+  category: z.string().min(2, "Category is required."),
+  icon: z.string().optional(),
+});
+type ResourceFormValues = z.infer<typeof resourceSchema>;
+
+const iconMap: Record<string, React.ElementType> = {
+    github: Github,
+    youtube: Youtube,
+    link: LinkIcon,
+    default: GraduationCap,
+};
+
 
 const EventForm = ({ event, onSave }: { event?: any; onSave: (data: any, file?: File) => void }) => {
   const form = useForm<EventFormValues>({
@@ -143,12 +160,54 @@ const EventForm = ({ event, onSave }: { event?: any; onSave: (data: any, file?: 
   );
 };
 
+const ResourceForm = ({ resource, onSave }: { resource?: any, onSave: (data: ResourceFormValues) => void }) => {
+    const form = useForm<ResourceFormValues>({
+        resolver: zodResolver(resourceSchema),
+        defaultValues: resource || { name: '', url: '', category: '', description: '', icon: 'link' },
+    });
+    const [isOpen, setIsOpen] = useState(false);
+
+    const onSubmit: SubmitHandler<ResourceFormValues> = (data) => {
+        onSave({ id: resource?.id, ...data });
+        setIsOpen(false);
+        form.reset();
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                {resource ? <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button> : <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Resource</Button>}
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader><DialogTitle>{resource ? 'Edit Resource' : 'Add New Global Resource'}</DialogTitle></DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField control={form.control} name="name" render={({ field }) => <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>} />
+                        <FormField control={form.control} name="url" render={({ field }) => <FormItem><FormLabel>URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>} />
+                        <FormField control={form.control} name="description" render={({ field }) => <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>} />
+                        <FormField control={form.control} name="category" render={({ field }) => <FormItem><FormLabel>Category</FormLabel><FormControl><Input {...field} placeholder="e.g., Platforms, Learning" /></FormControl><FormMessage /></FormItem>} />
+                        <FormField control={form.control} name="icon" render={({ field }) => <FormItem><FormLabel>Icon</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="github">GitHub</SelectItem><SelectItem value="youtube">YouTube</SelectItem><SelectItem value="link">Link</SelectItem><SelectItem value="default">Default</SelectItem></SelectContent></Select><FormMessage /></FormItem>} />
+                        <DialogFooter>
+                            <Button type="submit">Save Resource</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 
 export default function SdcDashboard() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  
   const eventsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'events') : null, [firestore]);
   const { data: events, isLoading: loadingEvents } = useCollection(eventsCollection);
+  
+  const globalResourcesCollection = useMemoFirebase(() => firestore ? collection(firestore, 'globalResources') : null, [firestore]);
+  const { data: resources, isLoading: loadingResources } = useCollection(globalResourcesCollection);
+
 
   const handleSaveEvent = async (eventData: any, posterFile?: File) => {
     if (!firestore) return;
@@ -198,6 +257,30 @@ export default function SdcDashboard() {
 
   const activeEvents = events?.filter((e:any) => e.status === 'Active') || [];
   
+  const handleSaveResource = (resourceData: any) => {
+    if (!globalResourcesCollection) return;
+    const dataToSave = { ...resourceData };
+    
+    if(dataToSave.id) {
+        const docRef = doc(firestore, 'globalResources', dataToSave.id);
+        delete dataToSave.id;
+        setDocumentNonBlocking(docRef, dataToSave, { merge: true });
+        toast({ title: 'Success', description: 'Resource updated.'});
+    } else {
+        addDocumentNonBlocking(globalResourcesCollection, dataToSave);
+        toast({ title: 'Success', description: 'Resource added.'});
+    }
+  };
+
+  const handleDeleteResource = (resourceId: string) => {
+    if (!firestore) return;
+    if(window.confirm('Are you sure you want to delete this global resource?')) {
+        const docRef = doc(firestore, 'globalResources', resourceId);
+        deleteDocumentNonBlocking(docRef);
+        toast({ title: 'Success', description: 'Resource deleted.' });
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <Card>
@@ -230,6 +313,45 @@ export default function SdcDashboard() {
                   <TableCell className="flex gap-2">
                     <EventForm event={event} onSave={handleSaveEvent} />
                     <Button variant="ghost" size="icon" onClick={() => handleArchiveEvent(event.id)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Global Resource Management</CardTitle>
+            <CardDescription>Manage the links and resources available to all students in the Resource Hub.</CardDescription>
+          </div>
+          <ResourceForm onSave={handleSaveResource} />
+        </CardHeader>
+        <CardContent>
+           <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>URL</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loadingResources && <TableRow><TableCell colSpan={4} className="text-center">Loading resources...</TableCell></TableRow>}
+              {!loadingResources && resources?.length === 0 && <TableRow><TableCell colSpan={4} className="text-center">No global resources found.</TableCell></TableRow>}
+              {resources?.map((resource: any) => (
+                <TableRow key={resource.id}>
+                  <TableCell className="font-medium">{resource.name}</TableCell>
+                  <TableCell>{resource.category}</TableCell>
+                  <TableCell><a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-primary underline truncate">{resource.url}</a></TableCell>
+                  <TableCell className="flex gap-2">
+                    <ResourceForm resource={resource} onSave={handleSaveResource} />
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteResource(resource.id)}>
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </TableCell>
