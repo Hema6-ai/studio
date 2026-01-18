@@ -858,13 +858,6 @@ export default function TimetableAdminPage() {
                 
                 <TabsContent value="structure" className="mt-6">
                     <div className="space-y-6">
-                        <Alert variant="default">
-                            <Settings className="h-4 w-4" />
-                            <AlertTitle>Phase 2: Academic Structure Definition</AlertTitle>
-                            <AlertDescription>
-                                Define the courses, sections, elective bins, rooms, and time grid. This data is the foundation for timetable generation.
-                            </AlertDescription>
-                        </Alert>
                         <TimeGridPreview />
                         <RoomManager user={user} />
                         {/* Existing Structure components (courses, sections, etc) would go here */}
