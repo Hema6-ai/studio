@@ -846,14 +846,18 @@ export default function TimetableAdminPage() {
                 </TabsList>
                 
                 <TabsContent value="policy" className="mt-6">
-                    {/* Policy content from previous step would go here */}
-                     <Alert variant="default">
-                        <Settings className="h-4 w-4" />
-                        <AlertTitle>Phase 1: Policy Definition</AlertTitle>
-                        <AlertDescription>
-                            Define the high-level rules for each semester. This is a prerequisite for all other steps. (This is a placeholder for the full UI).
-                        </AlertDescription>
-                    </Alert>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Phase 1: Policy Definition</CardTitle>
+                            <CardDescription>
+                                Define the high-level rules and constraints for each semester.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {/* Future UI for managing semester policies will go here. */}
+                            <p className="text-muted-foreground">Policy management UI is not yet implemented.</p>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
                 
                 <TabsContent value="structure" className="mt-6">
@@ -866,13 +870,6 @@ export default function TimetableAdminPage() {
                 
                  <TabsContent value="faculty" className="mt-6">
                      <div className="space-y-6">
-                        <Alert>
-                           <GraduationCap className="h-4 w-4" />
-                           <AlertTitle>Phase 3: Faculty &amp; Teaching Assignments</AlertTitle>
-                           <AlertDescription>
-                               First, create a master list of all faculty members. Then, assign a specific faculty member to each course section that will be taught this semester.
-                           </AlertDescription>
-                       </Alert>
                        <FacultyManager user={user} />
                        <AssignmentManager user={user} />
                      </div>
