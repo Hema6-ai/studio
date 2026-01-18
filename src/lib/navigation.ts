@@ -55,7 +55,6 @@ export const navLinks: Record<string, NavItem[]> = {
     student: [
         { href: '/student', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/student/curriculum', label: 'Curriculum', icon: Book },
-        { href: '/student/ai-schedule-planner', label: 'AI Schedule Planner', icon: CalendarDays },
         { href: '#doubt-clearing', label: 'Gemini AI Chat', icon: BotMessageSquare },
         { href: '#feed', label: 'Campus Feed', icon: Newspaper },
         { href: '/student/resources', label: 'Resource Hub', icon: BookCopy },
@@ -85,7 +84,6 @@ export const navLinks: Record<string, NavItem[]> = {
     ],
     faculty: [
         { href: '/faculty', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/faculty/ai-schedule-planner', label: 'AI Schedule Planner', icon: BotMessageSquare },
         { href: '/faculty/reschedule', label: 'Class & Reschedule', icon: CalendarDays },
         { href: '/faculty#availability', label: 'My Availability', icon: UserCheck },
         { href: '/student/resources', label: 'Resource Hub', icon: BookCopy },
