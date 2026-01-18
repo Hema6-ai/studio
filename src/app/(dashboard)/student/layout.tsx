@@ -35,7 +35,7 @@ export default function StudentSubLayout({ children }: { children: ReactNode }) 
     
     const isCurriculumPage = pathname.startsWith('/student/curriculum');
     const isAvailabilityPage = pathname.startsWith('/student/availability');
-    const isDocSubmissionPage = pathname.startsWith('/student/medical-leave');
+    const isDocSubmissionPage = pathname.startsWith('/student/medical-leave') || pathname.startsWith('/student/fee-receipt');
     
     // Don't show this specialized layout on the main student dashboard page
     if (!isCurriculumPage && !isAvailabilityPage && !isDocSubmissionPage) {

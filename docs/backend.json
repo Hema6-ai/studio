@@ -299,6 +299,31 @@
         },
         "required": ["id", "title", "organizer", "description", "eventDate", "venue", "eventType", "status", "createdAt"]
       },
+      "FeeReceipt": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "FeeReceipt",
+        "type": "object",
+        "description": "Represents a student's fee receipt submission for a specific semester.",
+        "properties": {
+          "uid": { "type": "string", "description": "The UID of the student submitting the receipt." },
+          "semester": { "type": "string", "description": "The academic semester the fee is for (e.g., 'Spring 2026')." },
+          "rollNumber": { "type": "string" },
+          "fullName": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "gender": { "type": "string" },
+          "mobile": { "type": "string" },
+          "programme": { "type": "string" },
+          "yearOfStudy": { "type": "string" },
+          "feeSemester": { "type": "string" },
+          "paymentMode": { "type": "string" },
+          "amountPaid": { "type": "number" },
+          "transactionDetails": { "type": "string" },
+          "receiptPdfUrl": { "type": "string", "format": "uri" },
+          "submittedAt": { "type": "string", "format": "date-time" },
+          "status": { "type": "string", "enum": ["submitted", "verified", "rejected"] }
+        },
+        "required": ["uid", "semester", "rollNumber", "fullName", "email", "gender", "mobile", "programme", "yearOfStudy", "feeSemester", "paymentMode", "amountPaid", "transactionDetails", "receiptPdfUrl", "submittedAt", "status"]
+      },
       "SemesterPolicy": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "SemesterPolicy",
@@ -442,6 +467,7 @@
       { "path": "/resourceHub/students/{studentId}/resources/{resourceId}", "definition": { "entityName": "StudentResource", "schema": { "$ref": "#/backend/entities/StudentResource" }, "description": "Stores personal resources added by a specific student. Path-based ownership ensures privacy.", "params": [{ "name": "studentId", "description": "The unique identifier of the student." }, { "name": "resourceId", "description": "The unique identifier of the personal resource." }] } },
       { "path": "/hostelComplaints/{complaintId}", "definition": { "entityName": "HostelComplaint", "schema": { "$ref": "#/backend/entities/HostelComplaint" }, "description": "Stores confidential hostel complaints submitted by students.", "params": [{ "name": "complaintId", "description": "The unique identifier of the complaint." }] } },
       { "path": "/events/{eventId}", "definition": { "entityName": "Event", "schema": { "$ref": "#/backend/entities/Event" }, "description": "Stores campus events managed by the SDC.", "params": [{ "name": "eventId", "description": "The unique identifier of the event." }] } },
+      { "path": "/fee_receipts/{receiptId}", "definition": { "entityName": "FeeReceipt", "schema": { "$ref": "#/backend/entities/FeeReceipt" }, "description": "Stores all student fee receipt submissions.", "params": [{ "name": "receiptId", "description": "The unique identifier for the fee receipt submission." }] } },
       { "path": "/semesterPolicies/{semesterId}", "definition": { "entityName": "SemesterPolicy", "schema": { "$ref": "#/backend/entities/SemesterPolicy" }, "description": "Stores the academic policies for each semester, governing enrollment and timetable generation.", "params": [{ "name": "semesterId", "description": "The unique identifier for the semester (e.g., UG1, UG2)." }] } },
       { "path": "/ugCourses/{courseId}", "definition": { "entityName": "UGCourse", "schema": { "$ref": "#/backend/entities/UGCourse" }, "description": "Stores course definitions for all UGs." } },
       { "path": "/ugSections/{sectionId}", "definition": { "entityName": "UGSection", "schema": { "$ref": "#/backend/entities/UGSection" }, "description": "Stores section rules for courses." } },

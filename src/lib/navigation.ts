@@ -1,3 +1,4 @@
+'use client';
 import {
     LayoutDashboard,
     CalendarDays,
@@ -65,7 +66,7 @@ export const navLinks: Record<string, NavItem[]> = {
             icon: FileUp,
             subLinks: [
                 { href: '/student/medical-leave', label: 'Medical Leave', icon: FileUp },
-                { href: '#', label: 'Fee Receipt', icon: Landmark },
+                { href: '/student/fee-receipt', label: 'Fee Receipt', icon: Landmark },
             ]
         },
         {
@@ -101,7 +102,6 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '/academics', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/academics/students', label: 'Students', icon: Users },
         { href: '/academics/faculty', label: 'Faculty', icon: GraduationCap },
-        { href: '/academics/timetables', label: 'Timetables', icon: CalendarDays },
         { href: '/academics/curriculum', label: 'Curriculum', icon: Book },
         { href: '/academics/medical-records', label: 'Medical Records', icon: Book },
         { href: '/academics/reschedule-log', label: 'Reschedule Log', icon: HistoryIcon },
