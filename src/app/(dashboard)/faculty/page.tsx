@@ -1,8 +1,8 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
@@ -92,8 +92,11 @@ export default function FacultyDashboard() {
         toast({ title: 'Availability Updated', description: `You are now set to ${status === 'YES' ? 'available' : 'unavailable'}.`});
     };
 
-    const rescheduleLogQuery = useMemoFirebase(() => firestore ? doc(firestore, 'rescheduleLog', 'latest') : null, [firestore]);
-    const { data: rescheduleLog } = useDoc(rescheduleLogQuery);
+    const rescheduleLogQuery = useMemoFirebase(() => {
+        if (!firestore || !facultyDisplayName) return null;
+        return query(collection(firestore, 'rescheduleLog'), where('facultyName', '==', facultyDisplayName));
+    }, [firestore, facultyDisplayName]);
+    const { data: rescheduleLog } = useCollection(rescheduleLogQuery);
 
     // --- Today's Schedule Logic ---
     const todaySchedule = useMemo(() => {
@@ -142,11 +145,10 @@ export default function FacultyDashboard() {
         return uniqueSchedule.map(classInfo => {
             if (!rescheduleLog) return { ...classInfo, isRescheduled: false };
 
-            const isRescheduled = Object.values(rescheduleLog).some((log: any) => 
-                log.facultyName === facultyDisplayName &&
-                log.subject === classInfo.course && 
-                log.originalSlot.startsWith(today) &&
-                log.originalSlot.includes(classInfo.time)
+            const originalSlotString = `${today} ${classInfo.time}`;
+            const isRescheduled = rescheduleLog.some((log: any) => 
+                log.subject === classInfo.course &&
+                log.originalSlot === originalSlotString
             );
 
             return { ...classInfo, isRescheduled };
@@ -217,7 +219,7 @@ export default function FacultyDashboard() {
                         <TableBody>
                             {todaySchedule.length > 0 ? (
                                 todaySchedule.map((item, index) => (
-                                    <TableRow key={index}>
+                                    <TableRow key={index} className={item.isRescheduled ? 'bg-red-100/50' : ''}>
                                         <TableCell>{item.time}</TableCell>
                                         <TableCell>
                                             {item.course}
@@ -243,3 +245,5 @@ export default function FacultyDashboard() {
       </div>
     );
   }
+
+    

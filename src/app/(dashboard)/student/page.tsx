@@ -155,14 +155,13 @@ import {
     }, [firestore, user]);
     
     const eventsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'events'), where("status", "==", "Active")) : null, [firestore]);
+    const rescheduleLogQuery = useMemoFirebase(() => firestore ? collection(firestore, 'rescheduleLog') : null, [firestore]);
 
     const {data: studentData, isLoading: studentLoading} = useCollection(studentQuery);
     const { data: events, isLoading: eventsLoading } = useCollection(eventsQuery);
-    const student = studentData?.[0];
-
-    const rescheduleLogQuery = useMemoFirebase(() => firestore ? collection(firestore, 'rescheduleLog') : null, [firestore]);
     const { data: rescheduleLog, isLoading: loadingRescheduleLog } = useCollection(rescheduleLogQuery);
-
+    
+    const student = studentData?.[0];
     const eventPlaceholder = PlaceHolderImages.find(img => img.id === 'event-poster-placeholder');
 
     const studentSchedule = useMemo(() => {
@@ -182,36 +181,37 @@ import {
             scheduleByDay[day] = [];
             const daySchedule = yearTimetable[day];
             daySchedule.forEach((slot: any) => {
-                const todaysClasses = slot.entries.map(parseEntry).filter((entry: any) => {
+                const classEntries = slot.entries.map(parseEntry).filter((entry: any) => {
                     const isEnrolled = enrolledCoursesSet.has(entry.courseAbbrWithSection) || enrolledCoursesSet.has(entry.courseAbbr);
                     return isEnrolled;
                 });
                 
-                if (todaysClasses.length > 0) {
+                if (classEntries.length > 0) {
                      const classInfo = {
                         time: slot.time,
-                        subject: todaysClasses[0].courseAbbr,
-                        venue: todaysClasses[0].room,
-                        isRescheduled: false,
+                        subject: classEntries[0].courseAbbr,
+                        venue: classEntries[0].room,
                      };
-                     
                      scheduleByDay[day].push(classInfo);
                 }
             });
         });
 
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-        const scheduleForToday = scheduleByDay[today] || [];
+        let scheduleForToday = scheduleByDay[today] || [];
         
-        // Check against reschedule log
-        return scheduleForToday.map(classInfo => {
-            const isRescheduled = rescheduleLog?.some(log => 
-                log.subject === classInfo.subject && 
-                log.originalSlot.startsWith(today) && // e.g., "Thursday 4:30-5:30"
-                log.originalSlot.endsWith(classInfo.time)
-            );
-            return { ...classInfo, isRescheduled };
-        });
+        if (rescheduleLog) {
+            scheduleForToday = scheduleForToday.map(classInfo => {
+                 const originalSlotString = `${today} ${classInfo.time}`;
+                 const isRescheduled = rescheduleLog.some(log => 
+                    log.subject === classInfo.subject && 
+                    log.originalSlot === originalSlotString
+                );
+                return { ...classInfo, isRescheduled };
+            });
+        }
+        
+        return scheduleForToday;
 
     }, [student, rescheduleLog, dummyTimetable]);
 
@@ -235,7 +235,7 @@ import {
               </TableHeader>
               <TableBody>
                 {studentSchedule.length > 0 ? studentSchedule.map((item, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={index} className={item.isRescheduled ? 'bg-red-100/50' : ''}>
                     <TableCell>{item.time}</TableCell>
                     <TableCell>
                       {item.subject}
@@ -316,3 +316,5 @@ import {
       </div>
     );
   }
+
+    

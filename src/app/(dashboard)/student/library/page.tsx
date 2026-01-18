@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { PlusCircle, Folder, File as FileIcon, Trash2, Download, BookOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +13,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 const placeholderCover = "https://picsum.photos/seed/book/300/400";
 
@@ -33,26 +34,40 @@ const InstituteLibrary = () => {
                 {isLoading && <p>Loading books...</p>}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                     {books?.map(book => (
-                        <Card key={book.id} className="overflow-hidden">
-                             <Link href={book.fileUrl} target="_blank" rel="noopener noreferrer">
-                                <div className="aspect-[3/4] bg-muted">
-                                    <Image 
-                                        src={book.coverImageUrl || placeholderCover} 
-                                        alt={book.title}
-                                        width={300}
-                                        height={400}
-                                        className="object-cover w-full h-full"
-                                    />
-                                </div>
-                            </Link>
-                            <div className="p-4">
+                        <Card key={book.id} className="overflow-hidden flex flex-col">
+                            <div className="aspect-[3/4] bg-muted relative">
+                                {book.isPhysical && book.copiesAvailable === 0 && (
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                        <Badge variant="destructive">Out of Stock</Badge>
+                                    </div>
+                                )}
+                                <Image 
+                                    src={book.coverImageUrl || placeholderCover} 
+                                    alt={book.title}
+                                    width={300}
+                                    height={400}
+                                    className="object-cover w-full h-full"
+                                />
+                            </div>
+                            <div className="p-4 flex flex-col flex-grow">
                                 <h3 className="font-semibold truncate">{book.title}</h3>
                                 <p className="text-xs text-muted-foreground truncate">{book.author}</p>
-                                <Button asChild variant="secondary" size="sm" className="mt-2 w-full">
-                                    <Link href={book.fileUrl} target="_blank" rel="noopener noreferrer">
-                                        <BookOpen className="mr-2" /> Read
-                                    </Link>
-                                </Button>
+                                <div className='mt-2 flex-grow'>
+                                    {book.isPhysical ? (
+                                        <Badge variant={book.copiesAvailable > 0 ? "default" : "secondary"} className={book.copiesAvailable > 0 ? "bg-green-600" : ""}>
+                                            {book.copiesAvailable > 0 ? `In Stock (${book.copiesAvailable} left)` : 'Out of Stock'}
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline">Digital</Badge>
+                                    )}
+                                </div>
+                                {!book.isPhysical && (
+                                     <Button asChild variant="secondary" size="sm" className="mt-2 w-full">
+                                        <Link href={book.fileUrl} target="_blank" rel="noopener noreferrer">
+                                            <BookOpen className="mr-2 h-4 w-4" /> Read Online
+                                        </Link>
+                                    </Button>
+                                )}
                             </div>
                         </Card>
                     ))}
@@ -130,11 +145,9 @@ const MyLibrary = () => {
     };
     
     const handleDeleteFile = (fileId: string) => {
-        if (window.confirm("Are you sure you want to delete this file from your library?")) {
-            const docRef = collection(firestore, `students/${user?.uid}/library`, fileId);
-            // This needs a blocking delete, not available in non-blocking-updates
-            // For demo purposes, we will use a workaround or assume it works
-            deleteDoc(docRef);
+        if (window.confirm("Are you sure you want to delete this file from your library?") && user) {
+            const docRef = doc(firestore, `students/${user.uid}/library`, fileId);
+            deleteDocumentNonBlocking(docRef);
             toast({ title: "File Deleted" });
         }
     }
@@ -148,7 +161,7 @@ const MyLibrary = () => {
                 </div>
                 <div className="flex gap-2">
                      <Dialog open={isFolderModalOpen} onOpenChange={setIsFolderModalOpen}>
-                        <DialogTrigger asChild><Button variant="outline"><PlusCircle className="mr-2" /> New Folder</Button></DialogTrigger>
+                        <DialogTrigger asChild><Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> New Folder</Button></DialogTrigger>
                         <DialogContent>
                             <DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader>
                             <div className="space-y-2">
@@ -159,7 +172,7 @@ const MyLibrary = () => {
                         </DialogContent>
                     </Dialog>
                     <Dialog open={isFileModalOpen} onOpenChange={setIsFileModalOpen}>
-                         <DialogTrigger asChild><Button><PlusCircle className="mr-2" /> Upload File</Button></DialogTrigger>
+                         <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4" /> Upload File</Button></DialogTrigger>
                           <DialogContent>
                             <DialogHeader><DialogTitle>Upload File to '{currentFolder}'</DialogTitle></DialogHeader>
                              <div className="space-y-2">
@@ -174,11 +187,11 @@ const MyLibrary = () => {
             <CardContent>
                 <div className="flex gap-2 mb-4 border-b pb-2">
                     <Button variant={currentFolder === 'root' ? 'secondary' : 'ghost'} size="sm" onClick={() => setCurrentFolder('root')}>
-                        <Folder className="mr-2" /> Root
+                        <Folder className="mr-2 h-4 w-4" /> Root
                     </Button>
                     {folders.map(folder => (
                         <Button key={folder} variant={currentFolder === folder ? 'secondary' : 'ghost'} size="sm" onClick={() => setCurrentFolder(folder)}>
-                            <Folder className="mr-2" /> {folder}
+                            <Folder className="mr-2 h-4 w-4" /> {folder}
                         </Button>
                     ))}
                 </div>
@@ -210,3 +223,5 @@ export default function LibraryPage() {
         </div>
     );
 }
+
+    

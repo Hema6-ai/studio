@@ -3,25 +3,31 @@ import { useState } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const bookSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
   author: z.string().min(3, "Author must be at least 3 characters."),
   category: z.string().min(2, "Category is required."),
   description: z.string().optional(),
+  isPhysical: z.boolean().default(false),
+  totalCopies: z.coerce.number().optional(),
+  copiesAvailable: z.coerce.number().optional(),
 });
 
 type BookFormValues = z.infer<typeof bookSchema>;
@@ -29,11 +35,17 @@ type BookFormValues = z.infer<typeof bookSchema>;
 const BookForm = ({ book, onSave }: { book?: any; onSave: (data: any, files: { bookFile?: File, coverImage?: File }) => void }) => {
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookSchema),
-    defaultValues: {
-      title: book?.title || '',
-      author: book?.author || '',
-      category: book?.category || '',
-      description: book?.description || '',
+    defaultValues: book ? {
+        ...book,
+        isPhysical: book.isPhysical || false,
+    } : {
+      title: '',
+      author: '',
+      category: '',
+      description: '',
+      isPhysical: false,
+      totalCopies: 0,
+      copiesAvailable: 0,
     },
   });
   
@@ -41,9 +53,11 @@ const BookForm = ({ book, onSave }: { book?: any; onSave: (data: any, files: { b
   const [bookFile, setBookFile] = useState<File | null>(null);
   const [coverImage, setCoverImage] = useState<File | null>(null);
 
+  const isPhysical = form.watch('isPhysical');
+
   const onSubmit: SubmitHandler<BookFormValues> = (data) => {
-    if (!book && !bookFile) {
-      form.setError("root", { message: "A book file (PDF) is required when adding a new book."});
+    if (!data.isPhysical && !book && !bookFile) {
+      form.setError("root", { message: "A book file (PDF) is required for digital books."});
       return;
     }
     onSave({ id: book?.id, ...data }, { bookFile: bookFile!, coverImage: coverImage! });
@@ -80,12 +94,38 @@ const BookForm = ({ book, onSave }: { book?: any; onSave: (data: any, files: { b
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
             )} />
-             <FormItem>
-                <FormLabel>Book File (PDF)</FormLabel>
-                <FormControl><Input type="file" accept="application/pdf" onChange={(e) => setBookFile(e.target.files?.[0] || null)} /></FormControl>
-                {bookFile && <p className="text-xs text-muted-foreground">{bookFile.name}</p>}
-                {!book && <FormMessage>A PDF file is required for new books.</FormMessage>}
-            </FormItem>
+            <FormField
+                control={form.control}
+                name="isPhysical"
+                render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                        <FormLabel>Physical Book</FormLabel>
+                        <FormMessage />
+                    </div>
+                    <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    </FormItem>
+                )}
+            />
+            {isPhysical ? (
+                <div className='grid grid-cols-2 gap-4'>
+                    <FormField control={form.control} name="totalCopies" render={({ field }) => (
+                        <FormItem><FormLabel>Total Copies</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="copiesAvailable" render={({ field }) => (
+                        <FormItem><FormLabel>Copies Available</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
+            ) : (
+                 <FormItem>
+                    <FormLabel>Book File (PDF)</FormLabel>
+                    <FormControl><Input type="file" accept="application/pdf" onChange={(e) => setBookFile(e.target.files?.[0] || null)} /></FormControl>
+                    {bookFile && <p className="text-xs text-muted-foreground">{bookFile.name}</p>}
+                    {!book && <FormMessage>A PDF file is required for new digital books.</FormMessage>}
+                </FormItem>
+            )}
             <FormItem>
                 <FormLabel>Cover Image (Optional)</FormLabel>
                 <FormControl><Input type="file" accept="image/*" onChange={(e) => setCoverImage(e.target.files?.[0] || null)} /></FormControl>
@@ -109,18 +149,33 @@ export default function LibrarianDashboard() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const booksCollection = collection(firestore, 'books');
+  
+  const booksCollection = useMemoFirebase(() => firestore ? collection(firestore, 'books') : null, [firestore]);
+  const availabilityRef = useMemoFirebase(() => firestore && user ? doc(firestore, 'availability', `librarian-${user.uid}`) : null, [firestore, user]);
+  
   const { data: books, isLoading: loadingBooks } = useCollection(booksCollection);
+  const { data: availabilityData, isLoading: loadingAvailability } = useDoc(availabilityRef);
+
+  const isAvailable = availabilityData?.availabilityStatus === 'YES';
+
+  const handleAvailabilityChange = (checked: boolean) => {
+    if (!availabilityRef || !user) return;
+    setDocumentNonBlocking(availabilityRef, { 
+        availabilityStatus: checked ? 'YES' : 'NO',
+        librarianId: user.uid
+    }, { merge: true });
+    toast({ title: 'Availability Updated', description: `You are now ${checked ? 'available' : 'unavailable'}.`});
+  };
 
   const handleSaveBook = async (bookData: any, files: { bookFile?: File, coverImage?: File }) => {
-    if (!user) return;
+    if (!user || !booksCollection) return;
     
     let fileUrl = bookData.fileUrl || '';
     let coverImageUrl = bookData.coverImageUrl || '';
 
     try {
       const storage = getStorage();
-      if (files.bookFile) {
+      if (files.bookFile && !bookData.isPhysical) {
         const bookRef = ref(storage, `library/books/${Date.now()}-${files.bookFile.name}`);
         const snapshot = await uploadBytes(bookRef, files.bookFile);
         fileUrl = await getDownloadURL(snapshot.ref);
@@ -138,7 +193,7 @@ export default function LibrarianDashboard() {
 
     const dataToSave = {
       ...bookData,
-      fileUrl,
+      fileUrl: bookData.isPhysical ? '' : fileUrl,
       coverImageUrl,
       createdAt: bookData.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -146,7 +201,7 @@ export default function LibrarianDashboard() {
     
     if (bookData.id) {
       const docRef = doc(firestore, 'books', bookData.id);
-      await setDoc(docRef, dataToSave, { merge: true });
+      setDocumentNonBlocking(docRef, dataToSave, { merge: true });
       toast({ title: "Success", description: "Book updated successfully." });
     } else {
       addDocumentNonBlocking(booksCollection, dataToSave);
@@ -155,20 +210,55 @@ export default function LibrarianDashboard() {
   };
 
   const handleDeleteBook = async (bookId: string) => {
-    if (window.confirm("Are you sure you want to permanently delete this book?")) {
+    if (window.confirm("Are you sure you want to permanently delete this book?") && firestore) {
       const docRef = doc(firestore, 'books', bookId);
-      await deleteDoc(docRef);
+      await deleteDocumentNonBlocking(docRef);
       toast({ title: "Success", description: "Book deleted." });
     }
   };
 
   return (
     <div className="space-y-6">
+        <div className="grid md:grid-cols-3 gap-6">
+            <Card className="md:col-span-2">
+                <CardHeader>
+                    <CardTitle>Librarian Dashboard</CardTitle>
+                    <CardDescription>Manage the institute's digital library collection.</CardDescription>
+                </CardHeader>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>My Availability</CardTitle>
+                    <CardDescription>Set your status for students.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                {loadingAvailability ? <p>Loading status...</p> : (
+                    <div className="flex items-center space-x-4 rounded-md border p-4">
+                        <div className="flex-1 space-y-1">
+                            <p className="text-sm font-medium leading-none">Librarian Availability</p>
+                        </div>
+                        <Switch
+                            checked={isAvailable}
+                            onCheckedChange={handleAvailabilityChange}
+                        />
+                    </div>
+                )}
+                </CardContent>
+                 <CardFooter>
+                    <div className="flex items-center w-full">
+                        {isAvailable ? 
+                                <span className="flex items-center text-sm text-green-600"><CheckCircle className="h-4 w-4 mr-2" /> You are currently available.</span> :
+                                <span className="flex items-center text-sm text-red-600"><XCircle className="h-4 w-4 mr-2" /> You are currently unavailable.</span>
+                            }
+                    </div>
+                </CardFooter>
+            </Card>
+        </div>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Librarian Dashboard</CardTitle>
-            <CardDescription>Manage the institute's digital library collection.</CardDescription>
+            <CardTitle>Book Collection</CardTitle>
+            <CardDescription>Manage all physical and digital books.</CardDescription>
           </div>
           <BookForm onSave={handleSaveBook} />
         </CardHeader>
@@ -178,18 +268,26 @@ export default function LibrarianDashboard() {
               <TableRow>
                 <TableHead>Title</TableHead>
                 <TableHead>Author</TableHead>
-                <TableHead>Category</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Availability</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loadingBooks && <TableRow><TableCell colSpan={4} className="text-center">Loading books...</TableCell></TableRow>}
-              {!loadingBooks && books?.length === 0 && <TableRow><TableCell colSpan={4} className="text-center">No books found. Add one to get started.</TableCell></TableRow>}
+              {loadingBooks && <TableRow><TableCell colSpan={5} className="text-center">Loading books...</TableCell></TableRow>}
+              {!loadingBooks && books?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center">No books found. Add one to get started.</TableCell></TableRow>}
               {books?.map((book) => (
                 <TableRow key={book.id}>
                   <TableCell>{book.title}</TableCell>
                   <TableCell>{book.author}</TableCell>
-                  <TableCell>{book.category}</TableCell>
+                  <TableCell>
+                      <Badge variant={book.isPhysical ? 'secondary' : 'outline'}>
+                        {book.isPhysical ? 'Physical' : 'Digital'}
+                      </Badge>
+                  </TableCell>
+                  <TableCell>
+                      {book.isPhysical ? `${book.copiesAvailable} / ${book.totalCopies} Copies` : 'Online'}
+                  </TableCell>
                   <TableCell className="flex gap-2">
                     <BookForm book={book} onSave={handleSaveBook} />
                     <Button variant="ghost" size="icon" onClick={() => handleDeleteBook(book.id)}>
@@ -205,3 +303,5 @@ export default function LibrarianDashboard() {
     </div>
   );
 }
+
+    

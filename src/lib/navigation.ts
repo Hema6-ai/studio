@@ -75,6 +75,7 @@ export const navLinks: Record<string, NavItem[]> = {
                 { href: '/student/availability/faculty', label: 'Faculty', icon: Users2 },
                 { href: '/student/availability/academic-office', label: 'Academic Office', icon: Briefcase },
                 { href: '/student/availability/doctor', label: 'Doctor', icon: Stethoscope },
+                { href: '/student/availability/librarian', label: 'Librarian', icon: LibraryIcon },
             ]
         },
         { href: '#burnout', label: 'Burnout Monitor', icon: Clock },
@@ -138,3 +139,5 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '/login', label: 'Logout', icon: LogOut },
     ]
 };
+
+    
