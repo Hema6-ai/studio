@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { TimetableDisplay } from '@/components/dashboard/timetable-display';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 interface SemesterPolicy {
@@ -830,8 +831,14 @@ export default function TimetableAdminPage() {
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Academic Office – Timetable Control Panel</CardTitle>
-                    <CardDescription>Define, configure, and generate the university timetable.</CardDescription>
+                    <CardTitle>Timetable Generator</CardTitle>
+                    <CardDescription>
+                        <ScrollArea className="h-40 w-full rounded-md border p-4 font-mono text-xs bg-muted/50">
+                            <pre className="whitespace-pre-wrap">
+{`A real-time, constraint-based university timetable generator that globally schedules students, lecturers, subjects, sections, and rooms while enforcing student-level conflict constraints using genetic-algorithm-driven optimization.`}
+                            </pre>
+                        </ScrollArea>
+                    </CardDescription>
                 </CardHeader>
             </Card>
 
@@ -848,14 +855,49 @@ export default function TimetableAdminPage() {
                 <TabsContent value="policy" className="mt-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Phase 1: Policy Definition</CardTitle>
+                            <CardTitle>Phase 1: Policy Definition (UG-3 Student Data Generation)</CardTitle>
                             <CardDescription>
-                                Define the high-level rules and constraints for each semester.
+                                This prompt defines the rules for generating the base student dataset for UG-3. This data is critical for sectioning and preference allocation.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {/* Future UI for managing semester policies will go here. */}
-                            <p className="text-muted-foreground">Policy management UI is not yet implemented.</p>
+                           <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
+                                <pre className="whitespace-pre-wrap">
+{`You are provided with 2023-batch student datasets for three branches: CSE, ECE, and AIDS.
+
+Your task is to generate a single consolidated JSON object that is complete, valid, and ready for automated academic systems.
+
+MANDATORY DATA RULES:
+1. Each branch MUST contain a minimum of 20 students.
+2. If the uploaded dataset for any branch contains fewer than 20 students, you MUST auto-generate additional students until the count reaches exactly 20.
+3. Auto-generated students must strictly follow these rules:
+   - StudentID formats:
+     • CSE  → S2023001XXXX
+     • ECE  → S2023002XXXX
+     • AIDS → S2023003XXXX
+   - Email format: firstname.lastname23@iiits.in
+   - CGPA must be between 6.00 and 10.00, with exactly two decimal places.
+   - Names must be realistic Indian names.
+   - All StudentIDs, emails, and names must be unique.
+4. All original students from the dataset MUST be preserved exactly as-is.
+5. Auto-generated students should be appended only if required and must blend seamlessly with real data.
+
+FINAL OUTPUT FORMAT (STRICT):
+{
+  "cse": [ { StudentID, Name, Email, CGPA }, ... ],
+  "ece": [ { StudentID, Name, Email, CGPA }, ... ],
+  "aids": [ { StudentID, Name, Email, CGPA }, ... ]
+}
+
+OUTPUT CONSTRAINTS:
+- Output ONLY valid JSON.
+- No explanations, no comments, no markdown.
+- No truncation or placeholders.
+- Deterministic, schema-clean output.
+
+This JSON will be directly consumed by downstream systems including section allocation, preference resolution, and timetable optimization engines.`}
+                                </pre>
+                           </ScrollArea>
                         </CardContent>
                     </Card>
                 </TabsContent>
