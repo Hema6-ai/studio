@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 
 function ResetPasswordPageContent() {
-    const bgImageUrl = "https://images.shiksha.com/mediadata/images/1587541819phpZp6y2Y.jpeg";
+    const bgImageUrl = "https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=2070&auto=format&fit=crop";
     const logoUrl = "https://www.iiits.ac.in/wp-content/uploads/2020/03/IIITS-Logo-Dark.png";
 
     return (
