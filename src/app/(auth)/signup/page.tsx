@@ -24,7 +24,7 @@ export default function SignupPage() {
                 <div className="w-full max-w-sm rounded-2xl border border-white/40 bg-white/65 p-8 shadow-2xl backdrop-blur-lg animate-in fade-in-50 duration-500">
                     <div className="mb-6 text-center">
                         <div className="flex justify-center mb-4">
-                          <Image src={logoUrl} alt="IIIT Sricity Logo" width={80} height={80} className="h-20 w-auto" />
+                          <Image src={logoUrl} alt="IIIT Sricity Logo" width={80} height={80} />
                         </div>
                         <h1 className="text-3xl font-bold font-headline text-primary">CampusOS</h1>
                         <p className="text-sm text-muted-foreground mt-2">
