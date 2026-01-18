@@ -6,7 +6,7 @@ import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { Logo } from "@/components/icons";
 
 function ResetPasswordPageContent() {
-    const bgImageUrl = "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop";
+    const bgImageUrl = "https://images.shiksha.com/mediadata/images/1598428805phpfre1xS.jpeg";
 
     return (
         <div className="relative w-full min-h-screen">
@@ -17,6 +17,7 @@ function ResetPasswordPageContent() {
                 fill
                 className="object-cover"
                 priority
+                data-ai-hint="university campus aerial view"
             />
 
             {/* Centered Form */}

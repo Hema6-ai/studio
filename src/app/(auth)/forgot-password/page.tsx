@@ -6,7 +6,7 @@ import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 import { Logo } from "@/components/icons";
 
 export default function ForgotPasswordPage() {
-  const bgImageUrl = "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop";
+  const bgImageUrl = "https://images.shiksha.com/mediadata/images/1598428805phpfre1xS.jpeg";
 
   return (
     <div className="relative w-full min-h-screen">
@@ -17,6 +17,7 @@ export default function ForgotPasswordPage() {
         fill
         className="object-cover"
         priority
+        data-ai-hint="university campus aerial view"
       />
 
       {/* Centered Form */}
