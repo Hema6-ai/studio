@@ -548,14 +548,6 @@ const SessionGenerationManager: FC<{ user: any }> = ({ user }) => {
 
     return (
          <div className="space-y-6">
-            <Alert>
-                <Activity className="h-4 w-4" />
-                <AlertTitle>Phase 4: Session Generation</AlertTitle>
-                <AlertDescription>
-                    Generate all required weekly class sessions from approved enrollments and teaching assignments. This step creates the "what" before scheduling the "when" and "where".
-                </AlertDescription>
-            </Alert>
-
             {dataIsLoading ? <Skeleton className="h-48 w-full" /> : prerequisiteDataIsMissing ? (
                  <Alert variant="destructive">
                      <AlertTriangle className="h-4 w-4"/>
@@ -634,13 +626,6 @@ const OptimizationManager: FC = () => {
 
     return (
         <div className="space-y-6">
-            <Alert>
-                <Wand2 className="h-4 w-4" />
-                <AlertTitle>Phase 5: Timetable Optimization</AlertTitle>
-                <AlertDescription>
-                    This phase improves the quality of a valid, clash-free timetable by applying soft constraints like minimizing student gaps and balancing faculty load, without violating any hard constraints.
-                </AlertDescription>
-            </Alert>
             <Card>
                 <CardHeader>
                     <CardTitle>Optimization Control</CardTitle>
@@ -737,14 +722,6 @@ const ExportManager: FC<{ user: any }> = ({ user }) => {
 
     return (
         <div className="space-y-6">
-            <Alert>
-                <Download className="h-4 w-4" />
-                <AlertTitle>Phase 6: Export &amp; Lock</AlertTitle>
-                <AlertDescription>
-                    This is the final phase. First, run a final verification of all hard constraints. Then, export the required JSON data for other systems and lock the timetable to prevent further changes.
-                </AlertDescription>
-            </Alert>
-
             <Card>
                 <CardHeader>
                     <CardTitle>1. Final Verification</CardTitle>
@@ -829,19 +806,6 @@ export default function TimetableAdminPage() {
 
     return (
         <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Timetable Generator</CardTitle>
-                    <CardDescription>
-                        <ScrollArea className="h-40 w-full rounded-md border p-4 font-mono text-xs bg-muted/50">
-                            <pre className="whitespace-pre-wrap">
-{`A real-time, constraint-based university timetable generator that globally schedules students, lecturers, subjects, sections, and rooms while enforcing student-level conflict constraints using genetic-algorithm-driven optimization.`}
-                            </pre>
-                        </ScrollArea>
-                    </CardDescription>
-                </CardHeader>
-            </Card>
-
             <Tabs defaultValue="policy" className="w-full">
                 <TabsList className="grid w-full grid-cols-6">
                     <TabsTrigger value="policy">Phase 1: Policies</TabsTrigger>
@@ -853,93 +817,64 @@ export default function TimetableAdminPage() {
                 </TabsList>
                 
                 <TabsContent value="policy" className="mt-6">
-                    <Tabs defaultValue="ug1">
+                    <Tabs defaultValue="rooms">
                         <TabsList>
-                            <TabsTrigger value="ug1">UG-1</TabsTrigger>
-                            <TabsTrigger value="ug2">UG-2</TabsTrigger>
-                            <TabsTrigger value="ug3">UG-3</TabsTrigger>
-                            <TabsTrigger value="ug4">UG-4</TabsTrigger>
+                            <TabsTrigger value="rooms">Rooms Dataset</TabsTrigger>
+                            <TabsTrigger value="faculty">Faculty Dataset</TabsTrigger>
                         </TabsList>
-                        <TabsContent value="ug1" className="mt-4">
+                        <TabsContent value="rooms" className="mt-4">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Policy: UG-1 Student Data Generation</CardTitle>
-                                    <CardDescription>Prompt defining the rules for generating the base student dataset for the 2024 batch.</CardDescription>
+                                    <CardTitle>Policy: Rooms Dataset Generation</CardTitle>
+                                    <CardDescription>Prompt defining the rules for generating the master rooms dataset.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
                                         <pre className="whitespace-pre-wrap">
-{`You are provided with 2024-batch student datasets for CSE, ECE, and AIDS branches.
+{`You are provided with three room datasets:
+1. G-Series classrooms
+2. B-Series classrooms
+3. Laboratory rooms
 
-Your objective is to produce a consolidated JSON object that is system-ready and self-complete.
-
-MANDATORY REQUIREMENTS:
-1. Each branch MUST contain at least 20 students.
-2. If the provided data for any branch is insufficient, auto-generate the missing students.
-3. Auto-generated data must strictly follow:
-   - StudentID patterns:
-     • CSE  → S2024001XXXX
-     • ECE  → S2024002XXXX
-     • AIDS → S2024003XXXX
-   - Email format: firstname.lastname24@iiits.in
-   - CGPA range: 6.00 to 10.00 (two decimals only)
-   - Indian naming conventions
-   - Full uniqueness across IDs, emails, and names
-4. Original dataset entries must remain unchanged.
-5. Generated students must seamlessly blend with real data.
-
-FINAL OUTPUT SCHEMA:
-{
-  "cse": [ { StudentID, Name, Email, CGPA }, ... ],
-  "ece": [ { StudentID, Name, Email, CGPA }, ... ],
-  "aids": [ { StudentID, Name, Email, CGPA }, ... ]
-}
-
-STRICT OUTPUT RULES:
-- JSON only. No prose.
-- No comments.
-- No truncation.
-- Ready for direct ingestion into academic automation systems.
-
-This output will be used as a base dataset for preference handling, sectioning, and timetable optimization.`}
-                                        </pre>
-                                    </ScrollArea>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                        <TabsContent value="ug2" className="mt-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Policy: UG-2 Student Data Generation</CardTitle>
-                                    <CardDescription>Prompt defining the rules for generating the base student dataset for the 2023 batch.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
-                                        <pre className="whitespace-pre-wrap">
-{`You are provided with 2023-batch student datasets for three branches: CSE, ECE, and AIDS.
-
-Your task is to generate a single consolidated JSON object that is complete, valid, and ready for automated academic systems.
+Your task is to generate a single consolidated JSON object representing all rooms, following the strict rules below.
 
 MANDATORY DATA RULES:
-1. Each branch MUST contain a minimum of 20 students.
-2. If the uploaded dataset for any branch contains fewer than 20 students, you MUST auto-generate additional students until the count reaches exactly 20.
-3. Auto-generated students must strictly follow these rules:
-   - StudentID formats:
-     • CSE  → S2023001XXXX
-     • ECE  → S2023002XXXX
-     • AIDS → S2023003XXXX
-   - Email format: firstname.lastname23@iiits.in
-   - CGPA must be between 6.00 and 10.00, with exactly two decimal places.
-   - Names must be realistic Indian names.
-   - All StudentIDs, emails, and names must be unique.
-4. All original students from the dataset MUST be preserved exactly as-is.
-5. Auto-generated students should be appended only if required and must blend seamlessly with real data.
+1. Room categories and constraints:
+   - G-Series:
+     • Room ID format: G-XX
+     • Capacity: exactly 120
+     • Total rooms required: 10
+   - B-Series:
+     • Room ID format: B-XX
+     • Capacity: exactly 70
+     • Total rooms required: 20
+   - Labs:
+     • Room ID format: L-XX
+     • Capacity: exactly 40
+     • Total rooms required: 5
+
+2. If any dataset contains fewer rooms than required:
+   - Automatically generate additional rooms to reach the exact required count.
+   - Auto-generated rooms must follow the same ID format, capacity rules, and naming sequence.
+   - Ensure all Room IDs are unique.
+
+3. Preserve all original room records exactly as provided.
+4. Append auto-generated rooms only if required.
 
 FINAL OUTPUT FORMAT (STRICT):
 {
-  "cse": [ { StudentID, Name, Email, CGPA }, ... ],
-  "ece": [ { StudentID, Name, Email, CGPA }, ... ],
-  "aids": [ { StudentID, Name, Email, CGPA }, ... ]
+  "G_series": [
+    { "RoomID": "G-01", "Capacity": 120 },
+    ...
+  ],
+  "B_series": [
+    { "RoomID": "B-01", "Capacity": 70 },
+    ...
+  ],
+  "Labs": [
+    { "RoomID": "L-01", "Capacity": 40 },
+    ...
+  ]
 }
 
 OUTPUT CONSTRAINTS:
@@ -948,101 +883,80 @@ OUTPUT CONSTRAINTS:
 - No truncation or placeholders.
 - Deterministic, schema-clean output.
 
-This JSON will be directly consumed by downstream systems including section allocation, preference resolution, and timetable optimization engines.`}
+This JSON will be directly consumed by timetable allocation, room assignment, and constraint satisfaction systems.`}
                                         </pre>
                                     </ScrollArea>
                                 </CardContent>
                             </Card>
                         </TabsContent>
-                        <TabsContent value="ug3" className="mt-4">
+                        <TabsContent value="faculty" className="mt-4">
                            <Card>
                                 <CardHeader>
-                                    <CardTitle>Policy: UG-3 Student Data Generation</CardTitle>
-                                    <CardDescription>Prompt defining the rules for generating the base student dataset for the 2022 batch.</CardDescription>
+                                    <CardTitle>Policy: Faculty Dataset Generation</CardTitle>
+                                    <CardDescription>Prompt defining the rules for generating the master faculty dataset.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
                                         <pre className="whitespace-pre-wrap">
-{`You are given 2022-batch student datasets for three branches: CSE, ECE, and AIDS.
+{`You are provided with a faculty master dataset containing faculty details for an academic institution.
 
-Your objective is to construct a single consolidated JSON object that is complete, valid, and directly usable by academic automation systems.
+Your task is to generate a single consolidated JSON object representing all faculty members, following the strict rules below.
 
 MANDATORY DATA RULES:
-1. Each branch MUST contain a minimum of 20 students.
-2. If any branch has fewer than 20 students in the provided dataset, you MUST auto-generate additional students until the count reaches exactly 20.
-3. Auto-generated students MUST strictly follow these rules:
-   - StudentID formats:
-     • CSE  → S2022001XXXX
-     • ECE  → S2022002XXXX
-     • AIDS → S2022003XXXX
-   - Email format: firstname.lastname22@iiits.in
-   - CGPA range: 6.00 to 10.00, with exactly two decimal places.
-   - Names must be realistic Indian names.
-   - Ensure absolute uniqueness across StudentID, Email, and Name.
-4. All original student records MUST be preserved exactly as provided.
-5. Auto-generated students must be appended only when required and should integrate seamlessly with the real data.
+1. Each faculty record MUST contain the following fields exactly:
+   - FacultyID
+   - Name
+   - Email
+   - Department
+   - Designation
+   - Specialization
+   - MaxWeeklyHours
+
+2. Preserve all original faculty records exactly as provided in the dataset.
+3. If any required field is missing or empty in a record:
+   - Auto-generate a valid value based on realistic academic norms.
+4. Email rules:
+   - Format: firstname.lastname@iiits.in
+   - Must be unique across all faculty.
+   - Remove titles such as Dr., Prof., Mr., Ms., etc.
+
+5. FacultyID rules:
+   - Must be unique.
+   - Maintain existing IDs if present.
+   - Auto-generate missing IDs in the format: F-XXXX.
+
+6. MaxWeeklyHours rules:
+   - Must be a positive integer.
+   - Typical range: 6 to 20 hours.
+   - If missing, assign a realistic value based on designation.
+
+7. Department and Specialization:
+   - Must align logically (e.g., CSE → AI, ML, Systems, Networks).
+   - Auto-correct inconsistencies if present.
 
 FINAL OUTPUT FORMAT (STRICT):
 {
-  "cse": [ { StudentID, Name, Email, CGPA }, ... ],
-  "ece": [ { StudentID, Name, Email, CGPA }, ... ],
-  "aids": [ { StudentID, Name, Email, CGPA }, ... ]
+  "faculty": [
+    {
+      "FacultyID": "F-0001",
+      "Name": "Ramesh Kumar",
+      "Email": "ramesh.kumar@iiits.in",
+      "Department": "CSE",
+      "Designation": "Assistant Professor",
+      "Specialization": "Machine Learning",
+      "MaxWeeklyHours": 12
+    }
+    ...
+  ]
 }
 
 OUTPUT CONSTRAINTS:
 - Output ONLY valid JSON.
 - No explanations, no comments, no markdown.
-- No placeholders or truncation.
-- Deterministic and schema-safe.
+- No truncation or placeholders.
+- Deterministic, schema-clean output.
 
-This JSON will be used directly for section assignment, preference resolution, and timetable optimization pipelines.`}
-                                        </pre>
-                                    </ScrollArea>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                         <TabsContent value="ug4" className="mt-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Policy: UG-4 Student Data Generation</CardTitle>
-                                    <CardDescription>Prompt defining the rules for generating the base student dataset for the 2021 batch.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
-                                        <pre className="whitespace-pre-wrap">
-{`You are provided with 2021-batch student datasets for three branches: CSE, ECE, and AIDS.
-
-Your objective is to construct a single consolidated JSON object that is complete, valid, and ready for direct use in academic automation systems.
-
-MANDATORY DATA RULES:
-1. Each branch MUST contain a minimum of 20 students.
-2. If the dataset for any branch has fewer than 20 students, you MUST auto-generate additional students to reach a total of exactly 20.
-3. Auto-generated students MUST adhere to these strict rules:
-   - StudentID formats:
-     • CSE  → S2021001XXXX
-     • ECE  → S2021002XXXX
-     • AIDS → S2021003XXXX
-   - Email format: firstname.lastname21@iiits.in
-   - CGPA must be between 6.00 and 10.00, with exactly two decimal places.
-   - Names must be realistic Indian names.
-   - All generated and existing data must be unique (StudentID, Email, Name).
-4. All original student records from the provided dataset MUST be preserved without modification.
-5. Append auto-generated students only when necessary to meet the minimum count, ensuring they blend seamlessly with the real data.
-
-FINAL OUTPUT FORMAT (STRICT):
-{
-  "cse": [ { StudentID, Name, Email, CGPA }, ... ],
-  "ece": [ { StudentID, Name, Email, CGPA }, ... ],
-  "aids": [ { StudentID, Name, Email, CGPA }, ... ]
-}
-
-OUTPUT CONSTRAINTS:
-- The output MUST be valid JSON only.
-- Do NOT include any explanations, comments, or markdown.
-- Do NOT use placeholders or truncate the output.
-- The output must be deterministic and schema-safe for machine parsing.
-
-This JSON is critical for final-year course allocation, project assignments, and other graduation-related automation.`}
+This JSON will be directly used for faculty-course assignment, workload balancing, and timetable optimization systems.`}
                                         </pre>
                                     </ScrollArea>
                                 </CardContent>
