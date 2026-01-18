@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useAuth, useFirestore } from "@/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { collection, doc, getDoc, query, where } from "firebase/firestore";
+import { signInWithEmailAndPassword, User } from "firebase/auth";
+import { collection, doc, getDoc, setDoc, serverTimestamp, DocumentData } from "firebase/firestore";
 
 export function LoginForm() {
   const router = useRouter();
@@ -26,6 +26,20 @@ export function LoginForm() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleSuccessfulLogin = (role: UserRole, isNew: boolean = false) => {
+    if (isNew) {
+      toast({
+        title: "Profile Created",
+        description: "Your user profile has been set up. Welcome!",
+      });
+    }
+    toast({
+      title: "Login Successful",
+      description: `Redirecting to ${role} dashboard...`,
+    });
+    router.push(`/${role}`);
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,26 +65,34 @@ export function LoginForm() {
       if (userDocSnap.exists()) {
         const userData = userDocSnap.data();
         const role = userData.role as UserRole;
-
         if (role) {
-            toast({
-              title: "Login Successful",
-              description: `Redirecting to ${role} dashboard...`,
-            });
-            router.push(`/${role}`);
+          handleSuccessfulLogin(role);
         } else {
-            toast({
-                variant: "destructive",
-                title: "Login Failed",
-                description: "Your account does not have a role assigned. Please contact administration.",
-            });
-        }
-      } else {
-         toast({
+          toast({
             variant: "destructive",
             title: "Login Failed",
-            description: "Your user profile could not be found. Please contact administration.",
-        });
+            description: "Your account does not have a role assigned. Please contact administration.",
+          });
+        }
+      } else {
+        // User profile doesn't exist, so create it now.
+        const derivedRole = getRoleFromEmail(user.email || "");
+        if (derivedRole) {
+          const newUserProfile = {
+            id: user.uid,
+            email: user.email,
+            role: derivedRole,
+            createdAt: serverTimestamp(),
+          };
+          await setDoc(userDocRef, newUserProfile);
+          handleSuccessfulLogin(derivedRole, true);
+        } else {
+           toast({
+              variant: "destructive",
+              title: "Login Failed",
+              description: "Could not determine a role for your account. Please contact administration.",
+          });
+        }
       }
     } catch (error: any) {
         toast({
