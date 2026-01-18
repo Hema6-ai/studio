@@ -209,10 +209,10 @@ export default function LibrarianDashboard() {
     }
   };
 
-  const handleDeleteBook = async (bookId: string) => {
+  const handleDeleteBook = (bookId: string) => {
     if (window.confirm("Are you sure you want to permanently delete this book?") && firestore) {
       const docRef = doc(firestore, 'books', bookId);
-      await deleteDocumentNonBlocking(docRef);
+      deleteDocumentNonBlocking(docRef);
       toast({ title: "Success", description: "Book deleted." });
     }
   };
@@ -303,5 +303,3 @@ export default function LibrarianDashboard() {
     </div>
   );
 }
-
-    
