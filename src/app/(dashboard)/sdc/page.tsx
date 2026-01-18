@@ -53,7 +53,7 @@ const EventForm = ({ event, onSave }: { event?: any; onSave: (data: any, file?: 
   const [posterImage, setPosterImage] = useState<File | null>(null);
 
   const onSubmit: SubmitHandler<EventFormValues> = (data) => {
-    onSave({ id: event?.id, createdAt: event?.createdAt, ...data }, posterImage || undefined);
+    onSave({ id: event?.id, createdAt: event?.createdAt, posterImageUrl: event?.posterImageUrl, ...data }, posterImage || undefined);
     setIsOpen(false);
     form.reset();
     setPosterImage(null);

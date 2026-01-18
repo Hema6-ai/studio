@@ -267,21 +267,32 @@ import {
                 {events?.map((event: any, index) => (
                   <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/1">
                     <Card>
-                      <CardHeader className="p-0">
-                        <Image
-                          src={event.posterImageUrl || eventPlaceholder?.imageUrl || ''}
-                          alt={event.title}
-                          width={600}
-                          height={400}
-                          className="rounded-t-lg object-cover aspect-video"
-                          data-ai-hint={eventPlaceholder?.imageHint || 'event poster'}
-                        />
+                      <CardHeader className="p-0 relative">
+                         <Link href={event.registrationLink || '#'} target="_blank" rel="noopener noreferrer">
+                            <Image
+                            src={event.posterImageUrl || eventPlaceholder?.imageUrl || ''}
+                            alt={event.title}
+                            width={600}
+                            height={400}
+                            className="rounded-t-lg object-cover aspect-video"
+                            data-ai-hint={eventPlaceholder?.imageHint || 'event poster'}
+                            />
+                         </Link>
                       </CardHeader>
                       <CardContent className="p-4">
                         <Badge variant="secondary" className="mb-2">{event.eventType}</Badge>
                         <h3 className="font-semibold">{event.title}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">{new Date(event.eventDate).toLocaleDateString()}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{new Date(event.eventDate).toLocaleDateString()} at {event.venue}</p>
                       </CardContent>
+                       <CardFooter>
+                           {event.registrationLink && (
+                                <Button asChild className="w-full">
+                                    <Link href={event.registrationLink} target="_blank" rel="noopener noreferrer">
+                                        Register Now
+                                    </Link>
+                                </Button>
+                           )}
+                        </CardFooter>
                     </Card>
                   </CarouselItem>
                 ))}
