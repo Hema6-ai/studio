@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 const ComplaintDetailsDialog = ({ complaint }: { complaint: any }) => {
     const firestore = useFirestore();
     const { toast } = useToast();
+    const [isOpen, setIsOpen] = useState(false);
     const [status, setStatus] = useState(complaint.status);
     const [internalNotes, setInternalNotes] = useState(complaint.internalNotes || '');
 
@@ -25,10 +26,11 @@ const ComplaintDetailsDialog = ({ complaint }: { complaint: any }) => {
         const complaintRef = doc(firestore, 'hostelComplaints', complaint.id);
         updateDocumentNonBlocking(complaintRef, { status, internalNotes });
         toast({ title: "Complaint Updated", description: `Status set to ${status}.` });
+        setIsOpen(false);
     }
 
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm">View</Button></DialogTrigger>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
@@ -37,7 +39,7 @@ const ComplaintDetailsDialog = ({ complaint }: { complaint: any }) => {
                         Hostel: {complaint.hostelName} | Category: {complaint.category}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4 space-y-4">
+                <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-4">
                     <div>
                         <h4 className="font-semibold">Description</h4>
                         <p className="text-sm text-muted-foreground p-2 border rounded-md bg-muted/50">{complaint.description}</p>
