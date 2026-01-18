@@ -6,7 +6,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import { Logo } from "@/components/icons";
 
 export default function LoginPage() {
-  const bgImageUrl = "https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=2070&auto=format&fit=crop";
+  const bgImageUrl = "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop";
 
   return (
     <div className="relative w-full min-h-screen">
