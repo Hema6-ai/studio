@@ -27,6 +27,7 @@ import {
     ShieldCheck,
     CalendarPlus,
     SlidersHorizontal,
+    Folder,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -103,6 +104,15 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '/academics/students', label: 'Students', icon: Users },
         { href: '/academics/faculty', label: 'Faculty', icon: GraduationCap },
         { href: '/academics/curriculum', label: 'Curriculum', icon: Book },
+        {
+            key: 'documents',
+            label: 'Documents',
+            icon: Folder,
+            subLinks: [
+                { href: '/academics/documents/medical', label: 'Medical Documents', icon: Stethoscope },
+                { href: '/academics/documents/fees', label: 'Fee Receipts', icon: Landmark },
+            ]
+        },
         { href: '/academics/medical-records', label: 'Medical Records', icon: Book },
         { href: '/academics/reschedule-log', label: 'Reschedule Log', icon: HistoryIcon },
         { href: '#', label: 'Profile', icon: User },
