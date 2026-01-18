@@ -1,6 +1,6 @@
 'use client';
 
-export type UserRole = 'student' | 'faculty' | 'doctor' | 'academics' | 'director' | 'librarian' | 'slc' | 'sdc' | 'timetable' | null;
+export type UserRole = 'student' | 'faculty' | 'doctor' | 'academics' | 'director' | 'librarian' | 'slc' | 'sdc' | 'timetable' | 'acadoffice' | null;
 
 export const ROLES = {
   STUDENT: 'student',
@@ -12,15 +12,24 @@ export const ROLES = {
   SLC: 'slc',
   SDC: 'sdc',
   TIMETABLE: 'timetable',
+  ACADOFFICE: 'acadoffice',
 } as const;
 
 
 export function getRoleFromEmail(email: string): UserRole {
-  if (typeof email !== 'string' || !email.endsWith('@iiits.in')) {
+  if (typeof email !== 'string') {
     return null; // Not a valid institutional email
   }
 
   const lowerCaseEmail = email.toLowerCase();
+
+  if (lowerCaseEmail === 'acadoffice@campus.edu') {
+    return ROLES.ACADOFFICE;
+  }
+  
+  if (!email.endsWith('@iiits.in')) {
+    return null; // Not a valid institutional email
+  }
   
   // Rule for Timetable Admin
   if (lowerCaseEmail === 'tt@iiits.in') {

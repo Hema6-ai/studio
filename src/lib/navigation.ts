@@ -131,5 +131,10 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '/timetable', label: 'Timetable Control', icon: SlidersHorizontal },
         { href: '#', label: 'Profile', icon: User },
         { href: '/login', label: 'Logout', icon: LogOut },
+    ],
+    acadoffice: [
+        { href: '/acadoffice', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '#', label: 'Profile', icon: User },
+        { href: '/login', label: 'Logout', icon: LogOut },
     ]
 };
