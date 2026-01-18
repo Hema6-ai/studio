@@ -3,10 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
-import { Logo } from "@/components/icons";
 
 export default function LoginPage() {
   const bgImageUrl = "https://images.shiksha.com/mediadata/images/1587541819phpZp6y2Y.jpeg";
+  const logoUrl = "https://www.iiits.ac.in/wp-content/uploads/2020/03/IIITS-Logo-Dark.png";
 
   return (
     <div className="relative w-full min-h-screen">
@@ -21,13 +21,13 @@ export default function LoginPage() {
 
       {/* Centered Form */}
       <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
-        <div className="w-full max-w-sm rounded-[16px] border border-white/40 bg-white/65 p-8 shadow-lg backdrop-blur-[18px]">
+        <div className="w-full max-w-sm rounded-2xl border border-white/40 bg-white/65 p-8 shadow-2xl backdrop-blur-lg animate-in fade-in-50 duration-500">
           <div className="mb-6 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Logo className="h-8 w-8 text-primary" />
-              <h1 className="text-3xl font-bold font-headline text-primary">CampusOS</h1>
+            <div className="flex justify-center mb-4">
+              <Image src={logoUrl} alt="IIIT Sricity Logo" width={80} height={80} className="h-20 w-auto" />
             </div>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-3xl font-bold font-headline text-primary">CampusOS</h1>
+            <p className="text-sm text-muted-foreground mt-2">
               Enter your institutional email to access your dashboard
             </p>
           </div>
