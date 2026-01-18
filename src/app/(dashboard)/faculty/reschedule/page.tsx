@@ -2,12 +2,12 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, query, where } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { Users, AlertTriangle } from 'lucide-react';
 import React, { useMemo, useState } from "react";
-import { dummyFaculty, dummyTimetable } from "@/lib/data";
+import { dummyTimetable } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -19,12 +19,7 @@ import { Badge } from "@/components/ui/badge";
 
 const normalizeName = (name: string) => {
     if (!name) return '';
-    // This normalizes by removing titles, spaces, and dots for a clean comparison.
-    return name
-      .toLowerCase()
-      .replace(/dr\.?|mrs\.?|mr\.?/g, '')
-      .replace(/[\s.]/g, '')
-      .trim();
+    return name.toLowerCase().replace(/dr\.?|mrs\.?|mr\.?/g, '').replace(/[\s.]/g, '').trim();
 };
   
 const parseEntry = (entry: string) => {
@@ -34,7 +29,7 @@ const parseEntry = (entry: string) => {
     return { courseAbbr, section: section || 'Common', room: room.trim() };
 }
 
-const RescheduleDialog = ({ facultyId, facultyName, subject, students }: { facultyId: string, facultyName: string, subject: any, students: any[] }) => {
+const RescheduleDialog = ({ facultyId, facultyName, subject, students, weeklySchedule }: { facultyId: string, facultyName: string, subject: any, students: any[], weeklySchedule: any[] }) => {
     const { toast } = useToast();
     const firestore = useFirestore();
     const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +42,6 @@ const RescheduleDialog = ({ facultyId, facultyName, subject, students }: { facul
         setIsLoading(true);
         setAiSuggestions(null);
         try {
-            // In a real app, these would be fetched or constructed properly
             const instituteTimetableDataUri = "data:text/plain;base64," + btoa(JSON.stringify(dummyTimetable));
             const roomAvailabilityDataUri = "data:text/plain;base64," + btoa(JSON.stringify({})); // Assuming empty for now
 
@@ -89,8 +83,11 @@ const RescheduleDialog = ({ facultyId, facultyName, subject, students }: { facul
         
         toast({ title: "Class Rescheduled!", description: `${subject.courseAbbr} has been moved to ${newSlot}. Students will be notified.` });
         setIsOpen(false);
+        // Reset state
+        setReason("");
+        setSelectedSlot("");
+        setAiSuggestions(null);
     };
-
 
     return (
          <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -107,13 +104,16 @@ const RescheduleDialog = ({ facultyId, facultyName, subject, students }: { facul
                 <div className="space-y-4 py-4">
                      <div>
                         <Label htmlFor="current-slot">Select class to reschedule</Label>
-                         <Select onValueChange={setSelectedSlot}>
+                         <Select onValueChange={setSelectedSlot} value={selectedSlot}>
                             <SelectTrigger id="current-slot">
                                 <SelectValue placeholder="Select a time slot..." />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Thursday 4:30-5:30">Thursday 4:30 - 5:30</SelectItem>
-                                <SelectItem value="Friday 11:00-12:00">Friday 11:00 - 12:00</SelectItem>
+                                {weeklySchedule.filter(item => item.course === subject.courseAbbr).map((item, index) => (
+                                    <SelectItem key={index} value={`${item.day} ${item.time}`}>
+                                        {item.day} {item.time} ({item.course} - {item.section})
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -159,7 +159,7 @@ const RescheduleDialog = ({ facultyId, facultyName, subject, students }: { facul
     )
 }
 
-const FacultySubjectCard = ({ subject, facultyId, facultyName }: { subject: any, facultyId: string, facultyName: string }) => {
+const FacultySubjectCard = ({ subject, facultyId, facultyName, weeklySchedule }: { subject: any, facultyId: string, facultyName: string, weeklySchedule: any[] }) => {
     const firestore = useFirestore();
     const [isExpanded, setIsExpanded] = useState(false);
     
@@ -186,7 +186,7 @@ const FacultySubjectCard = ({ subject, facultyId, facultyName }: { subject: any,
             <CardContent>
                 <div className="flex gap-4">
                     <Button variant="outline" onClick={() => setIsExpanded(!isExpanded)}><Users className="mr-2"/>{isExpanded ? "Hide Students" : "Show Enrolled Students"}</Button>
-                    <RescheduleDialog facultyId={facultyId} facultyName={facultyName} subject={subject} students={enrolledStudents} />
+                    <RescheduleDialog facultyId={facultyId} facultyName={facultyName} subject={subject} students={enrolledStudents} weeklySchedule={weeklySchedule} />
                 </div>
                  {isExpanded && (
                     <div className="mt-4">
@@ -208,26 +208,83 @@ const FacultySubjectCard = ({ subject, facultyId, facultyName }: { subject: any,
 
 export default function ReschedulePage() {
     const { user } = useUser();
+    const firestore = useFirestore();
+
+    const facultyDisplayName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Faculty Member');
+
+    const assignmentsQuery = useMemoFirebase(() => {
+        if (!firestore || !facultyDisplayName || facultyDisplayName === 'Faculty Member') return null;
+        return query(collection(firestore, 'teachingAssignments'), where('facultyName', '==', facultyDisplayName));
+    }, [firestore, facultyDisplayName]);
+
+    const curriculumQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'curriculum');
+    }, [firestore]);
+
+    const { data: assignments, isLoading: loadingAssignments } = useCollection(assignmentsQuery);
+    const { data: allCourses, isLoading: loadingCourses } = useCollection(curriculumQuery);
     
-    // --- Faculty Identity Normalization ---
-    const facultyNameFromEmail = useMemo(() => {
-        if (!user?.email) return '';
-        return normalizeName(user.email.split('@')[0]);
-    }, [user?.email]);
-
     const facultyDetails = useMemo(() => {
-        if (!facultyNameFromEmail) return [];
-        // Filters all course assignments from dummy data that match the logged-in faculty's name.
-        // It correctly handles entries with single or multiple (slash-separated) faculty names.
-        return dummyFaculty.filter(f => {
-            const normalizedDummyNames = f.name.split('/').map(namePart => normalizeName(namePart.trim()));
-            return normalizedDummyNames.includes(facultyNameFromEmail);
+        if (!assignments || !allCourses) return [];
+        
+        return assignments.map((assignment: any) => {
+            const courseDetail = allCourses.find((c: any) => c.courseAbbr === assignment.courseCode) || {};
+            return {
+                id: assignment.id,
+                courseName: courseDetail.courseName || assignment.courseCode,
+                courseAbbr: assignment.courseCode,
+                branch: courseDetail.branch || 'N/A',
+                section: assignment.section,
+                ugYear: [assignment.ug.replace('UG', '')]
+            };
         });
-    }, [facultyNameFromEmail]);
 
-    const facultyDisplayName = facultyDetails.length > 0 ? facultyDetails[0].name.split('/')[0].trim() : "Faculty Member";
+    }, [assignments, allCourses]);
 
-    if (!user) return <p>Loading...</p>
+    const weeklySchedule = useMemo(() => {
+        if (facultyDetails.length === 0) return [];
+        
+        const schedule: any[] = [];
+        const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+        facultyDetails.forEach(facultyCourse => {
+            const ugKey = `UG${facultyCourse.ugYear[0]}`;
+            const yearTimetable = (dummyTimetable as any)[ugKey]?.timetable;
+            if (!yearTimetable) return;
+
+            days.forEach(day => {
+                if (!yearTimetable[day]) return;
+                const daySchedule = yearTimetable[day];
+
+                daySchedule.forEach((slot: any) => {
+                    slot.entries.forEach((entryStr: string) => {
+                        const entry = parseEntry(entryStr);
+                        const courseSection = facultyCourse.section === 'Common' ? entry.section : facultyCourse.section;
+
+                        if (entry.courseAbbr === facultyCourse.courseAbbr && (entry.section === courseSection || facultyCourse.section === 'Common')) {
+                             schedule.push({
+                                day,
+                                time: slot.time,
+                                course: facultyCourse.courseAbbr,
+                                section: facultyCourse.section,
+                                ug: ugKey,
+                                room: entry.room
+                            });
+                        }
+                    });
+                });
+            });
+        });
+        
+        return schedule.filter((item, index, self) =>
+            index === self.findIndex((t) => (
+                t.time === item.time && t.course === item.course && t.section === item.section && t.day === item.day
+            ))
+        );
+    }, [facultyDetails]);
+
+    if (!user || loadingAssignments || loadingCourses) return <p>Loading...</p>
 
      return (
         <div className="grid gap-6">
@@ -239,7 +296,13 @@ export default function ReschedulePage() {
                 <CardContent className="space-y-4">
                     {facultyDetails.length === 0 && <p className="text-muted-foreground">Your assigned subjects will appear here.</p>}
                     {facultyDetails.map(subject => (
-                        <FacultySubjectCard key={subject.id} subject={subject} facultyId={user?.uid || 'unknown'} facultyName={facultyDisplayName} />
+                        <FacultySubjectCard 
+                            key={subject.id} 
+                            subject={subject} 
+                            facultyId={user?.uid || 'unknown'} 
+                            facultyName={facultyDisplayName}
+                            weeklySchedule={weeklySchedule}
+                        />
                     ))}
                 </CardContent>
             </Card>

@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
-import { cseCurriculum, eceCurriculum, aidsCurriculum } from '@/lib/data';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
-function CurriculumDisplay({ curriculumData }: { curriculumData: any }) {
+function CurriculumDisplay({ curriculumData, isLoading }: { curriculumData: any, isLoading: boolean }) {
+    if (isLoading) return <p>Loading curriculum...</p>;
     if (!curriculumData) return <p>No curriculum data available.</p>;
 
     const { branchFullName, infoLink, curriculum } = curriculumData;
@@ -31,6 +33,7 @@ function CurriculumDisplay({ curriculumData }: { curriculumData: any }) {
             </CardHeader>
             <CardContent>
                 <div className="space-y-8">
+                    {curriculum.length === 0 && <p className="text-muted-foreground">No courses found for this branch.</p>}
                     {curriculum.map((semester: any) => (
                         <div key={semester.semester}>
                             <h3 className="text-xl font-semibold mb-4 border-b pb-2">Semester {semester.semester}</h3>
@@ -51,7 +54,7 @@ function CurriculumDisplay({ curriculumData }: { curriculumData: any }) {
                                         <TableRow key={course.courseAbbr}>
                                             <TableCell>{course.courseAbbr}</TableCell>
                                             <TableCell>{course.courseName}</TableCell>
-                                            <TableCell>{course.type}</TableCell>
+                                            <TableCell>{course.courseType}</TableCell>
                                             <TableCell className="text-right">{course.credits}</TableCell>
                                         </TableRow>
                                     ))}
@@ -67,15 +70,41 @@ function CurriculumDisplay({ curriculumData }: { curriculumData: any }) {
 
 export default function CurriculumManagementPage() {
   const [activeBranch, setActiveBranch] = useState('CSE');
+  const firestore = useFirestore();
   const branches = ['CSE', 'ECE', 'AIDS'];
 
+  const curriculumQuery = useMemoFirebase(() => firestore ? collection(firestore, 'curriculum') : null, [firestore]);
+  const { data: allCurriculum, isLoading: loadingCurriculum } = useCollection(curriculumQuery);
+  
   const curriculumMap = {
-    CSE: cseCurriculum,
-    ECE: eceCurriculum,
-    AIDS: aidsCurriculum,
+    CSE: { branchFullName: 'Computer Science and Engineering', infoLink: 'https://iiits.ac.in/academics/b-tech-programme/computer-science-engineering/curriculum/' },
+    ECE: { branchFullName: 'Electronics and Communication Engineering', infoLink: 'https://iiits.ac.in/academics/b-tech-programme/electronics-communication-engineering/curriculum/' },
+    AIDS: { branchFullName: 'Artificial Intelligence and Data Science', infoLink: 'https://iiits.ac.in/academics/b-tech-programme/artificial-intelligence-and-data-science/b-tech-ai-ds-curriculum/' }
   };
 
-  const curriculumToDisplay = curriculumMap[activeBranch as keyof typeof curriculumMap] || null;
+  const curriculumToDisplay = useMemo(() => {
+    if (!allCurriculum) return null;
+
+    const branchCourses = allCurriculum.filter((course: any) => course.branch === activeBranch);
+    
+    const semesters = branchCourses.reduce((acc: any, course: any) => {
+        const sem = course.semester || 'N/A';
+        if (!acc[sem]) {
+            acc[sem] = { semester: sem, courses: [] };
+        }
+        acc[sem].courses.push(course);
+        return acc;
+    }, {});
+    
+    const sortedSemesters = Object.values(semesters).sort((a: any, b: any) => a.semester.localeCompare(b.semester));
+    sortedSemesters.forEach((sem: any) => sem.courses.sort((a: any, b: any) => a.courseAbbr.localeCompare(b.courseAbbr)));
+    
+    return {
+        ...curriculumMap[activeBranch as keyof typeof curriculumMap],
+        curriculum: sortedSemesters
+    };
+
+  }, [allCurriculum, activeBranch]);
 
   return (
     <div className="space-y-6">
@@ -98,7 +127,7 @@ export default function CurriculumManagementPage() {
             </CardContent>
         </Card>
 
-        <CurriculumDisplay curriculumData={curriculumToDisplay} />
+        <CurriculumDisplay curriculumData={curriculumToDisplay} isLoading={loadingCurriculum} />
     </div>
   );
 }

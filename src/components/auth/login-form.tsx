@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getRoleFromEmail } from "@/lib/roles";
+import { getRoleFromEmail, UserRole } from "@/lib/roles";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, query, where } from "firebase/firestore";
 
 export function LoginForm() {
   const router = useRouter();
@@ -44,43 +44,42 @@ export function LoginForm() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      const potentialRole = getRoleFromEmail(user.email || "");
+      
+      const userDocRef = doc(firestore, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
 
-      let finalRole = potentialRole;
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        const role = userData.role as UserRole;
 
-      if (potentialRole === 'student') {
-        const studentsRef = collection(firestore, 'students');
-        const q = query(studentsRef, where("email", "==", user.email));
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-          finalRole = null; // Block access if no student record found
-          toast({
-            variant: "destructive",
-            title: "Access Denied",
-            description: "Your student profile is not created yet. Please contact the Academic Office.",
-          });
-        }
-      }
-
-      if (finalRole) {
-        toast({
-          title: "Login Successful",
-          description: `Redirecting to ${finalRole} dashboard...`,
-        });
-        router.push(`/${finalRole}`);
-      } else if (potentialRole !== 'student') {
-        // This case handles if getRoleFromEmail returns null but it wasn't a student check failure
-         throw new Error("This email is not associated with a valid role.");
-      }
-    } catch (error: any) {
-        // Avoid showing a generic error if a specific student access error was already shown
-        if (getRoleFromEmail(email) !== 'student' || error.code) {
-             toast({
-              variant: "destructive",
-              title: "Login Failed",
-              description: error.message || "An unknown error occurred.",
+        if (role) {
+            toast({
+              title: "Login Successful",
+              description: `Redirecting to ${role} dashboard...`,
+            });
+            router.push(`/${role}`);
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Login Failed",
+                description: "Your account does not have a role assigned. Please contact administration.",
             });
         }
+      } else {
+         toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Your user profile could not be found. Please contact administration.",
+        });
+      }
+    } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: error.code === 'auth/invalid-credential' 
+            ? "Invalid email or password."
+            : error.message || "An unknown error occurred.",
+        });
     } finally {
         setIsLoading(false);
     }
