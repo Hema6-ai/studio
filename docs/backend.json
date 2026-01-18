@@ -117,7 +117,8 @@
         "id": { "type": "string", "description": "Unique identifier for the user." },
         "email": { "type": "string", "description": "The user's email address.", "format": "email" },
         "role": { "type": "string", "description": "The user's role (e.g., student, doctor, director, academic_office, librarian)." },
-        "createdAt": { "type": "string", "description": "The date and time the user account was created.", "format": "date-time" }
+        "createdAt": { "type": "string", "description": "The date and time the user account was created.", "format": "date-time" },
+        "profilePhotoURL": { "type": "string", "description": "URL to the user's profile photo.", "format": "uri" }
       },
       "required": ["id", "email", "role", "createdAt"]
     },
