@@ -58,6 +58,7 @@ export const navLinks: Record<string, NavItem[]> = {
         { href: '#feed', label: 'Campus Feed', icon: Newspaper },
         { href: '/student/resources', label: 'Resource Hub', icon: BookCopy },
         { href: '/student/library', label: 'Library', icon: LibraryIcon },
+        { href: '/student/complaints', label: 'Hostel Complaint', icon: ShieldCheck },
         {
             key: 'document-submission',
             label: 'Document Submission',
