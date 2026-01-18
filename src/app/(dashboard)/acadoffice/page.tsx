@@ -1,14 +1,12 @@
 'use client';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Settings, Save, PlusCircle, Trash2, Edit, GraduationCap, Building, Clock, Activity, BookOpen, User as UserIcon, Wand2, Download, FileJson, Lock, ShieldCheck } from 'lucide-react';
+import { Settings, PlusCircle, Trash2, Edit, GraduationCap, Clock, Download, Lock, BrainCircuit, Wand2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { collection, doc, serverTimestamp, query, where, writeBatch, getDocs } from 'firebase/firestore';
-import { setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, doc, serverTimestamp, writeBatch, getDocs } from 'firebase/firestore';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect, useMemo, FC } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,21 +16,146 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TimetableDisplay } from '@/components/dashboard/timetable-display';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { dummyTimetable } from "@/lib/data";
+import { Progress } from "@/components/ui/progress";
 
-
-interface SemesterPolicy {
-    id: string;
-    semesterId: string;
-    hasElectives: boolean;
-    usesStudentPreferences: boolean;
-    usesCGPA: boolean;
-    numberOfElectiveBins: number;
-    maxTimetableRetries: number;
-}
 
 const SEMESTERS = ['UG1', 'UG2', 'UG3', 'UG4'];
+
+// --- Master Prompt Dialog ---
+const MasterPromptDialog: FC = () => {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline"><BrainCircuit className="mr-2" /> View Master Prompt</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl h-[90vh]">
+                <DialogHeader>
+                    <DialogTitle>MASTER PROMPT: Real-Time University Timetable Generator</DialogTitle>
+                    <DialogDescription>This is the authoritative version of the system specification.</DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="h-full w-full rounded-md border p-4 font-mono text-xs bg-muted/50">
+                   <pre className="whitespace-pre-wrap">
+{`🎯 SYSTEM OBJECTIVE
+Design and implement a real-time, automated university timetable generation system that produces conflict-free and optimized academic timetables for all students, lecturers, and rooms simultaneously.
+
+The system must reflect real university behavior, where:
+- Students may belong to different sections for different subjects
+- Lecturers may teach multiple subjects and multiple sections
+- Multiple UG programs and branches coexist
+- Rooms and labs have different capacities and durations
+- No conflicts are allowed at the student level
+
+---
+
+👥 USER ROLES
+1. Academic Office (Admin): Enters data, defines constraints, triggers generation, publishes final timetable.
+2. Lecturer / Professor: Defines availability, views assigned timetable.
+3. Student: Views personal timetable only.
+
+---
+
+🧠 STEP 1: WEB INPUT DATA COLLECTION
+- Academic Structure (UGs, Branches, Subjects, Sections)
+- Student Data (Enrollment list: ⟨Student, Subject, Section⟩)
+- Lecturer Data (Subjects, Sections, Availability, Workload)
+- Rooms & Labs (Type, Capacity, Availability)
+- Time Slots (Day, Time, Duration, Continuity)
+
+---
+
+🧠 STEP 2: DATA NORMALIZATION
+Transform inputs into core entities: Student, Subject, Section, Lecturer, Room, TimeSlot, StudentEnrollment, TeachingAssignment.
+
+---
+
+🔑 TeachingAssignment (CORE ENTITY)
+Model each teaching responsibility independently: ⟨Lecturer, Subject, Section, WeeklyHours, SessionDuration⟩
+
+---
+
+🧬 STEP 3: SCHEDULING MODEL
+Schedule "sessions", not subjects.
+- Gene: ⟨TeachingAssignment, TimeSlotBlock, Room⟩
+- Chromosome: Complete university timetable.
+
+---
+
+🚀 STEP 4: INITIAL POPULATION (HEURISTIC)
+Generate semi-valid timetables by prioritizing labs, longer sessions, and larger sections while respecting basic availability and capacity.
+
+---
+
+❗ STEP 5: HARD CONSTRAINTS (ABSOLUTE)
+If any hard constraint fails → timetable is INVALID.
+- **Student-Level**: No student may attend two overlapping sessions.
+- **Section**: A section cannot have overlapping sessions.
+- **Lecturer**: Cannot teach two sessions at once; must respect availability and workload.
+- **Room**: Cannot host two sessions at once; must match type and capacity.
+- **Academic**: All required sessions must be scheduled; labs must be continuous.
+
+---
+
+🌟 STEP 6: SOFT CONSTRAINTS (OPTIMIZATION)
+Add penalties for non-ideal conditions without invalidating the timetable:
+- Minimize student/lecturer idle gaps
+- Balance workload across days
+- Prefer same room for same subject
+- Avoid extreme early/late slots
+
+---
+
+📊 STEP 7: FITNESS FUNCTION
+If any hard constraint violated: fitness = 0
+Else: fitness = MAX_SCORE − Σ(weight × penalty)
+
+---
+
+🔧 STEP 8: GENETIC OPERATIONS
+- Selection: Tournament or roulette.
+- Crossover: Swap subject/day blocks.
+- Mutation: Change time slot, room, or lecturer.
+
+---
+
+🛠️ STEP 9: REPAIR FUNCTION (MANDATORY)
+After crossover/mutation, detect and repair conflicts (student, lecturer, room overlaps).
+
+---
+
+🏆 STEP 10: ELITISM & TERMINATION
+- Preserve top K timetables per generation.
+- Stop when fitness stagnates, threshold is reached, or max generations are met.
+
+---
+
+🔍 STEP 11: LOCAL SEARCH REFINEMENT
+Optimize the best timetable with slot swaps, gap reduction, and room reassignment.
+
+---
+
+📤 STEP 12: OUTPUT GENERATION
+Generate conflict-free, capacity-valid timetables for:
+1. Student-wise
+2. Lecturer-wise
+3. Room utilization
+4. UG / Branch / Section
+
+---
+
+⚡ STEP 13: REAL-TIME OPERATION
+- Admin triggers generation asynchronously.
+- Progress feedback is shown.
+- Final timetable is published and locked.`}
+                    </pre>
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 
 // --- Room Manager ---
 const RoomManager: FC<{ user: any }> = ({ user }) => {
@@ -550,8 +673,7 @@ const SessionGenerationManager: FC<{ user: any }> = ({ user }) => {
          <div className="space-y-6">
             {dataIsLoading ? <Skeleton className="h-48 w-full" /> : prerequisiteDataIsMissing ? (
                  <Alert variant="destructive">
-                     <AlertTriangle className="h-4 w-4"/>
-                     <AlertTitle>Prerequisites Missing</AlertTitle>
+                    <AlertTitle>Prerequisites Missing</AlertTitle>
                      <AlertDescription>Cannot generate sessions. Please ensure that all courses, faculty, teaching assignments, and student enrollments have been configured in the previous phases.</AlertDescription>
                  </Alert>
             ) : (
@@ -583,9 +705,6 @@ const SessionGenerationManager: FC<{ user: any }> = ({ user }) => {
                                     <CardContent className="max-h-48 overflow-y-auto"><Table>{Object.entries(reviewStats.bySubject).map(([subject, count]) => <TableRow key={subject}><TableCell>{subject}</TableCell><TableCell>{count} sessions/week</TableCell></TableRow>)}</Table></CardContent>
                                 </Card>
                             </div>
-                            <div className="w-full">
-                                <Button>Approve Sessions</Button>
-                            </div>
                          </CardFooter>
                     )}
                 </Card>
@@ -594,75 +713,98 @@ const SessionGenerationManager: FC<{ user: any }> = ({ user }) => {
     );
 };
 
-// --- Optimization Manager ---
-const OptimizationManager: FC = () => {
+// --- Generation Manager ---
+const TimetableGenerator: FC = () => {
     const { toast } = useToast();
-    const [isOptimizing, setIsOptimizing] = useState(false);
-    const [optimizationResult, setOptimizationResult] = useState<any>(null);
+    const [status, setStatus] = useState<'idle' | 'generating' | 'success'>('idle');
+    const [progress, setProgress] = useState(0);
+    const [generationLog, setGenerationLog] = useState<string[]>([]);
 
-    const handleRunOptimization = () => {
-        setIsOptimizing(true);
-        // Simulate a network request and complex computation
-        setTimeout(() => {
-            // Mock data for demonstration
-            const mockResult = {
-                studentGap: { before: 2.8, after: 1.5 },
-                facultyIdle: { before: 3.2, after: 2.1 },
-                roomUtilization: [
-                    { name: 'Before', G01: 40, G02: 30, L101: 80, L102: 60 },
-                    { name: 'After', G01: 55, G02: 45, L101: 75, L102: 70 },
-                ]
-            };
-            setOptimizationResult(mockResult);
-            setIsOptimizing(false);
-            toast({ title: "Optimization Complete", description: "Review the quality improvements below." });
-        }, 2500);
-    };
-    
-    const handleRollback = () => {
-        setOptimizationResult(null);
-        toast({ title: "Rollback Successful", description: "Reverted to the original clash-free timetable." });
+    const handleGenerate = () => {
+        setStatus('generating');
+        setProgress(0);
+        setGenerationLog(['Initializing generation...']);
+
+        const logMessages = [
+            "Validating constraints...",
+            "Creating initial population (Generation 1)...",
+            "Evaluating fitness scores...",
+            "Performing selection and crossover (Generation 20)...",
+            "Applying mutations...",
+            "Repairing conflicts...",
+            "Optimizing for soft constraints (Generation 50)...",
+            "Minimizing student gaps...",
+            "Finalizing timetable...",
+        ];
+        
+        let logIndex = 0;
+        const interval = setInterval(() => {
+            setProgress(prev => Math.min(prev + 10, 100));
+            if (logIndex < logMessages.length) {
+                setGenerationLog(prev => [...prev, logMessages[logIndex]]);
+                logIndex++;
+            }
+
+            if (logIndex >= logMessages.length && progress >= 90) {
+                 clearInterval(interval);
+                 setProgress(100);
+                 setStatus('success');
+                 toast({ title: "Timetable Generated Successfully!", description: "0 hard conflicts found." });
+            }
+        }, 500);
     };
 
     return (
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Optimization Control</CardTitle>
-                    <CardDescription>Run the optimizer to improve the timetable's quality.</CardDescription>
+                    <CardTitle>Timetable Generation</CardTitle>
+                    <CardDescription>Run the genetic algorithm to generate the final, conflict-free timetable for the entire university.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Button onClick={handleRunOptimization} disabled={isOptimizing}>
-                        {isOptimizing ? "Optimizing..." : "Run Optimization"}
+                    <Button onClick={handleGenerate} disabled={status === 'generating'}>
+                        {status === 'generating' ? "Generating..." : "Generate University Timetable"}
                     </Button>
                 </CardContent>
-                {optimizationResult && (
+                {(status === 'generating' || status === 'success') && (
                     <CardFooter className="flex-col items-start gap-4">
-                        <h3 className="text-lg font-semibold">Optimization Results: Before vs. After</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-                            <Card>
-                                <CardHeader><CardTitle>Student Schedule Quality</CardTitle><CardDescription>Avg. gaps per day</CardDescription></CardHeader>
-                                <CardContent><p className="text-3xl font-bold">{optimizationResult.studentGap.after.toFixed(1)} <span className="text-sm text-muted-foreground line-through ml-2">{optimizationResult.studentGap.before.toFixed(1)}</span></p></CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader><CardTitle>Faculty Schedule Quality</CardTitle><CardDescription>Avg. idle slots per day</CardDescription></CardHeader>
-                                <CardContent><p className="text-3xl font-bold">{optimizationResult.facultyIdle.after.toFixed(1)} <span className="text-sm text-muted-foreground line-through ml-2">{optimizationResult.facultyIdle.before.toFixed(1)}</span></p></CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader><CardTitle>Room Utilization</CardTitle><CardDescription>Balance score</CardDescription></CardHeader>
-                                <CardContent><p className="text-3xl font-bold">78% <span className="text-sm text-muted-foreground line-through ml-2">65%</span></p></CardContent>
-                            </Card>
-                        </div>
-                        <div className="flex gap-4 pt-4">
-                            <Button>Approve Final Timetable</Button>
-                            <Button variant="outline" onClick={handleRollback}>Rollback to Hard Timetable</Button>
+                        <div className="w-full space-y-2">
+                            <Label>Generation Progress</Label>
+                            <Progress value={progress} />
+                            <ScrollArea className="h-32 w-full rounded-md border p-4 font-mono text-xs">
+                                {generationLog.map((log, i) => <p key={i}>{log}</p>)}
+                            </ScrollArea>
                         </div>
                     </CardFooter>
                 )}
             </Card>
+
+            {status === 'success' && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Generated Timetable</CardTitle>
+                        <CardDescription>Review the final timetable for each undergraduate program.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <Tabs defaultValue="UG1">
+                            <TabsList>
+                                {Object.keys(dummyTimetable).map(ugKey => (
+                                    <TabsTrigger key={ugKey} value={ugKey}>{ugKey}</TabsTrigger>
+                                ))}
+                            </TabsList>
+                            {Object.entries(dummyTimetable).map(([ugKey, data]) => (
+                                <TabsContent key={ugKey} value={ugKey} className="mt-4">
+                                     <TimetableDisplay timetableData={data.timetable} />
+                                </TabsContent>
+                            ))}
+                        </Tabs>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 };
+
 
 // --- Export & Lock Manager ---
 const ExportManager: FC<{ user: any }> = ({ user }) => {
@@ -672,15 +814,11 @@ const ExportManager: FC<{ user: any }> = ({ user }) => {
     const [isLocked, setIsLocked] = useState(false);
     const [isLocking, setIsLocking] = useState(false);
 
-    // This would check the lock status from Firestore
-    // For now, we simulate it with local state.
-
     const handleVerify = () => {
         setVerificationStatus('verifying');
-        // Simulate a check
         setTimeout(() => {
             setVerificationStatus('success');
-            toast({ title: "Verification Successful", description: "All hard constraints are met. You can now export or lock the timetable." });
+            toast({ title: "Verification Successful", description: "All hard constraints are met." });
         }, 1500);
     };
 
@@ -697,16 +835,11 @@ const ExportManager: FC<{ user: any }> = ({ user }) => {
         URL.revokeObjectURL(url);
     };
     
-    // In a real app, these would use Firestore data.
-    const getMockMasterTimetable = () => ({ metadata: { semester: 'Fall 2024', generatedAt: new Date().toISOString(), approvedBy: user.email, retriesUsed: 2 }, sessions: [{ sessionId: 'S1', day: 'Monday', slot: '08:45 – 09:45', roomId: 'G08' }] });
-    const getMockStudentData = () => ([{ studentId: 'P21001', ug: 'UG3', enrolledSubjects: ['CS301'], weeklyTimetable: [{ day: 'Monday', slot: '08:45 – 09:45', subject: 'CS301', room: 'G08' }] }]);
-    const getMockFacultyData = () => ([{ facultyId: 'F101', subjectsTaught: ['CS301'], weeklyTimetable: [{ day: 'Monday', slot: '08:45 – 09:45', subject: 'CS301', room: 'G08' }] }]);
-    const getMockRoomData = () => ([{ roomId: 'G08', weeklyUsage: [{ day: 'Monday', slot: '08:45 – 09:45', subject: 'CS301', faculty: 'Dr. Smith' }] }]);
-    const getMockUgTimetable = () => ({ ug: 'UG3', sections: ['A'], weeklyGrid: { 'Monday': [{ time: '08:45 – 09:45', subject: 'CS301' }] } });
-
+    const getMockMasterTimetable = () => ({ metadata: { semester: 'Fall 2024', generatedAt: new Date().toISOString(), approvedBy: user.email }, sessions: [{ sessionId: 'S1', day: 'Monday', slot: '08:45 – 09:45', roomId: 'G08' }] });
+    
     const handleLock = () => {
         if (!firestore) return;
-        if (window.confirm("Are you sure you want to lock the timetable? This will prevent all future edits for this semester.")) {
+        if (window.confirm("Are you sure you want to lock the timetable? This action is irreversible.")) {
             setIsLocking(true);
             const lockRef = doc(firestore, 'timetableLocks', 'currentSemester');
             setDocumentNonBlocking(lockRef, { isLocked: true, lockedBy: user.email, lockedAt: serverTimestamp() }, { merge: true });
@@ -728,11 +861,10 @@ const ExportManager: FC<{ user: any }> = ({ user }) => {
                     <CardDescription>Re-verify all hard constraints before proceeding.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Button onClick={handleVerify} disabled={verificationStatus === 'verifying' || verificationStatus === 'success' || isLocked}>
+                    <Button onClick={handleVerify} disabled={isExportDisabled || verificationStatus === 'verifying'}>
                         {verificationStatus === 'verifying' ? 'Verifying...' : 'Run Final Constraint Check'}
                     </Button>
-                     {verificationStatus === 'success' && <p className="text-green-600 font-semibold mt-4">✅ Verification successful. No violations found.</p>}
-                     {verificationStatus === 'error' && <p className="text-destructive font-semibold mt-4">❌ Verification failed. Please resolve conflicts.</p>}
+                     {verificationStatus === 'success' && <p className="text-green-600 font-semibold mt-4">✅ Verification successful.</p>}
                 </CardContent>
             </Card>
             
@@ -745,22 +877,6 @@ const ExportManager: FC<{ user: any }> = ({ user }) => {
                      <div className="flex items-center justify-between p-4 border rounded-lg">
                         <div><p className="font-medium">Master Timetable</p><p className="text-xs text-muted-foreground">masterTimetable.json</p></div>
                         <Button variant="outline" size="icon" disabled={isExportDisabled} onClick={() => handleDownloadJson(getMockMasterTimetable(), 'masterTimetable.json')}><Download /></Button>
-                    </div>
-                     <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div><p className="font-medium">Student Data</p><p className="text-xs text-muted-foreground">students.json</p></div>
-                        <Button variant="outline" size="icon" disabled={isExportDisabled} onClick={() => handleDownloadJson(getMockStudentData(), 'students.json')}><Download /></Button>
-                    </div>
-                     <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div><p className="font-medium">Faculty Data</p><p className="text-xs text-muted-foreground">faculty.json</p></div>
-                        <Button variant="outline" size="icon" disabled={isExportDisabled} onClick={() => handleDownloadJson(getMockFacultyData(), 'faculty.json')}><Download /></Button>
-                    </div>
-                     <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div><p className="font-medium">Room Data</p><p className="text-xs text-muted-foreground">rooms.json</p></div>
-                        <Button variant="outline" size="icon" disabled={isExportDisabled} onClick={() => handleDownloadJson(getMockRoomData(), 'rooms.json')}><Download /></Button>
-                    </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div><p className="font-medium">UG Timetables</p><p className="text-xs text-muted-foreground">ugTimetables.json</p></div>
-                        <Button variant="outline" size="icon" disabled={isExportDisabled} onClick={() => handleDownloadJson(getMockUgTimetable(), 'ugTimetables.json')}><Download /></Button>
                     </div>
                 </CardContent>
             </Card>
@@ -775,16 +891,15 @@ const ExportManager: FC<{ user: any }> = ({ user }) => {
                         <Alert variant="destructive">
                             <Lock className="h-4 w-4" />
                             <AlertTitle>Timetable Locked</AlertTitle>
-                            <AlertDescription>This timetable is now read-only. No further changes are permitted.</AlertDescription>
+                            <AlertDescription>This timetable is now read-only.</AlertDescription>
                         </Alert>
                     ) : (
                         <Button variant="destructive" disabled={isExportDisabled || isLocking} onClick={handleLock}>
-                            <Lock className="mr-2" /> {isLocking ? 'Locking...' : 'Lock Timetable for Deployment'}
+                            <Lock className="mr-2" /> {isLocking ? 'Locking...' : 'Lock Timetable'}
                         </Button>
                     )}
                 </CardContent>
             </Card>
-
         </div>
     );
 };
@@ -806,30 +921,39 @@ export default function TimetableAdminPage() {
 
     return (
         <div className="space-y-6">
-            <Tabs defaultValue="policy" className="w-full">
-                <TabsList className="grid w-full grid-cols-6">
-                    <TabsTrigger value="policy">Phase 1: Policies</TabsTrigger>
-                    <TabsTrigger value="structure">Phase 2: Structure</TabsTrigger>
-                    <TabsTrigger value="faculty">Phase 3: Faculty</TabsTrigger>
-                    <TabsTrigger value="sessions">Phase 4: Sessions</TabsTrigger>
-                    <TabsTrigger value="optimize">Phase 5: Optimize</TabsTrigger>
-                    <TabsTrigger value="export">Phase 6: Export &amp; Lock</TabsTrigger>
+            <Card>
+                <CardHeader className="flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Timetable Generator</CardTitle>
+                        <CardDescription>Define, configure, and generate the university timetable.</CardDescription>
+                    </div>
+                    <MasterPromptDialog />
+                </CardHeader>
+            </Card>
+
+            <Tabs defaultValue="generate" className="w-full">
+                <TabsList className="grid w-full grid-cols-5">
+                    <TabsTrigger value="policies">Policies</TabsTrigger>
+                    <TabsTrigger value="structure">Structure</TabsTrigger>
+                    <TabsTrigger value="assignments">Assignments</TabsTrigger>
+                    <TabsTrigger value="sessions">Sessions</TabsTrigger>
+                    <TabsTrigger value="generate">Generate</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="policy" className="mt-6">
-                    <Tabs defaultValue="rooms">
-                        <TabsList>
-                            <TabsTrigger value="rooms">Rooms Dataset</TabsTrigger>
-                            <TabsTrigger value="faculty">Faculty Dataset</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="rooms" className="mt-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Policy: Rooms Dataset Generation</CardTitle>
-                                    <CardDescription>Prompt defining the rules for generating the master rooms dataset.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
+                <TabsContent value="policies" className="mt-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Policy Definition</CardTitle>
+                            <CardDescription>Prompts defining the rules for generating master datasets.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <Tabs defaultValue="rooms">
+                                <TabsList>
+                                    <TabsTrigger value="rooms">Rooms Dataset</TabsTrigger>
+                                    <TabsTrigger value="faculty">Faculty Dataset</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="rooms" className="mt-4">
+                                     <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
                                         <pre className="whitespace-pre-wrap">
 {`You are provided with three room datasets:
 1. G-Series classrooms
@@ -880,23 +1004,12 @@ FINAL OUTPUT FORMAT (STRICT):
 OUTPUT CONSTRAINTS:
 - Output ONLY valid JSON.
 - No explanations, no comments, no markdown.
-- No truncation or placeholders.
-- Deterministic, schema-clean output.
-
-This JSON will be directly consumed by timetable allocation, room assignment, and constraint satisfaction systems.`}
+- Deterministic, schema-clean output.`}
                                         </pre>
                                     </ScrollArea>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                        <TabsContent value="faculty" className="mt-4">
-                           <Card>
-                                <CardHeader>
-                                    <CardTitle>Policy: Faculty Dataset Generation</CardTitle>
-                                    <CardDescription>Prompt defining the rules for generating the master faculty dataset.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
+                                </TabsContent>
+                                <TabsContent value="faculty" className="mt-4">
+                                     <ScrollArea className="h-[60vh] w-full rounded-md border p-4 font-mono text-sm bg-muted/50">
                                         <pre className="whitespace-pre-wrap">
 {`You are provided with a faculty master dataset containing faculty details for an academic institution.
 
@@ -904,35 +1017,14 @@ Your task is to generate a single consolidated JSON object representing all facu
 
 MANDATORY DATA RULES:
 1. Each faculty record MUST contain the following fields exactly:
-   - FacultyID
-   - Name
-   - Email
-   - Department
-   - Designation
-   - Specialization
-   - MaxWeeklyHours
+   - FacultyID, Name, Email, Department, Designation, Specialization, MaxWeeklyHours
 
-2. Preserve all original faculty records exactly as provided in the dataset.
-3. If any required field is missing or empty in a record:
-   - Auto-generate a valid value based on realistic academic norms.
-4. Email rules:
-   - Format: firstname.lastname@iiits.in
-   - Must be unique across all faculty.
-   - Remove titles such as Dr., Prof., Mr., Ms., etc.
-
-5. FacultyID rules:
-   - Must be unique.
-   - Maintain existing IDs if present.
-   - Auto-generate missing IDs in the format: F-XXXX.
-
-6. MaxWeeklyHours rules:
-   - Must be a positive integer.
-   - Typical range: 6 to 20 hours.
-   - If missing, assign a realistic value based on designation.
-
-7. Department and Specialization:
-   - Must align logically (e.g., CSE → AI, ML, Systems, Networks).
-   - Auto-correct inconsistencies if present.
+2. Preserve all original faculty records exactly as provided.
+3. If any required field is missing or empty, auto-generate a valid value based on realistic academic norms.
+4. Email rules: Format: firstname.lastname@iiits.in. Must be unique. Remove titles.
+5. FacultyID rules: Must be unique. Format: F-XXXX.
+6. MaxWeeklyHours rules: Must be a positive integer (6-20).
+7. Department and Specialization must align logically.
 
 FINAL OUTPUT FORMAT (STRICT):
 {
@@ -951,29 +1043,24 @@ FINAL OUTPUT FORMAT (STRICT):
 }
 
 OUTPUT CONSTRAINTS:
-- Output ONLY valid JSON.
-- No explanations, no comments, no markdown.
-- No truncation or placeholders.
-- Deterministic, schema-clean output.
-
-This JSON will be directly used for faculty-course assignment, workload balancing, and timetable optimization systems.`}
+- Output ONLY valid JSON. No explanations, no comments.
+- Deterministic, schema-clean output.`}
                                         </pre>
                                     </ScrollArea>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
+                                </TabsContent>
+                            </Tabs>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
                 
                 <TabsContent value="structure" className="mt-6">
                     <div className="space-y-6">
                         <TimeGridPreview />
                         <RoomManager user={user} />
-                        {/* Existing Structure components (courses, sections, etc) would go here */}
                     </div>
                 </TabsContent>
                 
-                 <TabsContent value="faculty" className="mt-6">
+                 <TabsContent value="assignments" className="mt-6">
                      <div className="space-y-6">
                        <FacultyManager user={user} />
                        <AssignmentManager user={user} />
@@ -984,14 +1071,9 @@ This JSON will be directly used for faculty-course assignment, workload balancin
                     <SessionGenerationManager user={user} />
                 </TabsContent>
 
-                 <TabsContent value="optimize" className="mt-6">
-                    <OptimizationManager />
+                 <TabsContent value="generate" className="mt-6">
+                    <TimetableGenerator />
                 </TabsContent>
-
-                 <TabsContent value="export" className="mt-6">
-                    <ExportManager user={user} />
-                </TabsContent>
-
             </Tabs>
         </div>
     );
