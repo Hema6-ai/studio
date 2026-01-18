@@ -10,7 +10,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FileUp, CheckCircle, Clock, XCircle, Shield, Building, AlertTriangle, UserCheck, Paperclip } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { FileUp, Paperclip } from "lucide-react";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { collection, query, where } from "firebase/firestore";
@@ -39,7 +41,6 @@ export default function MedicalLeavePage() {
   }, [firestore, user]);
 
   const { data: medicalRequests, isLoading } = useCollection(medicalRequestsQuery);
-  const medicalRequestStatus = medicalRequests?.[0]; // Get the most recent one for this demo
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -56,16 +57,6 @@ export default function MedicalLeavePage() {
     if(!firestore || !user) return;
     setIsSubmitting(true);
 
-    if (medicalRequestStatus && !medicalRequestStatus.directorApprovalStatus && !medicalRequestStatus.doctorVerificationStatus?.includes('Rejected')) {
-        toast({
-            variant: "destructive",
-            title: "Existing Request Pending",
-            description: "You already have a medical leave request in progress."
-        });
-        setIsSubmitting(false);
-        return;
-    }
-
     if (!selectedFile) {
         toast({
             variant: "destructive",
@@ -79,13 +70,8 @@ export default function MedicalLeavePage() {
     let fileURL = '';
     try {
         const storage = getStorage();
-        // Create a storage reference
         const storageRef = ref(storage, `medical-documents/${user.uid}/${Date.now()}-${selectedFile.name}`);
-        
-        // Upload file
         const snapshot = await uploadBytes(storageRef, selectedFile);
-        
-        // Get download URL
         fileURL = await getDownloadURL(snapshot.ref);
 
     } catch (error) {
@@ -100,16 +86,16 @@ export default function MedicalLeavePage() {
     }
 
     const requestData = {
-        studentId: studentId,
+        studentId: user.uid,
         studentName: studentName,
         age: Number(age),
         ugNumber: ugNumber,
         dateRequested: new Date().toISOString(),
         timeRequested: new Date().toISOString(),
-        medicalDocuments: [fileURL], // Save the URL of the uploaded file
+        medicalDocuments: [fileURL],
         statusUpdates: ['Student Applied'],
-        doctorVerificationStatus: null, // null | 'Approved' | 'Rejected'
-        directorApprovalStatus: null, // null | 'Approved' | 'Rejected'
+        doctorVerificationStatus: null,
+        directorApprovalStatus: null,
         rejectionReason: null
     };
 
@@ -132,24 +118,19 @@ export default function MedicalLeavePage() {
     setIsSubmitting(false);
   }
 
-  const getStatusIcon = (isComplete: boolean, isApproved?: boolean | null, isCurrent?: boolean) => {
-    if (isComplete) {
-      if (isApproved === false) return <XCircle className="h-6 w-6 text-red-500" />;
-      return <CheckCircle className="h-6 w-6 text-green-500" />;
+  const getStatusInfo = (req: any) => {
+    if (req.directorApprovalStatus === 'Rejected' || req.doctorVerificationStatus === 'Rejected') {
+        const reason = req.rejectionReason ? `Reason: ${req.rejectionReason}` : '';
+        return { text: `Rejected by ${req.directorApprovalStatus ? 'Director' : 'Doctor'}`, variant: 'destructive', reason };
     }
-    if(isCurrent) return <Clock className="h-6 w-6 text-blue-500 animate-pulse" />;
-    return <Clock className="h-6 w-6 text-gray-400" />;
+    if (req.directorApprovalStatus === 'Approved') {
+        return { text: 'Approved', variant: 'default', className: 'bg-green-600 hover:bg-green-700 text-white' };
+    }
+    if (req.doctorVerificationStatus === 'Approved') {
+        return { text: 'Pending Director Approval', variant: 'secondary', className: 'bg-blue-500 hover:bg-blue-600 text-white' };
+    }
+    return { text: 'Pending Doctor Verification', variant: 'secondary' };
   };
-
-  const getConnectorClass = (isComplete: boolean) => {
-    return isComplete ? 'bg-green-500' : 'bg-gray-300';
-  };
-  
-  const hasApplied = !!medicalRequestStatus;
-  const doctorApproved = medicalRequestStatus?.doctorVerificationStatus === 'Approved';
-  const doctorRejected = medicalRequestStatus?.doctorVerificationStatus === 'Rejected';
-  const directorApproved = medicalRequestStatus?.directorApprovalStatus === 'Approved';
-  const directorRejected = medicalRequestStatus?.directorApprovalStatus === 'Rejected';
 
   return (
     <div className="grid gap-6 lg:grid-cols-5">
@@ -159,7 +140,7 @@ export default function MedicalLeavePage() {
           <CardHeader>
             <CardTitle>Request Medical Leave</CardTitle>
             <CardDescription>
-              Fill out the form below and upload your medical certificate.
+              Fill out the form below and upload your medical certificate. You can submit multiple requests.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -220,82 +201,41 @@ export default function MedicalLeavePage() {
       <div className="lg:col-span-2">
         <Card>
             <CardHeader>
-                <CardTitle>Request Status</CardTitle>
-                <CardDescription>Track your medical leave request through the approval process.</CardDescription>
+                <CardTitle>My Leave History</CardTitle>
+                <CardDescription>Track all your submitted medical leave requests.</CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoading && <p className="text-muted-foreground text-center">Loading status...</p>}
-                {!hasApplied && !isLoading && <p className="text-muted-foreground text-center">Submit a request to see its status here.</p>}
-                
-                {hasApplied && medicalRequestStatus && (
-                <div className="space-y-6">
-                    {/* Step 1: Student Applied */}
-                    <div className="flex items-start">
-                        {getStatusIcon(hasApplied, true)}
-                        <div className="ml-4">
-                            <p className="font-semibold">Student Applied</p>
-                            <p className="text-xs text-muted-foreground">{new Date(medicalRequestStatus.dateRequested).toLocaleString()}</p>
-                        </div>
-                    </div>
-
-                    {/* Connector */}
-                    <div className={`ml-3 h-8 w-0.5 ${getConnectorClass(!!medicalRequestStatus.doctorVerificationStatus)}`}></div>
-
-                    {/* Step 2: Doctor Verification */}
-                    <div className="flex items-start">
-                        {getStatusIcon(!!medicalRequestStatus.doctorVerificationStatus, doctorApproved, !medicalRequestStatus.doctorVerificationStatus)}
-                        <div className="ml-4">
-                             <p className="font-semibold flex items-center gap-2">Doctor Verified <UserCheck className="h-4 w-4" /></p>
-                            {medicalRequestStatus.doctorVerificationStatus ? (
-                                <>
-                                 <p className={`text-sm font-bold ${doctorApproved ? 'text-green-600' : 'text-red-600'}`}>
-                                    {medicalRequestStatus.doctorVerificationStatus}
-                                 </p>
-                                 </>
-                            ) : (
-                                <p className="text-xs text-muted-foreground">Pending verification</p>
-                            )}
-                        </div>
-                    </div>
-                    
-                    {(doctorRejected || directorRejected) && (
-                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center flex flex-col items-center gap-2 mt-4">
-                            <AlertTriangle className="h-6 w-6 text-red-600" />
-                            <p className="text-sm text-red-700 font-semibold">Your request was rejected.</p>
-                             {medicalRequestStatus.rejectionReason && <p className="text-xs text-red-600 mt-1">Reason: {medicalRequestStatus.rejectionReason}</p>}
-                            <p className="text-xs text-red-600 mt-1">For any queries, please visit the Academic Office.</p>
-                        </div>
-                    )}
-
-                    {/* Connector */}
-                    {doctorApproved && <div className={`ml-3 h-8 w-0.5 ${getConnectorClass(!!medicalRequestStatus.directorApprovalStatus)}`}></div>}
-
-
-                    {/* Step 3: Director Approval */}
-                    {doctorApproved && !doctorRejected && <div className="flex items-start">
-                        {getStatusIcon(!!medicalRequestStatus.directorApprovalStatus, directorApproved, !medicalRequestStatus.directorApprovalStatus && doctorApproved)}
-                        <div className="ml-4">
-                             <p className="font-semibold flex items-center gap-2">Director Verified <Shield className="h-4 w-4" /></p>
-                            {medicalRequestStatus.directorApprovalStatus ? (
-                                <p className={`text-sm font-bold ${directorApproved ? 'text-green-600' : 'text-red-600'}`}>{medicalRequestStatus.directorApprovalStatus}</p>
-                            ) : (
-                                <p className="text-xs text-muted-foreground">Pending final approval</p>
-                            )}
-                        </div>
-                    </div>}
-
-                    {/* Connector */}
-                    {directorApproved && <div className={`ml-3 h-8 w-0.5 ${getConnectorClass(true)}`}></div>}
-
-                     {/* Step 4: Academic Office */}
-                    {directorApproved && <div className="flex items-start">
-                        {getStatusIcon(true, true)}
-                        <div className="ml-4">
-                             <p className="font-semibold flex items-center gap-2">Final Decision <Building className="h-4 w-4" /></p>
-                             <p className="text-sm font-bold text-green-600">Approved</p>
-                             <p className="text-xs text-muted-foreground">Processed by Academic Office.</p>
-                        </div>
-                    </div>}
+                {isLoading && <p className="text-center text-muted-foreground">Loading history...</p>}
+                {!isLoading && (!medicalRequests || medicalRequests.length === 0) ? (
+                    <p className="text-center text-muted-foreground py-10">You have not submitted any requests yet.</p>
+                ) : (
+                <div className="max-h-[60vh] overflow-y-auto">
+                    <Table>
+                        <TableHeader className="sticky top-0 bg-card">
+                            <TableRow>
+                                <TableHead>Date & Time</TableHead>
+                                <TableHead>Status</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {medicalRequests?.sort((a,b) => new Date(b.dateRequested).getTime() - new Date(a.dateRequested).getTime()).map((req) => {
+                                const statusInfo = getStatusInfo(req);
+                                return (
+                                    <TableRow key={req.id}>
+                                        <TableCell className="text-xs font-medium">
+                                            {new Date(req.dateRequested).toLocaleString()}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={statusInfo.variant as any} className={statusInfo.className}>
+                                                {statusInfo.text}
+                                            </Badge>
+                                            {statusInfo.reason && <p className="text-xs text-destructive mt-1">{statusInfo.reason}</p>}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
                 </div>
                 )}
             </CardContent>
