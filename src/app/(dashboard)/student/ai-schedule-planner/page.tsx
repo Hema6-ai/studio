@@ -64,10 +64,15 @@ const AiPersonalPlanner = ({ instituteSchedule, studentId }: { instituteSchedule
             };
             const result = await generateSchedulePlan(input);
             setAiSchedule(result);
-            toast({ title: 'Plan Generated!', description: 'Your personalized schedule has been created.' });
+
+            if (result.reasoning.includes("[Fallback Scheduler Used]")) {
+                toast({ title: 'Plan Generated', description: 'Used fallback scheduler as AI was busy.' });
+            } else {
+                toast({ title: 'Plan Generated!', description: 'Your personalized schedule has been created by Gemini.' });
+            }
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: 'AI Error', description: 'Could not generate the schedule plan. Please try again.' });
+            toast({ variant: 'default', title: 'Request Failed', description: 'Could not connect to the scheduling service. Please check your connection and try again.' });
         } finally {
             setIsLoading(false);
         }
