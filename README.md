@@ -3,8 +3,7 @@
 
 ## 1. Team Details
 
-*   **Team name:** *[Please fill in]*
-*   **Team leader name:** *[Please fill in]*
+*   **Team leader name:** *P.Hema*
 
 ## 2. Problem Statement & Solution
 
